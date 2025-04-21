@@ -1,0 +1,110 @@
+package kr.or.ddit.contract.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import kr.or.ddit.account.vo.AccountVO;
+import kr.or.ddit.contract.service.Contractservice;
+import kr.or.ddit.contract.vo.ContractVO;
+import kr.or.ddit.security.SecurityUtil;
+import kr.or.ddit.signature.service.SignatureService;
+import kr.or.ddit.signature.vo.SignatureVO;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Controller
+public class ContractController {
+
+    @Autowired
+    private Contractservice service;
+
+    @Autowired
+    private SignatureService signService;
+
+    // 근로계약서 목록 조회 (인사담당자)
+    @GetMapping("/contract/List")
+    public String contractList(Model model) {
+        List<ContractVO> contractList = service.ContractList();
+        model.addAttribute("contractList", contractList);
+        return "tiles:contract/contractList";
+    }
+
+    // 근로계약서 상세 조회 (인사담당자)
+    @GetMapping("/contract/detail")
+    public String contractDetail(@RequestParam("empId") String empId, Model model) {
+        ContractVO contract = service.selectContract(empId);
+        model.addAttribute("contract", contract);
+        return "tiles:contract/contractDetail";
+    }
+
+    // 근로계약서 등록 폼 진입 (계약서 없는 사원 목록 포함)
+    @GetMapping("/contract/registerForm")
+    public String registerForm(Model model) {
+        List<ContractVO> unContractList = service.unContractList();
+        model.addAttribute("unContractList", unContractList);
+        model.addAttribute("contract", new ContractVO());
+        return "tiles:contract/contractRegister";
+    }
+
+    // 근로계약서 자동 급여 적용 후 폼 진입
+    @GetMapping("/contract/auto")
+    public String autoContract(@RequestParam("empId") String empId, Model model) {
+        ContractVO contract = service.createContractWithAutoSalary(empId);
+        
+        if (contract == null) {
+            model.addAttribute("errorMsg", "급여 자동 적용에 실패했습니다. 급여 기준표를 확인해주세요.");
+            return "redirect:/contract/registerForm";  // 또는 오류 페이지
+        }
+
+        List<ContractVO> unContractList = service.unContractList();
+        model.addAttribute("unContractList", unContractList);
+        model.addAttribute("contract", contract);
+        return "tiles:contract/contractRegister";
+    }
+    // 근로계약서 등록
+    @PostMapping("/contract/register")
+    public String register(@ModelAttribute("contract") ContractVO contract) {
+        service.insertContract(contract);
+        log.info("근로계약서 등록 완료: {}", contract);
+        return "redirect:/contract/List";
+    }
+
+    // 서명 처리
+    @PostMapping("/contract/sign")
+    public String signContract(@RequestParam("contractId") int contractId, @RequestParam("empId") String empId) {
+        AccountVO account = SecurityUtil.getrealUser();
+        if (account == null || !account.getEmpId().equals(empId)) {
+            log.warn("서명 권한 없음: 로그인한 사용자와 계약서 사원이 일치하지 않음.");
+            return "redirect:/contract/myContract";
+        }
+
+        SignatureVO sign = signService.getSignature(empId);
+        if (sign != null) {
+            service.updateContractSign(contractId, sign.getSignId());
+            log.info("서명 완료: 계약 ID = {}, 서명 ID = {}", contractId, sign.getSignId());
+        } else {
+            log.warn("서명 실패: 서명 정보 없음 empId = {}", empId);
+        }
+        return "redirect:/contract/myContract";
+    }
+
+    // 내 근로계약서 조회 (직원용)
+    @GetMapping("/contract/myContract")
+    public String myContract(Model model) {
+        AccountVO account = SecurityUtil.getrealUser();
+        if (account != null) {
+            String empId = account.getEmpId();
+            ContractVO myContract = service.selectMyContract(empId);
+            model.addAttribute("contract", myContract);
+            return "tiles:contract/myContract";
+        }
+        return "redirect:/login";
+    }
+} 

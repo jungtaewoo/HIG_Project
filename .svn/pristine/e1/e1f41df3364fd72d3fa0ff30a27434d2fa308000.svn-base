@@ -1,0 +1,208 @@
+function connectWebSocket() {
+	console.log("🔌 WebSocket 연결 시도...");
+
+	let socket = new SockJS('/wss');
+	stompClient = Stomp.over(socket);
+
+	stompClient.connect({}, function (frame) {
+		console.log("✅ WebSocket 연결 성공: " + frame);
+
+		stompClient.subscribe('/topic/onlineStatus', function (message) {
+			console.log("🔄 상태 업데이트 수신: ", message.body);
+			loadEmployeeList();
+		});
+	}, function (error) {
+		console.error("❌ WebSocket 연결 실패", error);
+	});
+}
+
+function loadEmployeeList() {
+	console.log("📥 직원 목록 요청");
+
+	$.ajax({
+		url: "/messenger/empList",
+		type: "GET",
+		dataType: "json",
+		success: function (data) {
+			console.log("📋 직원 목록 수신 완료", data);
+
+			const treeData = {};
+			data.forEach(emp => {
+				const dept = emp.department?.departmentName || "미지정 부서";
+				const team = emp.teamName || "미지정 팀";
+
+				if (!treeData[dept]) treeData[dept] = {};
+				if (!treeData[dept][team]) treeData[dept][team] = [];
+
+				treeData[dept][team].push(emp);
+			});
+
+			let html = `
+			  <div class="empList-box">
+			  <div class="empList-header d-flex flex-wrap align-items-center gap-2 mb-4">
+			    <input type="text" id="empSearchInput" class="form-control search-input" placeholder="이름, 팀, 부서 검색">
+
+			    <button class="btn btn-primary btn-search" id="empSearchBtn">
+			      <i class="bi bi-search me-1"></i> 검색
+			    </button>
+
+			    <button class="btn btn-outline-secondary" id="collapseAllBtn">
+			      전체 닫기
+			    </button>
+			    </div>
+			    
+			    <div id="empListWrapper">
+			      <ul id="orgTree" class="dept-list">
+			`;
+
+			for (const deptName in treeData) {
+				html += `<li>
+					<span class="toggle"><i class="bi bi-building me-2"></i>${deptName}</span>
+					<ul style="display: none;">`;
+
+				for (const teamName in treeData[deptName]) {
+					html += `<li>
+						<span class="toggle"><i class="bi bi-people me-2"></i>${teamName}</span>
+						<ul style="display: none;">`;
+
+					treeData[deptName][teamName].forEach(emp => {
+						html += `
+							<li class="employee-item"
+								data-emp-id="${emp.empId}"
+								data-name="${emp.empName}"
+								data-dept="${deptName}"
+								data-team="${teamName}">
+								<i class="bi bi-person-fill me-1"></i> ${emp.empName} (${emp.rankName || 'N/A'})
+								<span class="ms-2">${emp.status === '온라인' ? '🟢' : '⚪'} ${emp.status}</span>
+							</li>`;
+					});
+
+					html += `</ul></li>`;
+				}
+
+				html += `</ul></li>`;
+			}
+
+			html += `
+						</ul>
+					</div>
+				</div>
+			`;
+
+			$("#contentArea").html(html);
+
+			// 토글 기능
+			$(document).off("click", ".toggle").on("click", ".toggle", function () {
+				const $toggle = $(this);
+				const $ul = $toggle.next("ul");
+
+				$toggle.toggleClass("open");
+				if ($toggle.hasClass("open")) {
+					$ul.stop(true, true).slideDown(300);
+				} else {
+					$ul.stop(true, true).slideUp(300);
+				}
+			});
+
+			// 직원 클릭 시 채팅방 열기
+			$(".employee-item").on("click", function () {
+				const empId = $(this).data("emp-id");
+				openChatWith(empId);
+			});
+
+			// 검색 버튼
+			$("#empSearchBtn").on("click", function () {
+				const keyword = $("#empSearchInput").val().trim();
+				if (keyword) searchAndExpandTree(keyword);
+			});
+
+			// 엔터 키로 검색
+			$("#empSearchInput").on("keypress", function (e) {
+				if (e.which === 13) $("#empSearchBtn").click();
+			});
+
+			// 전체 닫기
+			$("#collapseAllBtn").on("click", function () {
+				$(".toggle").removeClass("open");
+				$("#orgTree ul").slideUp(300);
+			});
+		},
+		error: function () {
+			alert("❌ 직원 목록을 불러오는 중 오류 발생");
+		}
+	});
+}
+
+function searchAndExpandTree(keyword) {
+	let found = false;
+
+	$(".employee-item").each(function () {
+		const $empItem = $(this);
+		const name = $empItem.data("name");
+		const dept = $empItem.data("dept");
+		const team = $empItem.data("team");
+
+		const isMatch = name.includes(keyword) || dept.includes(keyword) || team.includes(keyword);
+
+		if (isMatch) {
+			found = true;
+
+			const teamLi = $empItem.closest("ul").closest("li");
+			const teamToggle = teamLi.children(".toggle");
+			const teamUl = teamToggle.next("ul");
+
+			const deptLi = teamLi.closest("ul").closest("li");
+			const deptToggle = deptLi.children(".toggle");
+			const deptUl = deptToggle.next("ul");
+
+			teamToggle.addClass("open");
+			teamUl.stop(true, true).slideDown(300);
+
+			deptToggle.addClass("open");
+			deptUl.stop(true, true).slideDown(300);
+
+			$(".employee-item").css("background", "");
+			$empItem.css("background", "#ffff99");
+
+			$empItem[0].scrollIntoView({ behavior: "smooth", block: "center" });
+		}
+	});
+
+	if (!found) {
+		alert("검색 결과가 없습니다.");
+	}
+}
+
+function openChatWith(targetEmpId) {
+	const currentEmpId = sessionStorage.getItem("currentUserId");
+	if (!currentEmpId || !targetEmpId) {
+		alert("로그인 정보가 없습니다.");
+		return;
+	}
+
+	$.ajax({
+		url: "/messenger/selectOrInsertRoom",
+		method: "POST",
+		data: { empId1: currentEmpId, empId2: targetEmpId },
+		success: function (roomId) {
+			const popupName = `chatRoom_${roomId}`;
+			const popupOptions = "width=600,height=500,left=300,top=100,resizable=yes,scrollbars=yes";
+			window.open(`/messenger/room?roomId=${roomId}`, popupName, popupOptions);
+		},
+		error: function () {
+			alert("❌ 채팅방 생성에 실패했습니다.");
+		}
+	});
+}
+
+$(document).ready(function () {
+	console.log("📦 chatempList.js 로드됨");
+	connectWebSocket();
+	loadEmployeeList();
+
+	$("#empListBtn").on("click", function (e) {
+		e.preventDefault();
+		console.log("👆 직원 목록 버튼 클릭됨");
+		loadEmployeeList();
+	});
+});

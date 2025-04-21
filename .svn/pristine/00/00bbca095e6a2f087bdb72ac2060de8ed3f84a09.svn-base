@@ -1,0 +1,40 @@
+/** 
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *   
+ *   수정일      			수정자           수정내용
+ *  -----------   	-------------    ---------------------------
+ * 2025. 3. 13.     	정태우            최초 생성
+ *
+ * </pre>
+ */
+document.addEventListener("DOMContentLoaded", () => {
+    const myModalEl = document.getElementById("exampleModal__");
+
+    // 기존 이벤트 제거 후 다시 바인딩
+    myModalEl.addEventListener("show.bs.modal", handleModalShow);
+});
+
+function handleModalShow(event) {
+    const myModalEl = document.getElementById("exampleModal__"); // 다시 선언
+    myModalEl.removeEventListener("show.bs.modal", handleModalShow); // 기존 이벤트 제거
+
+    const aTag = event.relatedTarget; // 클릭한 요소 (a 태그)
+    const modalBody = myModalEl.querySelector(".modal-body");
+
+    // AJAX 요청 실행
+    fetch(aTag.href) // aTag 자체가 아닌 href 사용
+        .then(response => response.text())
+        .then(html => {
+            modalBody.innerHTML = html; // 모달에 내용 삽입
+        })
+        .catch(error => {
+            console.error("Error loading account details:", error);
+        });
+
+    // 다시 이벤트 등록 (한 번만 실행되도록)
+    setTimeout(() => {
+        myModalEl.addEventListener("show.bs.modal", handleModalShow);
+    }, 100);
+}
+

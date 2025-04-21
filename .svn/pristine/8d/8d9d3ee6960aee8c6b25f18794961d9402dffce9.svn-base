@@ -1,0 +1,114 @@
+function renderChart() {
+  fetch("/approval/approver/statusCount")
+    .then(res => {
+      if (!res.ok) throw new Error(res.status);
+      return res.json();
+    })
+    .then(stats => {
+      // 1) summary badge 업데이트
+      stats.forEach(({ APRSTATUS, CNT }) => {
+        const badge = document.querySelector(`.stat-card .badge[data-status="${APRSTATUS}"]`);
+        if (badge) badge.textContent = CNT+'건';
+      });
+
+      // 2) 차트 데이터 준비
+      const labels = stats.map(o => o.APRSTATUS);
+      const data = stats.map(o => o.CNT);
+
+      // 상태별 색상 정의 (회수 포함)
+      const colorMap = { 
+        대기: "#6c757d", // 회색
+        승인: "#198754", // 초록
+        반려: "#dc3545", // 빨강
+        회수: "#0dcaf0"  // 하늘색
+      };
+
+      // 라벨에 맞는 색상 배열 생성
+      const bgColors = labels.map(l => colorMap[l] || "#888");
+
+      const ctx = document.getElementById("statusChart").getContext("2d");
+
+      // 상태별 이동 필터 매핑
+      const statusMap = { 
+        대기: "waiting", 
+        승인: "completed", 
+        반려: "rejected", 
+        회수: "withdrawn"
+      };
+
+      // 이전 차트 인스턴스가 있으면 제거
+      if (window.statusChartInstance) {
+        window.statusChartInstance.destroy();
+      }
+
+      // 3) 차트 생성
+      window.statusChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: '문서 건수',
+            data: data,
+            backgroundColor: bgColors
+          }]
+        },
+        options: {
+          indexAxis: 'y', // 가로 막대형
+          animation: { 
+            duration: 0,
+            // 애니메이션 완료 후 각 막대 중앙에 건수 표시
+            onComplete: function() {
+              const chart = this;
+              const ctx = chart.ctx;
+              const dataset = chart.data.datasets[0];
+
+              // 폰트를 좀 더 예쁘게 설정 (Noto Sans KR 예시)
+              ctx.font = 'bold 14px "Noto Sans KR", sans-serif';
+              ctx.fillStyle = '#fff';  // 막대가 어두운 색이므로 흰 글자
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+
+              dataset.data.forEach((value, index) => {
+                // bar.getCenterPoint()를 이용해 막대의 중앙 좌표를 구함
+                const bar = chart.getDatasetMeta(0).data[index];
+                const centerPoint = bar.getCenterPoint();
+                // 막대의 중앙에 값(건수) 표시
+                ctx.fillText(value + "건", centerPoint.x, centerPoint.y);
+              });
+            }
+          },
+          scales: {
+            x: { 
+              beginAtZero: true, 
+              grid: { display: false }, 
+              ticks: { precision: 0 }
+            },
+            y: { grid: { display: false } }
+          },
+          plugins: {
+            legend: { display: false },
+            title: { 
+              display: true, 
+            },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.label}: ${ctx.parsed.x}건`
+              }
+            }
+          },
+          // 막대 클릭 시 해당 상태로 필터 후 이동
+          onClick: (evt, elems) => {
+            if (!elems.length) return;
+            const idx = elems[0].index;
+            const status = statusMap[labels[idx]] || 'all';
+            localStorage.setItem('draftStatusFilterValue', status);
+            window.location.href = '/approval/mydrafts';
+          }
+        }
+      });
+    })
+    .catch(err => console.error("차트/섬머리 로드 실패:", err));
+}
+
+// 페이지 로드되면 자동 실행
+document.addEventListener("DOMContentLoaded", renderChart);

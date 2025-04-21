@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.evaluation.EvaluationCandidateMapper">
+
+    <resultMap type="EvaluationCandidateVO" id="evaluationCandidateResultMap" autoMapping="true">
+        <id property="empId" column="emp_id"/>
+        <result property="jobId" column="job_id"/>
+        <result property="teamId" column="team_id"/>
+        <result property="departmentId" column="department_id"/>
+        <result property="evaluatorName" column="evaluator_name"/>
+        
+        <association property="employee" javaType="EmployeeVO" autoMapping="true"/>
+        <association property="department" javaType="DepartmentVO" autoMapping="true"/>
+        <association property="team" javaType="TeamVO" autoMapping="true"/>
+        <association property="rank" javaType="RankVO" autoMapping="true"/>
+    </resultMap>
+	
+	<!-- 신규 평가 목록 출력용 -->
+    <select id="readCandidateList" resultMap="evaluationCandidateResultMap">
+        SELECT 
+	        e.emp_id
+            ,e.name
+            ,e.job_id
+            ,e.team_id
+            ,e.department_id
+	        ,d.department_name
+	        ,t.team_name
+	        ,r.rank_name
+	        ,ec.evaluation_year
+	        ,ec.half_year
+	        ,ec.is_target
+	        ,ec.evaluation_status
+	    FROM employee e
+	    JOIN department d ON e.department_id = d.department_id
+	    JOIN team t ON e.team_id = t.team_id
+	    JOIN rank r ON e.rank_id = r.rank_id
+	    LEFT JOIN evaluation_candidate ec
+	        ON e.emp_id = ec.emp_id
+	       AND ec.evaluation_year = #{year}
+	       AND ec.half_year = #{half}
+	    ORDER BY e.emp_id
+    </select>
+
+   
+
+    <!-- 중복 체크 -->
+	<select id="existsCandidate" parameterType="EvaluationCandidateVO" resultType="int">
+	    SELECT COUNT(*)
+	    FROM evaluation_candidate
+	    WHERE emp_id = #{empId}
+	      AND evaluation_year = #{evaluationYear}
+	      AND half_year = #{halfYear}
+	</select>
+	
+	<!-- 모든 직급 조회 -->
+	<select id="readAllRanks">
+		SELECT
+		    rank_id
+		  , rank_name
+		  , rank_status
+		FROM
+		    rank
+	</select>
+	
+	
+    <!-- 평가 대상자 등록용 목록 조회 (LEFT JOIN) -->
+	<select id="readCandidateListForInsert" resultMap="evaluationCandidateResultMap">
+	    SELECT 
+	        e.emp_id
+	        ,e.name	
+	        ,e.job_id 			AS job_id
+	        ,e.team_id 			AS team_id
+	        ,e.department_id	AS department_id
+	        ,d.department_name
+	        ,t.team_name			
+	        ,r.rank_name	    
+	        ,ec.evaluation_year	
+	        ,ec.half_year		
+	        ,ec.is_target		
+	        ,ec.evaluation_status	
+	        , ev.name AS evaluator_name  <!-- ✅ 추가 -->
+	    FROM employee e
+	    JOIN department d ON e.department_id = d.department_id
+	    JOIN team t ON e.team_id = t.team_id
+	    JOIN rank r ON e.rank_id = r.rank_id
+	    LEFT JOIN evaluation_candidate ec
+	        ON e.emp_id = ec.emp_id
+	       AND ec.evaluation_year = #{year}
+	       AND ec.half_year = #{half}
+	    LEFT JOIN employee ev 
+       		ON ec.evaluator_id = ev.emp_id
+	    
+	    <where>
+	        <if test="rank != null and rank != ''">
+	            r.rank_id = #{rank}
+	        </if>
+	    </where>
+	    ORDER BY e.emp_id
+	</select>
+	
+	<!-- 과거조회용 INNER JOIN -->
+	<select id="readCandidateListForHistory" resultMap="evaluationCandidateResultMap">
+	    SELECT 
+	        e.emp_id,
+	        e.name,
+	        d.department_name,
+	        t.team_name,
+	        r.rank_name,
+	        ec.evaluation_year,
+	        ec.half_year,
+	        ec.is_target,
+	        ec.evaluation_status
+	    FROM evaluation_candidate ec
+	    JOIN employee e ON ec.emp_id = e.emp_id
+	    JOIN department d ON e.department_id = d.department_id
+	    JOIN team t ON e.team_id = t.team_id
+	    JOIN rank r ON e.rank_id = r.rank_id
+	    WHERE ec.evaluation_year = #{year}
+	      AND ec.half_year = #{half}
+	    <if test="rank != null and rank != ''">
+	        AND r.rank_id = #{rank}
+	    </if>
+	    ORDER BY e.emp_id
+	</select>
+	
+	<!-- 팀 내 평가자 찾기 (1030 팀장 : 1000,1010,1020을 평가)-->
+	<select id="findEvaluatorByJobAndTeam" resultType="string">
+	    SELECT emp_id
+	    FROM employee
+	    WHERE team_id = #{teamId}
+	      AND job_id = #{jobId}
+	      AND ROWNUM = 1
+	</select>
+	
+	<!-- 부서 내 평가자 찾기 (1040 본부장 : 1030을 평가)-->
+	<select id="findEvaluatorByJobAndDepartment" resultType="string">
+	   	SELECT emp_id
+	    FROM employee
+	    WHERE department_id = #{departmentId}
+	      AND job_id = #{jobId}
+	      AND ROWNUM = 1
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	 <!-- 단건 업데이트 -->
+    <update id="updateOneCandidate" parameterType="EvaluationCandidateVO">
+        UPDATE evaluation_candidate
+        SET 
+            evaluation_year = #{evaluationYear},
+            half_year = #{halfYear},
+            is_target = #{isTarget},
+            evaluation_status = #{evaluationStatus}
+        WHERE emp_id = #{empId}
+    </update>
+    
+    <!-- 단건 삭제 -->
+    <insert id="insertCandidate" parameterType="EvaluationCandidateVO">
+	    INSERT INTO evaluation_candidate (
+	        emp_id
+	        ,evaluation_year
+	        ,half_year
+	        ,is_target
+	        ,evaluation_status
+	        ,evaluator_id
+	    ) VALUES (
+	        #{empId}
+	        ,#{evaluationYear}
+	        ,#{halfYear}
+	        ,#{isTarget}
+	        ,#{evaluationStatus}
+	        ,#{evaluatorId}
+	    )
+	</insert>
+	
+
+</mapper>

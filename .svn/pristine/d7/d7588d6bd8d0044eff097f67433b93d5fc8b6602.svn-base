@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.or.ddit.mybatis.mappers.meetingroom.MeetingMapper">
+
+  <!-- 1. 회의실 전체 조회 -->
+  <select id="selectAllRooms" resultType="kr.or.ddit.meetingroom.vo.MeetingRoomVO">
+    SELECT
+      ROOM_ID,
+      ROOM_NAME,
+      LOCATION,
+      CAPACITY,
+      EQUIPMENT,
+      IS_AVAILABLE
+    FROM MEETING_ROOM
+    WHERE IS_AVAILABLE = 'Y'
+    ORDER BY ROOM_NAME
+  </select>
+
+  <!-- 2. 예약 등록 -->
+  <insert id="insertReservation" parameterType="kr.or.ddit.meetingroom.vo.MeetingReservationVO">
+    INSERT INTO MEETING_RESERVATION (
+      RESERVATION_ID,
+      EMP_ID,
+      ROOM_ID,
+      START_TIME,
+      END_TIME,
+      PURPOSE,
+      CREATED_AT
+    ) VALUES (
+      SEQ_MEETING_RESERVATION.NEXTVAL,
+      #{empId},
+      #{roomId},
+      #{startTime},
+      #{endTime},
+      #{purpose},
+      SYSDATE
+    )
+  </insert>
+
+  <!-- 3. 예약 중복 체크 (겹치는 시간 있는지 확인) -->
+  <select id="checkDuplicateReservation" parameterType="kr.or.ddit.meetingroom.vo.MeetingReservationVO" resultType="int">
+    SELECT COUNT(*)
+    FROM MEETING_RESERVATION
+   	WHERE ROOM_ID = #{roomId}
+	  AND (
+	    START_TIME &lt; #{endTime}
+	    AND END_TIME &gt; #{startTime}
+	  )
+  </select>
+
+  <!-- 4. 특정 회의실의 예약 리스트 (캘린더용, 옵션) -->
+  <select id="selectReservationsByRoom" resultType="kr.or.ddit.meetingroom.vo.MeetingReservationVO">
+    SELECT
+      R.RESERVATION_ID,
+      R.EMP_ID,
+      R.ROOM_ID,
+      R.START_TIME,
+      R.END_TIME,
+      R.PURPOSE,
+      R.CREATED_AT,
+      E.NAME AS EMP_NAME,
+      M.ROOM_NAME
+    FROM MEETING_RESERVATION R
+    JOIN EMPLOYEE E ON R.EMP_ID = E.EMP_ID
+    JOIN MEETING_ROOM M ON R.ROOM_ID = M.ROOM_ID
+    WHERE R.ROOM_ID = #{roomId}
+    ORDER BY R.START_TIME
+  </select>
+
+</mapper>

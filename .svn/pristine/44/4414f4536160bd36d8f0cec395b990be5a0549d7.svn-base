@@ -1,0 +1,268 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+
+<style>
+  body {
+    background: linear-gradient(to right, #f8f9fa, #e9ecef);
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+.chart-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  margin-bottom: 1.5rem;
+  height: 360px;
+}
+
+  .section-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .table th, .table td {
+    vertical-align: middle;
+    text-align: center;
+  }
+
+  .table-hover tbody tr:hover {
+    background-color: #f1f1f1;
+  }
+
+  .btn-primary {
+    border-radius: 1rem;
+    padding: 0.5rem 1.25rem;
+  }
+
+    #table1 th, #table1 td {
+    text-align: center;
+    vertical-align: middle;
+  }
+</style>
+
+<div class="container my-4">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="chart-card">
+        <div class="section-title">계정 등록 현황</div>
+       <canvas id="myChart1" class="w-100 h-100"></canvas>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="chart-card">
+        <div class="section-title">비활성 계정 현황</div>
+        <canvas id="myChart2" class="w-100" height="300"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<h2 class="section-title">계정현황 목록</h2>
+<div class="card">
+	<div class="card-body">
+		 <table id="table1" class="table table-striped datatable">
+		    <thead>
+			      <tr>
+			        <th>ID</th>
+			        <th>사원명</th>
+			        <th>부서</th>
+			        <th>팀</th>
+			        <th>직급</th>
+			        <th>직책</th>
+			        <th>입사일</th>
+			        <th>E-MAIL</th>
+			        <th>계정등록일</th>
+			        <th>상태</th>
+			        <th>잠금일</th>
+			      </tr>
+		    </thead>
+			<tbody>
+			   <c:if test="${not empty accountList }">
+			 <c:forEach items="${accountList}" var="account">
+			    <tr>
+			        <td>
+			            <a href="#"
+			               data-bs-toggle="modal"
+			               data-bs-target="#exampleModal"
+			               data-mode="detail"
+			               data-account-id="${account.accountId}">
+			               ${account.accountId}
+			            </a>
+			        </td>
+			        <td>${account.empName }</td>
+			        <td>${account.department.departmentName }</td>
+			        <td>${account.employee.team.teamName}</td>
+			        <td>${account.rank.rankName }</td>
+			        <td>${account.job.jobName }</td>
+			        <td>${fn:substring(account.employee.hireDate,0,10)  }</td>
+			        <td>${account.employee.email }</td>
+			        <td>${fn:substring(account.accountDate,0,10)  }</td>
+			        <td>${account.accountStatus ? "사용" : "미사용" }</td>
+			        <td>${account.accountDel }</td>
+			<!--         <td> -->
+			<!--            <button class="btn btn-warning edit-button"  -->
+			<!--                    data-bs-toggle="modal"  -->
+			<!--                    data-bs-target="#exampleModal"  -->
+			<!--                    data-mode="edit" -->
+			<%--                    data-account-id="${account.accountId}"> --%>
+			<!--                수정 -->
+			<!--            </button> -->
+			<!--        </td> -->
+
+			    </tr>
+
+		</c:forEach>
+			   </c:if>
+			</tbody>
+		</table>
+	</div>
+</div>
+<div class="d-flex justify-content-end mt-3">
+  <form action="/account/insert/formUI" method="get">
+    <button type="submit" class="btn btn-primary">+ 신규 등록</button>
+  </form>
+</div>
+
+
+<!-- <!-- DataLabels는 나중에 로드 -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+~~~${totalCount }
+<script type="text/javascript">
+Chart.register(ChartDataLabels); //  전역 등록
+const ctx1 = document.getElementById('myChart1');
+const ctx2 = document.getElementById('myChart2');
+
+const data = {
+  labels: ['전체직원','등록계정', '미등록계정'],
+  datasets: [{
+    label: '계정 등록 현황',
+    data: [
+    	'${totalCount.totalemp}',
+    	'${totalCount.totalAccount}',
+    	'${totalCount.unRegisterAccount}'
+    	],
+    backgroundColor: [
+      'rgba(54, 162, 235, 0.7)',
+      'rgba(75, 192, 192, 0.7)',
+      'rgba(255, 159, 64, 0.7)'
+    ],
+    borderColor: [
+      'rgba(54, 162, 235, 1)',
+      'rgba(75, 192, 192, 1)',
+      'rgba(255, 159, 64, 1)'
+    ],
+    borderWidth: 1
+  }]
+};
+
+new Chart(ctx1, {
+  type: 'bar',
+  data: data,
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      },
+      datalabels: {
+        anchor: 'end',
+        align: 'top',
+        color: '#000',
+        font: {
+          weight: 'bold',
+          size: 14
+        },
+        formatter: (value) => `\${value}명`
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          precision: 0
+        }
+      }
+    }
+  },
+  plugins: [ChartDataLabels]
+});
+
+//계정비활성, 비활성예정 차트
+const data2 = {
+  labels: ['비활성', '비활성예정'],
+  datasets: [{
+    label: '비활성계정 현황',
+    data: [
+    ],
+    backgroundColor: [
+      'rgba(75, 192, 192, 0.7)',
+      'rgba(255, 159, 64, 0.7)'
+    ],
+    borderColor: [
+      'rgba(75, 192, 192, 1)',
+      'rgba(255, 159, 64, 1)'
+    ],
+    borderWidth: 1
+  }]
+};
+
+// 두 번째 차트 생성
+new Chart(ctx2, {
+  type: 'bar',
+  data: data2, //  여기서 분리한 data2 사용
+  options: {
+    responsive: true,
+    maintainAspectRatio: false, //  Chart1과 동일하게 설정
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        anchor: 'end',
+        align: 'top',
+        color: '#000',
+        font: { weight: 'bold', size: 14 },
+        formatter: (value) => `${value}명`
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { precision: 0 }
+      }
+    }
+  },
+  plugins: [ChartDataLabels]
+});
+
+</script>
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">상세보기</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-warning" id="editButton" data-mode="edit">수정</button>
+        <button type="button" class="btn btn-success" id="saveButton" style="display: none;">저장</button>
+        <button type="button" class="btn btn-secondary" id="closeButton" data-bs-dismiss="modal">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- JavaScript 파일을 포함하는 스크립트 태그 -->
+<script src="${pageContext.request.contextPath}/resources/js/account/accountList.js"></script>
+<script src="${pageContext.request.contextPath}/resources/js/account/accountEdit.js"></script>

@@ -1,0 +1,107 @@
+package kr.or.ddit.account.controller;
+
+import java.util.Date;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import kr.or.ddit.account.service.AccountService;
+import kr.or.ddit.passwordrest.vo.PasswordResetVO;
+import kr.or.ddit.spring.config.EmailUtil;
+
+@Controller
+public class PasswordResetController {
+
+    @Autowired
+    private AccountService service;
+
+    @Autowired
+    private EmailUtil emailUtil;
+    @GetMapping("/account/forgotPassword")
+    public String showForgotPasswordForm() {
+        return "account/forgotPassword";
+    }
+    
+    // 비밀번호 재설정 폼
+    @GetMapping("/password/forgot")
+    public String forgotForm() {
+        return "account/forgotPassword";
+    }
+
+    // 링크 전송
+    @PostMapping("/password/sendLink")
+    public String sendResetLink(@RequestParam("accountId") String accountId, Model model) {
+        String email = service.accountfindEmail(accountId);
+
+        if (email == null || email.isBlank()) {
+            model.addAttribute("error", "해당 사번의 이메일이 존재하지 않습니다.");
+            return "redirect:/?resetMail=fail";
+        }
+
+        // 토큰 생성
+        String token = service.insertPasswordReset(accountId);
+        String resetLink = "/password/reset?token=" + token;
+
+        //  메일 내용 구성
+        String subject = "비밀번호 재설정 링크 안내";
+        String htmlContent = "<h3>비밀번호 재설정 안내</h3>"
+                + "<p>아래 링크를 클릭해 비밀번호를 재설정하세요.</p>"
+                + "<a href='http://localhost:80" + resetLink + "'>비밀번호 재설정하기</a>";
+
+        // SMTP 계정 설정 
+        String host = "smtp.gmail.com";
+        int port = 587;
+        String username = "honeynut7789@gmail.com";
+        String password = "icqi jmax ovzf pibx";
+        String fromName = "인사관리 시스템";
+
+        // 이메일 발송
+        emailUtil.sendEmail(host, port, username, password, fromName, email, subject, htmlContent);
+
+        model.addAttribute("msg", "비밀번호 재설정 링크가 이메일로 전송되었습니다.");
+        return "redirect:/?resetMail=success";
+    }
+
+    // 토큰 기반 비밀번호 변경 폼
+    @GetMapping("/password/reset")
+    public String resetForm(@RequestParam("token") String token, Model model) {
+        PasswordResetVO tokenVO = service.selectPasswordReset(token);
+
+        if (tokenVO == null || tokenVO.getExpirationDate().before(new Date())) {
+            model.addAttribute("error", "유효하지 않거나 만료된 토큰입니다.");
+            return "account/forgotPassword";
+        }
+
+        model.addAttribute("token", token);
+        return "account/resetPassword";
+    }
+
+    @PostMapping("/password/update")
+    public String updatePassword(@RequestParam("token") String token,
+                                 @RequestParam("newPassword") String newPassword,
+                                 Model model) {
+
+        // 비밀번호 유효성 검사 (8자 이상, 특수문자 1개 이상 포함)
+        if (newPassword.length() < 8 || !newPassword.matches(".*[!@#$%^&*(),.?\":{}|<>].*")) {
+            model.addAttribute("error", "비밀번호는 8자리 이상이며 특수문자를 최소 1개 포함해야 합니다.");
+            model.addAttribute("token", token); // 다시 입력 폼으로 token 유지
+            return "account/resetPassword";
+        }
+
+        // 비밀번호 재설정 로직 실행
+        boolean result = service.resetPassword(token, newPassword);
+
+        if (!result) {
+            model.addAttribute("error", "비밀번호 변경에 실패했습니다. 토큰이 만료되었을 수 있습니다.");
+            model.addAttribute("token", token);
+            return "account/resetPassword";
+        }
+
+        model.addAttribute("msg", "비밀번호가 성공적으로 변경되었습니다.");
+        return "account/resetSuccess";
+    }
+}

@@ -1,0 +1,18 @@
+package kr.or.ddit.mybatis.mappers.signature;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Mapper;
+
+import kr.or.ddit.signature.vo.SignatureVO;
+
+@Mapper
+public interface SignatureMapper {
+	int insertSign(SignatureVO sign);
+ 
+	List<SignatureVO> selectSign();
+	
+	SignatureVO getSignature(String empId);
+	
+	int updateSign(SignatureVO sign);
+}

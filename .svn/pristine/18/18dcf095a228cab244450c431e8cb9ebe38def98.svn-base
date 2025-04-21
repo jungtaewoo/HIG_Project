@@ -1,0 +1,240 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="security" %>
+<security:authentication property="principal" var="principal" />
+  <title>조직도</title>
+  <!-- FancyTree 스타일과 라이브러리 (glyph extension을 이용하려면 Font Awesome CSS 필요) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery.fancytree/dist/skin-win8/ui.fancytree.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery.fancytree/dist/jquery.fancytree-all-deps.min.js"></script>
+  <!-- chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+  <style>
+.scrollable-list {
+    max-height: 800px; /* 원하는 높이로 조정 (예: 400px) */
+    overflow-y: auto;  /* 수직 스크롤바 자동 생성 */
+}
+.page-header-bar {
+  margin-top: -50px !important;  /* 위쪽 여백 조절 가능 */
+  padding: 10px 20px;
+}
+
+
+.back-button {
+  flex-shrink: 0;
+}
+
+.breadcrumb-bar {
+  flex-grow: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+
+  .button-container {
+    position: absolute;
+    top:  100px; /* 원하는 위치로 조정 */
+    left: 55%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+	}
+    .container {
+      display: flex;
+      justify-content: flex-start;
+      align-items: flex-start;
+      gap: 20px;
+    }
+    .tree {
+      width: 40%;
+      font-family: '맑은 고딕', sans-serif;
+      font-size: 14px;
+    }
+    /* 상세 정보 영역 스타일 */
+    #detailPane {
+      width: 50%;
+      padding: 20px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      display: none;
+    }
+  </style>
+  <script src="/resources/js/organization/organization.js" defer></script>
+<style>
+.wrapper {
+  margin-left: 180px;
+  margin-right: 180px;
+}
+#detailPane {
+  width: 100%;
+  padding: 20px;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  display: none;
+}
+#openToTeamBtn {
+  color: white !important;         /* 글자 흰색 */
+  background-color: #17a2b8 !important;  /* info 계열 파란색 */
+  border-color: #17a2b8 !important;
+}
+/* 부모: 트리 카드 전체 */
+.scrollable-list {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  overflow: hidden;
+  height: 100%; /* 또는 max-height 설정 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* 트리 자체 */
+#orgTree {
+  flex: 1 1 auto; /* 반응형으로 커지게! */
+  padding: 10px;
+  overflow-y: auto; /* 스크롤은 이 안에서 처리 */
+}
+/* FancyTree 트리 라인 완전 제거 */
+.fancytree-container.fancytree-treefocus span.fancytree-connector,
+.fancytree-container span.fancytree-connector {
+  display: none !important;
+}
+.fancytree-container {
+  border: none !important;
+}
+.fancytree-expander {
+  border: none !important;
+}
+
+</style>
+<div class="wrapper">
+<div class="page-header-bar container-fluid">
+  <div class="d-flex justify-content-between align-items-center">
+
+    <!-- 왼쪽: 뒤로가기 버튼 -->
+    <div>
+      <button type="button" class="btn btn-outline-secondary" onclick="history.back();">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+    </div>
+
+    <!-- 오른쪽: 브레드크럼브 -->
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item fw-bold text-primary">
+          <a href="${pageContext.request.contextPath }/account/login/home">📌 Main</a>
+        </li>
+        <li class="breadcrumb-item active"  aria-current="page">
+         조직도
+        </li>
+      </ol>
+    </nav>
+
+  </div>
+</div>
+
+
+
+  <h1>조직도</h1>
+
+	<div class="button-container">
+	    <input type="text" id="empSearchInput" placeholder="이름, 팀, 부서 검색" class="form-control" style="width:200px;">
+	    <button id="empSearchBtn" class="btn btn-primary">검색</button>
+	    <button id="openToTeamBtn" class="btn btn-info">팀 열기</button>
+	    <button id="openAllBtn" class="btn btn-success">전체 열기</button>
+	    <button id="collapseAllBtn" class="btn btn-secondary">전체 닫기</button>
+	</div>
+
+  <div class="container">
+	<div id="orgTreeContainer">
+	  <div class="list-group scrollable-list" style="
+	    border-radius: 12px;                      /* 둥근 모서리 */
+	    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
+	    padding: 10px;                            /* 안쪽 여백 (선택) */
+	    background-color: #fff;                   /* 배경색 (선택) */
+	  ">
+	    <div id="orgTree"></div>
+	  </div>
+	</div>
+
+
+
+		<div id="detailPane" style="
+		  border-radius: 12px;      /* 둥근 모서리 */
+		  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
+		  border: 1px solid #ccc;
+		  background: #f9f9f9;
+		  width: 100%;
+		  padding: 20px;
+		  display: none;
+		">
+		  <div style="display: flex; justify-content: space-between; align-items: center;">
+		    <h2 id="detailTitle" style="margin: 0;"></h2>
+		    <button id="closeDetailBtn" class="btn btn-sm btn-outline-danger">&times;</button>
+		  </div>
+		  <div id="detailContent"></div>
+		</div>
+
+
+		<div style="display: flex; justify-content: right; align-items: center; gap: 100px; width: 100%;">
+		    <div style="width: 500px; height: 500px;">
+		        <canvas id="deptEmpCountChart"></canvas>
+		    </div>
+		</div>
+<!-- 	    <div class="col-md-6"> -->
+<!-- 			<div class="chart-container"> -->
+<!-- 				<h6>📥 채용 현황</h6> -->
+<%-- 				<canvas id="recruitChart"></canvas> --%>
+<!-- 			</div> -->
+<!-- 		</div> -->
+
+<!-- 	    <div class="col-md-6"> -->
+<!-- 			<div class="chart-container"> -->
+<!-- 				<h6> 부서별 직원 수</h6> -->
+<%-- 				<canvas id="deptEmpCountChart"></canvas> --%>
+<!-- 			</div> -->
+<!-- 		</div> -->
+</div>
+</div>
+
+<security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+    <script>
+        var hasHRRole = true;
+    </script>
+</security:authorize>
+<security:authorize access="!hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+    <script>
+        var hasHRRole = false;
+    </script>
+</security:authorize>
+
+
+  <c:if test="${not empty updateError}">
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            Swal.fire({
+                title: "업데이트 실패",
+                text: "${updateError}",
+                icon: "error",
+                confirmButtonText: "확인"
+            });
+        });
+    </script>
+</c:if>
+
+<c:if test="${not empty updateSuccess}">
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            Swal.fire({
+                title: "업데이트 성공",
+                text: "${updateSuccess}",
+                icon: "success",
+                confirmButtonText: "확인"
+            });
+        });
+    </script>
+</c:if>

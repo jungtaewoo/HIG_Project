@@ -1,0 +1,24 @@
+package kr.or.ddit.mybatis.mappers.annual;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import kr.or.ddit.annual.vo.AnnualHistoryVO;
+import kr.or.ddit.annual.vo.AnnualVO;
+
+@Mapper
+public interface AnnualMapper {
+	//전체 직원의 연차 갯수, 사용량, 잔여량 조회
+	public List<AnnualVO> annualList(String teamId);
+	
+	// 한 직원의 연차 내역 리스트 조회 
+	public List<AnnualHistoryVO> annualDetail(@Param("empId") String empId, @Param("date") String date);
+	
+	//한 직원의 연차 갯수, 사용량, 잔여량 조회
+	public AnnualVO annaulCount(String empId);
+	
+	// 연차 사용시 갯수 업데이트
+	public void updateAnnual(@Param("empId") String empId, @Param("count") double count);
+}

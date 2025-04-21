@@ -1,0 +1,183 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<!DOCTYPE html>
+<head>
+<meta charset="UTF-8">
+<title>근로계약서 등록</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f5f7fa;
+        padding: 40px;
+        color: #333;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 30px;
+        color: #2c3e50;
+    }
+
+    form {
+        max-width: 700px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 12px 15px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #f0f3f5;
+        width: 30%;
+        font-weight: 600;
+    }
+	.cancel a {
+    color: #fff;
+    text-decoration: none;
+	}
+
+
+    input[type="text"],
+    input[type="date"],
+    input[type="number"],
+    select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        box-sizing: border-box;
+        transition: border-color 0.3s;
+    }
+
+    input:focus, select:focus {
+        border-color: #3498db;
+        outline: none;
+    }
+
+    input[type="submit"], .cancel {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 20px;
+        border: none;
+        background-color: #3498db;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    input[type="submit"]:hover,
+    .cancel:hover {
+        background-color: #2c80b4;
+    }
+
+    .cancel {
+        background-color: #7f8c8d;
+        margin-left: 10px;
+    }
+
+    .cancel:hover {
+        background-color: #636e72;
+    }
+</style>
+</head>
+	<h2>근로계약서 등록</h2>
+	<form action="${pageContext.request.contextPath}/contract/register" method="post">
+		<table>
+			<tr>
+				<th>직원 선택:</th>
+				<td>
+					<select name="empId" required>
+						<option value="">-- 근로계약이 없는 사원 선택 --</option>
+						<c:forEach var="emp" items="${unContractList}">
+							<option value="${emp.empId}">${emp.name} (${emp.empId})</option>
+						</c:forEach>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th>근무 장소:</th>
+				<td>
+					<input type="text" name="workPlace" required>
+				</td>
+			</tr>
+			<tr>
+				<th>계약 유형:</th>
+				<td>
+					<select name="contractType">
+						<option value="정규직">정규직</option>
+						<option value="계약직">계약직</option>
+						<option value="인턴">인턴</option>
+					</select>
+				</td>
+			</tr>
+
+			<tr>
+				<th>시작일:</th>
+				<td><input type="date" name="startDate" required></td>
+			</tr>
+			<tr>
+				<th>종료일:</th>
+				<td><input type="date" name="endDate"></td>
+			</tr>
+			<tr>
+				<th>근무 형태:</th>
+				<td>
+					<select name="workType">
+						<option value="풀타임">풀타임</option>
+						<option value="파트타임">파트타임</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th>기본 급여:</th>
+				<td><input type="number" name="baseSalary" required></td>
+			</tr>
+<!-- 			<tr>
+				<th>초과 근무 수당:</th>
+				<td><input type="number" name="overtimePay"></td>
+			</tr> -->
+			<tr>
+				<th>주간 근무 시간:</th>
+				<td><input type="number" name="weeklyHours" required></td>
+			</tr>
+			<tr>
+				<th>계약 상태:</th>
+				<td>
+					<select name="contractStatus">
+						<option value="일시 중지">일시 중지</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th>교통비:</th>
+				<td><input type="number" name="transportAllowance"></td>
+			</tr>
+			<tr>
+				<th>식대:</th>
+				<td><input type="number" name="foodAllowance"></td>
+			</tr>
+			<tr>
+				<th>직챙수당:</th>
+				<td><input type="number" name="positionAllowance"></td>
+			</tr>
+		</table>
+		<br>
+		<input type="submit" value="등록">
+		<div class="cancel" style= color="#fff">
+			<a href="${pageContext.request.contextPath}/contract/List">취소</a>
+		</div>
+	</form>

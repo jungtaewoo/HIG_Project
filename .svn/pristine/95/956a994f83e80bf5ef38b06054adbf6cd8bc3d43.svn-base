@@ -1,0 +1,41 @@
+/** 
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *   
+ *   수정일      			수정자           수정내용
+ *  -----------   	-------------    ---------------------------
+ * 2025. 3. 23.     	youngjun            최초 생성
+ *
+ * </pre>
+ */
+
+document.addEventListener("DOMContentLoaded", () => {
+	const myModal = document.getElementById("exampleModal");
+	//const saveBtn = document.getElementById("saveBtn");
+	//console.log("찍히나",saveBtn);
+	
+	$("#saveBtn").on("click", function(){
+		const year = $("input[name='payYear']").val();
+		const month = $("input[name='payMonth']").val();
+		
+		console.log("year",year);
+		console.log("month",month);
+		
+		$.ajax({
+			url:`/salary/insert/ex/${year}/${month}`,
+			type:"GET",
+			success:function(data){
+				$(".modal-body").html(data);
+				modal.show();
+			},
+			error:function(){
+				alert("급여 미리보기 로드 실패");
+			}
+		});
+	});
+	
+	
+		
+		
+		
+});

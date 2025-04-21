@@ -1,0 +1,103 @@
+package kr.or.ddit.employee.service;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import kr.or.ddit.employee.exception.EmpNotFoundException;
+import kr.or.ddit.employee.vo.EmployeeVO;
+import kr.or.ddit.mybatis.mappers.employee.EmployeeMapper;
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class EmployeeServiceImpl implements EmployeeService {
+
+	private final EmployeeMapper dao;
+	
+	@Override
+	public List<EmployeeVO> readEmpList() {
+		return dao.selectEmpList();
+	}
+	
+	@Override
+	public boolean createEmp(EmployeeVO emp) {
+		int rowcnt = dao.insertEmp(emp);
+		return rowcnt > 0;
+	}
+
+
+	@Override
+	public EmployeeVO readEmp(String empId) throws EmpNotFoundException {
+		EmployeeVO emp = dao.selectEmp(empId);
+		if(emp==null) {
+			throw new EmpNotFoundException(empId);
+		}
+		return emp;
+	}
+
+	@Override
+	public boolean modifyEmp(EmployeeVO emp) {
+		int rowcnt = dao.updateEmp(emp);
+		return rowcnt > 0;
+	}
+
+	@Override
+	@Transactional
+	public boolean updateEmpStatus(String empId, String empStatus) {
+		int empUpdate = dao.updateEmpStatus(empId, empStatus);
+		return empUpdate > 0;
+	}
+
+	@Override
+	public int empCount() {
+		return dao.empCount();
+	}
+
+	@Override
+	public int resignCount() {
+		return dao.resignCount();
+	}
+
+	@Override
+	public int hireCount() {
+		return dao.hireCount();
+	}
+
+	@Override
+	public List<Map<String, Object>> rankPercent() {
+		return dao.rankPercent();
+	}
+
+	@Override
+	public List<Map<String, Object>> tunurePercent() {
+		return dao.tunurePercent();
+	}
+	
+	@Override
+	public int updateRetireInfo(EmployeeVO employeeVO) {
+	    return dao.updateRetireInfo(employeeVO);
+	}
+
+	@Override
+	public int updateLeaveInfo(EmployeeVO employeeVO) {
+	    return dao.updateLeaveInfo(employeeVO);
+	}
+
+	@Override
+	public List<EmployeeVO> selectEmpListList() {
+		return dao.selectEmpListList();
+	}
+	@Override
+	public List<EmployeeVO> retrieveRetireLeaveList() {
+	    return dao.selectRetireLeaveList();
+	}
+
+	@Override
+	public List<Map<String, Object>> filterEmployee(String departmentId, String teamId) {
+		return dao.filterEmployee(departmentId, teamId);
+	}
+	
+}

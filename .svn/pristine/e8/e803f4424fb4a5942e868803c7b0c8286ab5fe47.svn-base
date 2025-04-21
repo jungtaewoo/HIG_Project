@@ -1,0 +1,31 @@
+package kr.or.ddit.mybatis.mappers.annual;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import kr.or.ddit.annual.vo.AnnualHistoryVO;
+
+@Mapper
+public interface AnnualHistroyMapper {
+	// 전체 연차 내역 불러오기
+	public List<AnnualHistoryVO> TotalHisrotyList(String teamId);
+
+
+	// 한 사람의 연차 사용 내역 불러오기
+	public List<AnnualHistoryVO> EmpHisrotyDetail(String empId);
+
+	// 오늘 연차인 연차 내역 불러오기
+	public List<AnnualHistoryVO> TodayAnnualHistory();
+	
+	//오늘 연차인 사람의 수 
+	public int TodayAnnualCount();
+	
+	// 이번달 연차인 연차 내역 불러오기
+	public int ThisMonthAnnualHistory();
+	
+	// 오늘 연차 기록이 있는지 조회
+	public int existsAttendance(String empId, String workDate);
+
+}

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * == 개정이력(Modification Information) ==
+ *
+ *   수정일      			수정자           수정내용
+ *  ============   	============== =======================
+ *  2025. 3. 25.     	KHS            최초 생성
+ *
+-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.boardcategory.BoardCategoryMapper">
+
+	<resultMap type="kr.or.ddit.boardcategory.vo.BoardCategoryVO" id="categoryMap" autoMapping="true">
+		<id property="categoryId" column="CATEGORY_ID"/>
+	</resultMap>
+
+	<!-- 카테고리 리스트 가져오기 -->
+	<select id="getBoardCategoryList" resultMap="categoryMap">
+		SELECT *
+        FROM NOTICE_CATEGORY
+	</select>
+
+</mapper>

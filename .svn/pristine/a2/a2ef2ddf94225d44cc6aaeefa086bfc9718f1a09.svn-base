@@ -1,0 +1,511 @@
+$(document).ready(function() {
+
+	fetch('/employee/getEmployeeCountByDepartment')
+	    .then(response => response.json())
+	    .then(data => {
+			console.log(data);
+
+	        window.deptEmpList = data;  // 이게 가져와서 출력해주는 부분??
+	        console.log("deptEmpList 데이터 로드 완료:", window.deptEmpList);
+	        deptEmpCountChart(); // 차트 함수 실행
+	    })
+	    .catch(error => console.error("데이터 가져오기 실패:", error));
+
+	   // 부서별 직원 수 차트 생성 함수
+	   function deptEmpCountChart() {
+	       if (window.deptEmpList && Array.isArray(window.deptEmpList)) {
+	           const deptLabels = [];
+	           const deptData = [];
+	           /*const deptColors = [];*/
+			   const deptColors = [
+			       "#5c61b4", // 경영지원본부
+			       "#2cc4bc", // 마케팅본부
+			       "#ffc532", // 연구개발본부
+			       "#f1716e", // 생산본부
+			       "#acacdc", // 테스트 부서
+
+
+			       "#E74C3C", // 부서 6
+			       "#1ABC9C", // 부서 7
+			       "#2C3E50"  // 부서 8
+			   ];
+
+
+	           window.deptEmpList.forEach(function(dept) {
+	               deptLabels.push(dept.departmentName);
+	               deptData.push(dept.departmentEmployeeCount);
+	               /*deptColors.push('#' + Math.floor(Math.random() * 16777215).toString(16));*/
+	           });
+
+	           const totalEmployees = deptData.reduce((sum, count) => sum + count, 0);
+	           const ctx = document.getElementById('deptEmpCountChart').getContext('2d');
+
+			   new Chart(ctx, {
+			     type: 'pie',
+			     data: {
+			       labels: deptLabels,
+			       datasets: [{
+			         label: '부서별 직원 수',
+			         data: deptData,
+			         backgroundColor: deptColors,
+			         hoverOffset: 4
+			       }]
+			     },
+			     plugins: [ChartDataLabels],
+			     options: {
+			       responsive: true,
+			       plugins: {
+			         legend: { position: 'top' },
+			         title: {
+			           display: true,
+			           text: '부서별 직원 수',
+			           font: { size: 16 }
+			         },
+			         datalabels: {
+						formatter: function(value, context) {
+						  const label = context.chart.data.labels[context.dataIndex]; // 부서 이름 가져오기
+						  const total = deptData.reduce((a, b) => a + b, 0);
+						  const percent = ((value / total) * 100).toFixed(1);
+						  return `${label}\n${value}명(${percent}%)`; // 👈 부서명 추가
+						},
+			           font: { size: 16 },
+			           color: '#000',
+			           anchor: 'center',
+			           align: 'end',
+			           offset: 5,
+			           clamp: true,
+			           clip: false
+			         },
+			         tooltip: {
+			           callbacks: {
+			             label: function(context) {
+			               const label = context.label || '';
+			               const value = context.raw || 0;
+			               const percent = ((value / deptData.reduce((a, b) => a + b, 0)) * 100).toFixed(1);
+			               return `${label}: ${value}명 (${percent}%)`;
+			             }
+			           }
+			         }
+			       }
+			     }
+			   });
+
+
+	       } else {
+	           console.error('deptEmpList 데이터가 없거나 배열이 아닙니다.');
+
+	       }
+
+	   }
+
+
+
+    // AJAX 요청으로 부서 데이터를 조회
+    $.ajax({
+        url: window.contextPath + '/employee/getDepartments',
+        method: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            console.log("받은 응답:", response);
+            var departmentList = Array.isArray(response) ? response : (response.data ? response.data : []);
+            var orgData = processOrgData(departmentList);
+            console.log("가공된 조직 데이터:", orgData);
+
+            // FancyTree 초기화: glyph 옵션을 사용하여 기본 아이콘 설정
+            $("#orgTree").fancytree({
+                glyph: {
+                    map: {
+                        expanderClosed: "fas fa-plus-square",   // 접힘 아이콘
+                        expanderOpen: "fas fa-minus-square",      // 펼침 아이콘
+                        folder: "fas fa-folder",                  // 폴더 아이콘 (일반 노드)
+                        folderOpen: "fas fa-folder-open"          // 펼쳐진 폴더 아이콘
+                    }
+                },
+                source: orgData,
+                activate: function(event, data) {
+                    console.log("클릭한 노드:", data.node);
+                    console.log("노드 데이터:", data.node.data);
+
+					// 🔥 모든 하이라이트 초기화 (검색된 노드 배경 제거)
+					$("#orgTree .fancytree-title").css("background", "");
+
+
+					if (data.node.data && data.node.data.type === 'department') {
+					    $("#detailTitle").text("부서 정보");
+					    var contentHtml = ""
+					        + "<p><strong>부서명:</strong> " + (data.node.data.departmentName || "") + "</p>"
+					        + "<p><strong>부서장:</strong> " + (data.node.data.deptHeadName || "") + "</p>"
+					        + "<p><strong>부서 위치:</strong> " + (data.node.data.departmentLocation || "") + "</p>"
+					        + "<p><strong>전화번호:</strong> " + (data.node.data.departmentPhonenumber || "") + "</p>"
+					        + "<p><strong>팩스번호:</strong> " + (data.node.data.departmentFaxnumber || "") + "</p>";
+
+					    if (hasHRRole) {
+					        contentHtml += "<div style='text-align: right; margin-top: 10px;'>"
+					            + "<button id='insertDeptBtn' class='btn btn-primary' style='margin-right: 5px;'>부서 추가</button>"
+					            + "<button id='updateDeptBtn' class='btn btn-primary' style='margin-right: 5px;'>부서 수정</button>"
+					            + "<button id='deleteDeptBtn' class='btn btn-danger'>부서 삭제</button>"
+					            + "</div>";
+					    }
+
+					    $("#detailContent").html(contentHtml);
+					    $("#detailPane").show();
+
+					    $("#insertDeptBtn").click(function() {
+					        window.location.href = window.contextPath + "/department/register?departmentId=" + data.node.data.departmentId;
+					    });
+
+					    $("#updateDeptBtn").click(function() {
+					        window.location.href = window.contextPath + "/department/update?departmentId=" + data.node.data.departmentId;
+					    });
+
+					    $("#deleteDeptBtn").click(function() {
+					        Swal.fire({
+					            html: '<h2 style="font-size: 24px;">삭제한 부서는 되돌릴 수 없습니다<br>선택한 부서를 삭제하시겠습니까?</h2>',
+					            icon: "warning",
+					            showCancelButton: true,
+					            confirmButtonColor: "#435ebe",
+					            cancelButtonColor: "#d33",
+					            confirmButtonText: "삭제",
+					            cancelButtonText: "취소"
+					        }).then((result) => {
+					            if (result.isConfirmed) {
+					                $.ajax({
+					                    url: window.contextPath + "/department/deleteone",
+					                    type: "POST",
+					                    contentType: "application/json",
+					                    data: JSON.stringify(data.node.data.departmentId),
+					                    dataType: "json",
+					                    success: function(response) {
+					                        if (response.success) {
+					                            Swal.fire({
+					                                title: "삭제 완료",
+					                                text: "부서가 삭제되었습니다.",
+					                                icon: "success",
+					                                confirmButtonText: "확인"
+					                            }).then(() => {
+					                                location.reload();
+					                            });
+					                        } else {
+					                            Swal.fire({
+					                                title: "삭제 실패",
+					                                text: "부서원이 있는 부서는 삭제할 수 없습니다.",
+					                                icon: "error",
+					                                confirmButtonText: "확인"
+					                            });
+					                        }
+					                    },
+					                    error: function(xhr, status, error) {
+					                        Swal.fire({
+					                            title: "삭제 실패",
+					                            text: "서버와의 통신 중 문제가 발생했습니다.",
+					                            icon: "error",
+					                            confirmButtonText: "확인"
+					                        });
+					                        console.error("Error:", error);
+					                    }
+					                });
+					            }
+					        });
+					    });
+						} else if (data.node.data && data.node.data.type === 'team') {
+						    $("#detailTitle").text("팀 정보");
+						    var contentHtml = ""
+						        + "<p><strong>팀명:</strong> " + (data.node.data.teamName || "") + "</p>"
+						        + "<p><strong>전화번호:</strong> " + (data.node.data.teamPhonenumber || "") + "</p>"
+						        + "<p><strong>팩스번호:</strong> " + (data.node.data.teamFaxnumber || "") + "</p>";
+
+						    if (hasHRRole) {
+						        contentHtml += "<div style='text-align: right; margin-top: 10px;'>"
+						            + "<button id='insertTeamBtn' class='btn btn-primary' style='margin-right: 5px;'>팀 추가</button>"
+						            + "<button id='updateTeamBtn' class='btn btn-primary' style='margin-right: 5px;'>팀 수정</button>"
+						            + "<button id='deleteTeamBtn' class='btn btn-danger'>팀 삭제</button>"
+						            + "</div>";
+						    }
+
+						    $("#detailContent").html(contentHtml);
+						    $("#detailPane").show();
+
+						    $("#insertTeamBtn").click(function() {
+						        window.location.href = window.contextPath + "/team/register?teamId=" + data.node.data.teamId;
+						    });
+
+						    $("#updateTeamBtn").click(function() {
+						        window.location.href = window.contextPath + "/team/update?teamId=" + data.node.data.teamId;
+						    });
+
+						    $("#deleteTeamBtn").click(function() {
+						        var teamId = data.node.data.teamId;
+						        if (!teamId) {
+						            Swal.fire({
+						                title: "삭제 실패",
+						                text: "삭제할 팀을 선택해주세요.",
+						                icon: "error",
+						                confirmButtonText: "확인"
+						            });
+						            return;
+						        }
+						        Swal.fire({
+						            html: '<h2 style="font-size: 24px;">선택한 팀을 삭제하시겠습니까?</h2>',
+						            icon: "warning",
+						            showCancelButton: true,
+						            confirmButtonColor: "#435ebe",
+						            cancelButtonColor: "#d33",
+						            confirmButtonText: "삭제",
+						            cancelButtonText: "취소"
+						        }).then((result) => {
+						            if (result.isConfirmed) {
+						                $.ajax({
+						                    url: window.contextPath + "/team/deleteone",
+						                    type: "POST",
+						                    contentType: "application/json",
+						                    data: JSON.stringify(teamId),
+						                    dataType: "json",
+						                    success: function(response) {
+						                        if (response.success) {
+						                            Swal.fire({
+						                                title: "삭제 완료",
+						                                text: "팀이 삭제되었습니다.",
+						                                icon: "success",
+						                                confirmButtonText: "확인"
+						                            }).then(() => {
+						                                location.reload();
+						                            });
+						                        } else {
+						                            Swal.fire({
+						                                title: "삭제 실패",
+						                                text: "팀원이 있는 팀은 삭제할 수 없습니다.",
+						                                icon: "error",
+						                                confirmButtonText: "확인"
+						                            });
+						                        }
+						                    },
+						                    error: function(xhr, status, error) {
+						                        Swal.fire({
+						                            title: "삭제 실패",
+						                            text: "서버와의 통신 중 문제가 발생했습니다.",
+						                            icon: "error",
+						                            confirmButtonText: "확인"
+						                        });
+						                        console.error("Error:", error);
+						                    }
+						                });
+						            }
+						        });
+						    });
+                    } else if (data.node.data && data.node.data.type === 'employee') {
+                        $("#detailTitle").text("직원 정보");
+                        $("#detailContent").html(
+                            "<p><strong>이름:</strong> " + (data.node.data.name || "") + "</p>" +
+                            "<p><strong>부서:</strong> " + (data.node.data.dept || "") + "</p>" +
+                            "<p><strong>직책:</strong> " + (data.node.data.job || "") + "</p>" +
+							"<p><strong>직급:</strong> " + (data.node.data.rank || "") + "</p>" +
+                            "<p><strong>이메일:</strong> " + (data.node.data.email || "") + "</p>" +
+                            "<p><strong>전화번호:</strong> " + (data.node.data.phone || "") + "</p>" +
+                            "<p><strong>주소:</strong> " + (data.node.data.address || "") + "</p>"
+                        );
+                        $("#detailPane").show();
+                    } else {
+                        $("#detailPane").hide();
+                    }
+                }
+            });
+
+			// **중복 등록 방지**: 기존 이벤트 핸들러를 모두 off() 한 뒤 새로 on()
+            $("#empSearchBtn").off("click");
+            $("#empSearchInput").off("keypress");
+            $("#collapseAllBtn").off("click");
+            $("#openAllBtn").off("click");
+
+            // 검색 버튼 클릭
+            $("#empSearchBtn").on("click", function () {
+                const keyword = $("#empSearchInput").val().trim();
+                if (keyword) searchAndExpandTree(keyword);
+            });
+
+            // 엔터키 입력 시 검색
+            $("#empSearchInput").on("keypress", function (e) {
+                if (e.which === 13) {
+                    $("#empSearchBtn").click();
+                }
+            });
+
+            // 전체 접기 버튼
+            $("#collapseAllBtn").on("click", function () {
+                $("#orgTree").fancytree("getTree").visit(function(node) {
+                    node.setExpanded(false);
+                });
+            });
+
+            // 전체 열기 버튼
+            $("#openAllBtn").on("click", function () {
+                $("#orgTree").fancytree("getTree").visit(function(node) {
+                    node.setExpanded(true);
+                });
+            });
+
+			/**
+			 * 조직도에서 검색하여 해당 노드를 확장하고 하이라이트하는 함수
+			 */
+			function searchAndExpandTree(keyword) {
+			    const lowerKeyword = keyword.toLowerCase();
+			    let found = false;
+			    const tree = $.ui.fancytree.getTree("#orgTree");
+
+				// 🔥 모든 하이라이트 초기화
+				$("#orgTree .fancytree-title").css("background", "");
+
+				tree.visit(function(node) {
+				    const name = node.title.toLowerCase();
+				    const dept = (node.data.departmentName || "").toLowerCase();
+				    const team = (node.data.teamName || "").toLowerCase();
+
+				    if (name.includes(lowerKeyword) || dept.includes(lowerKeyword) || team.includes(lowerKeyword)) {
+				        found = true;
+
+				        // 부모 노드를 모두 확장하여 해당 노드가 보이도록 함
+				        node.visitParents(function(parent) {
+				            parent.setExpanded(true);
+				        });
+
+				        // 🔥 검색된 노드 하이라이트
+				        $(node.span).find(".fancytree-title").css("background", "#ffff99");
+
+				        // 해당 노드로 스크롤 이동
+				        node.makeVisible();
+				    }
+				});
+
+			    if (!found) {
+			        alert("검색 결과가 없습니다.");
+			    }
+			}
+
+
+
+
+		  // 🔥 여기 추가! (FancyTree 초기화 후 실행)
+	      var tree = $("#orgTree").fancytree("getTree");
+
+	      // 저장된 열린 노드 복원
+	      var expandedNodes = JSON.parse(localStorage.getItem("expandedNodes")) || [];
+	      tree.visit(function(node) {
+	          if (expandedNodes.includes(node.key)) {
+	              node.setExpanded(true);
+	          }
+	      });
+
+	      // 노드가 열리거나 닫힐 때 상태 저장
+	      tree.$div.on("fancytreeexpand fancytreecollapse", function(event, data) {
+	          var openNodes = [];
+	          tree.visit(function(node) {
+	              if (node.isExpanded()) {
+	                  openNodes.push(node.key);
+	              }
+	          });
+	          localStorage.setItem("expandedNodes", JSON.stringify(openNodes));
+	      });
+
+	  },
+
+        error: function(xhr, status, error) {
+            console.error("Ajax 요청 실패:", status, error);
+        }
+    });
+});
+
+
+function processOrgData(departmentList) {
+    var orgData = [];
+    if (!Array.isArray(departmentList)) {
+        console.error("departmentList 형식 오류:", departmentList);
+        return orgData;
+    }
+    departmentList.forEach(function(dept) {
+		var deptName = dept.departmentName + (dept.departmentEmployeeCount ? " (" + dept.departmentEmployeeCount + "명)" : "");
+         deptNode = {
+            title: deptName,
+            folder: true,
+            expanded: false,
+            icon: "fas fa-building",
+            data: {
+                type: 'department',
+                departmentId: dept.departmentId,
+                departmentName: dept.departmentName,
+                deptHeadName: dept.deptHeadName,
+                departmentLocation: dept.departmentLocation,
+                departmentPhonenumber: dept.departmentPhonenumber,
+                departmentFaxnumber: dept.departmentFaxnumber
+            },
+            children: []
+        };
+
+        if (dept.teams && Array.isArray(dept.teams)) {
+            dept.teams.forEach(function(team) {
+				var teamEmpName = team.teamName + (team.teamEmployeeCount ? " (" + team.teamEmployeeCount + "명)" : "");
+                 teamNode = {
+                    title: teamEmpName,
+                    folder: true,
+                    expanded: false,
+                    icon: "fas fa-users",
+                    data: {
+                        type: 'team',
+                        teamId: team.teamId,
+                        teamName: team.teamName,
+                        teamPhonenumber: team.teamPhonenumber,
+                        teamFaxnumber: team.teamFaxnumber
+                    },
+                    children: []
+                };
+
+                if (team.employees && Array.isArray(team.employees)) {
+                    team.employees.forEach(function(emp) {
+						// emp.rank가 존재하면 괄호 안에 표시, 없으면 그냥 이름만 표시
+						var displayName = emp.name + (emp.rank && emp.rank.rankName ? " (" + emp.rank.rankName + ")" : "");
+                        teamNode.children.push({
+                            title: displayName,
+                            icon: "fas fa-user",
+                            data: {
+                                type: 'employee',
+                                name: emp.name,
+                                dept: dept.departmentName,
+                                job: (emp.job && emp.job.jobName) ? emp.job.jobName : "",
+                                rank: (emp.rank && emp.rank.rankName) ? emp.rank.rankName : "",
+                                email: emp.email || "",
+                                phone: emp.phoneNumber || "",
+                                address: emp.address || ""
+                            }
+                        });
+                    });
+                }
+
+                if (teamNode.children.length > 0) {
+                    deptNode.children.push(teamNode);
+                }
+            });
+        }
+
+        if (dept.employees && Array.isArray(dept.employees)) {
+            dept.employees.forEach(function(emp) {
+                deptNode.children.push({
+                    title: emp.name,
+                    icon: "fas fa-user",
+                    data: {
+                        type: 'employee',
+						name: emp.name,
+                        dept: dept.departmentName,
+                        job: (emp.job && emp.job.jobName) ? emp.job.jobName : "",
+                        rank: (emp.rank && emp.rank.rankName) ? emp.rank.rankName : "",
+                        email: emp.email || "",
+                        phone: emp.phoneNumber || "",
+                        address: emp.address || ""
+                    }
+                });
+            });
+        }
+
+        if (deptNode.children.length > 0) {
+            orgData.push(deptNode);
+        }
+    });
+    return orgData;
+}

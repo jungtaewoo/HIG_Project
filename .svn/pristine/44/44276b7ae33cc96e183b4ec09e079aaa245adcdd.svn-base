@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 
+ * == 개정이력(Modification Information) ==
+ *   
+ *   수정일      			수정자           수정내용
+ *  ============   	============== =======================
+ *  2025. 3. 15.     	LJW            최초 생성
+ *
+-->
+
+
+<mapper namespace="kr.or.ddit.mybatis.mappers.empappointments.AppointmentMapper">
+
+    <!-- AppointmentResultMap -->
+    <resultMap type="AppointmentVO" id="AppointmentResultMap" autoMapping="true">
+        <id property="appId" column="app_id" />
+	
+        <association property="employee" javaType="EmployeeVO" autoMapping="true">
+            <id property="empId" column="emp_id" />
+        </association>
+        <association property="job" javaType="JobVO" autoMapping="true">
+            <id property="jobId" column="job_id" />
+        </association>
+        <association property="department" javaType="DepartmentVO" autoMapping="true">
+            <id property="departmentId" column="department_id" />
+        </association>
+        <association property="rank" javaType="RankVO" autoMapping="true">
+            <id property="rankId" column="rank_id" />
+        </association>
+        <association property="position" javaType="PositionVO" autoMapping="true">
+            <id property="positionId" column="position_id" />
+        </association>
+        <association property="team" javaType="TeamVO" autoMapping="true">
+            <id property="teamId" column="team_id" />
+        </association>
+
+    </resultMap>
+    
+    <resultMap id="TeamResultMap" type="TeamVO">
+		<result property="teamId" column="TEAM_ID" />
+		<result property="teamName" column="TEAM_NAME" />
+		<result property="departmentId" column="DEPARTMENT_ID" />
+	</resultMap>
+	<!-- 인사발령 상세보기  -->
+	<select id="selectAppoint" resultMap="AppointmentResultMap">
+		
+		SELECT 
+		    e.NAME,
+		    a.APP_ID, 
+		    a.EMP_ID, 
+		    a.APP_DATE, 
+		    a.APP_TYPE, 
+		    a.APP_REASON,
+		
+		    old_d.DEPARTMENT_NAME AS PREV_DEPARTMENT_NAME,
+		    old_j.JOB_NAME AS PREV_JOB_NAME,
+		    old_p.POSITION_NAME AS PREV_POSITION_NAME,  
+		    old_r.RANK_NAME AS PREV_RANK_NAME,
+		    prev_team.TEAM_NAME AS PREV_TEAM_NAME,  
+		
+		    new_dept.DEPARTMENT_NAME AS NEW_DEPARTMENT_NAME,
+		    new_job.JOB_NAME AS NEW_JOB_NAME,
+		    new_pos.POSITION_NAME AS NEW_POSITION_NAME,
+		    new_rank.RANK_NAME AS NEW_RANK_NAME,
+		    new_team.TEAM_NAME AS NEW_TEAM_NAME
+		
+		FROM HR_APPOINTMENT a
+		
+			JOIN EMPLOYEE e ON a.EMP_ID = e.EMP_ID
+			
+			LEFT JOIN DEPARTMENT old_d ON a.PREV_DEPARTMENT_ID = old_d.DEPARTMENT_ID
+			LEFT JOIN JOB old_j ON a.PREV_JOB_ID = old_j.JOB_ID
+			LEFT JOIN POSITION old_p ON a.PREV_POSITION_ID = old_p.POSITION_ID 
+			LEFT JOIN RANK old_r ON a.PREV_RANK_ID = old_r.RANK_ID
+			LEFT JOIN TEAM prev_team ON e.TEAM_ID = prev_team.TEAM_ID  -- EMPLOYEE에서 TEAM_ID 사용
+			
+			LEFT JOIN DEPARTMENT new_dept ON a.NEW_DEPARTMENT_ID = new_dept.DEPARTMENT_ID
+			LEFT JOIN JOB new_job ON a.NEW_JOB_ID = new_job.JOB_ID
+			LEFT JOIN POSITION new_pos ON a.NEW_POSITION_ID = new_pos.POSITION_ID  
+			LEFT JOIN RANK new_rank ON a.NEW_RANK_ID = new_rank.RANK_ID
+			LEFT JOIN TEAM new_team ON e.TEAM_ID = new_team.TEAM_ID  
+				
+		WHERE APP_ID = #{appId }
+		
+	</select>
+	<!-- 인사발령 전체 리스트 -->
+	<select id="selectAppointList" resultMap="AppointmentResultMap">
+		SELECT 
+		    e.NAME,
+		    a.APP_ID, 
+		    a.EMP_ID, 
+		    a.APP_DATE, 
+		    a.APP_TYPE, 
+		    a.APP_REASON,
+		
+		    a.PREV_DEPARTMENT_ID,
+		    a.PREV_TEAM_ID,
+		    a.PREV_RANK_ID,
+		    a.PREV_JOB_ID,
+		    a.PREV_POSITION_ID,
+		
+		    a.NEW_DEPARTMENT_ID,
+		    a.NEW_TEAM_ID,
+		    a.NEW_RANK_ID,
+		    a.NEW_JOB_ID,
+		    a.NEW_POSITION_ID,
+		
+		    old_d.DEPARTMENT_NAME AS PREV_DEPARTMENT_NAME,
+		    old_j.JOB_NAME AS PREV_JOB_NAME,
+		    old_p.POSITION_NAME AS PREV_POSITION_NAME,  
+		    old_r.RANK_NAME AS PREV_RANK_NAME,
+		    old_team.TEAM_NAME AS PREV_TEAM_NAME,  
+		
+		    new_dept.DEPARTMENT_NAME AS NEW_DEPARTMENT_NAME,
+		    new_job.JOB_NAME AS NEW_JOB_NAME,
+		    new_pos.POSITION_NAME AS NEW_POSITION_NAME,
+		    new_rank.RANK_NAME AS NEW_RANK_NAME,
+		    new_team.TEAM_NAME AS NEW_TEAM_NAME
+		
+		FROM HR_APPOINTMENT a
+		JOIN EMPLOYEE e ON a.EMP_ID = e.EMP_ID
+		
+		LEFT JOIN DEPARTMENT old_d ON a.PREV_DEPARTMENT_ID = old_d.DEPARTMENT_ID
+		LEFT JOIN JOB old_j ON a.PREV_JOB_ID = old_j.JOB_ID
+		LEFT JOIN POSITION old_p ON a.PREV_POSITION_ID = old_p.POSITION_ID 
+		LEFT JOIN RANK old_r ON a.PREV_RANK_ID = old_r.RANK_ID
+		LEFT JOIN TEAM old_team ON a.PREV_TEAM_ID = old_team.TEAM_ID
+		
+		LEFT JOIN DEPARTMENT new_dept ON a.NEW_DEPARTMENT_ID = new_dept.DEPARTMENT_ID
+		LEFT JOIN JOB new_job ON a.NEW_JOB_ID = new_job.JOB_ID
+		LEFT JOIN POSITION new_pos ON a.NEW_POSITION_ID = new_pos.POSITION_ID  
+		LEFT JOIN RANK new_rank ON a.NEW_RANK_ID = new_rank.RANK_ID
+		LEFT JOIN TEAM new_team ON a.NEW_TEAM_ID = new_team.TEAM_ID
+		
+		order by app_id DESC
+	</select>
+	
+	<select id="generateAppId" resultType="int">
+	    SELECT SEQ_HR_APPOINTMENT_ID.NEXTVAL FROM DUAL
+	</select>
+	
+	
+	<insert id="insertAppoint" parameterType="AppointmentVO">
+		
+		INSERT INTO hr_appointment (
+		    app_id
+		    , emp_id
+		    , app_date
+		    , app_type
+		    , app_reason
+		    , prev_job_id
+		    , prev_rank_id
+		    , prev_department_id
+		    , prev_team_id
+		    , prev_position_id
+		    , new_job_id
+		    , new_rank_id
+		    , new_department_id
+		    , new_team_id
+		    , new_position_id
+		) VALUES ( 
+			  #{appId 			   }
+	        , #{empId              }
+	        , TO_DATE(#{appDate}, 'YYYY-MM-DD')
+	        , #{appType            }
+	        , #{appReason          }
+	        , #{prevJobId          }
+	        , #{prevRankId         }
+	        , #{prevDepartmentId   }
+	        , #{prevTeamId         }
+	        , #{prevPositionId     }
+	        , #{newJobId           }
+	        , #{newRankId          }
+	        , #{newDepartmentId    }
+	        , #{newTeamId          } 
+	        , #{newPositionId      } 
+		) 
+	
+	
+	</insert>
+	
+	<update id="insertAppoint_emptable">
+		UPDATE employee
+		SET
+			JOB_ID = #{newJobId }
+			, RANK_ID = #{newRankId }
+			, DEPARTMENT_ID = #{newDepartmentId }
+			, TEAM_ID = #{newTeamId }
+			, POSITION_ID = #{newPositionId }
+		WHERE
+	        emp_id = #{empId }
+	</update>
+	
+	
+	<update id="updateAppoint">
+		UPDATE hr_appointment
+		SET
+		      APP_ID = #{appId }
+			, EMP_ID = #{empId }
+			, APP_DATE = #{appDate }
+			, APP_TYPE = #{appType }
+			, APP_REASON = #{appReason }
+			, NEW_JOB_ID = #{newJobId }
+			, NEW_RANK_ID = #{newRankId }
+			, NEW_DEPARTMENT_ID = #{newDepartmentId }
+			, NEW_TEAM_ID = #{newTeamId }
+			, NEW_POSITION_ID = #{newPositionId }
+		WHERE
+	        app_id = #{appId }
+	
+	</update>
+	
+	<select id="readDepartment">
+		SELECT
+		    department_id
+		  , department_name
+		  , department_location
+		  , department_phonenumber
+		  , number_type
+		  , parent_org_id
+		  , department_status
+		FROM
+		    department
+	</select>
+	
+	<select id="readRank">
+		SELECT
+		    rank_id
+		  , rank_name
+		  , rank_status
+		FROM
+		    rank
+	</select>
+		
+	<select id="readPosition">
+		SELECT
+		    position_id
+		  , position_name
+		  , position_status
+		FROM
+		    position
+	</select>
+	
+	<select id="readTeam">
+		SELECT
+		    team_id
+		  , department_id
+		  , team_status
+		  , team_name
+		FROM
+		    team
+	</select>
+	
+	<select id="readJob">
+		SELECT
+		    job_id
+		  , job_name
+		  , job_status
+		FROM
+		    job
+	</select>
+	
+    <!-- 부서별 팀 조회 -->		
+	<select id="selectTeamsByDepartment" resultType="TeamVO">
+		SELECT TEAM_ID AS teamId
+		       ,TEAM_NAME AS teamName
+		       ,DEPARTMENT_ID AS departmentId
+		  FROM TEAM
+		 WHERE DEPARTMENT_ID = #{departmentId}
+	</select>
+	
+	<!-- 팀별 직원 조회 -->
+	<select id="selectEmployeesByTeam" resultType="EmployeeVO">
+		SELECT EMP_ID AS empId
+		       ,NAME AS name
+		       ,TEAM_ID AS teamId
+		  FROM EMPLOYEE
+		 WHERE TEAM_ID = #{teamId}
+		   AND EMP_STATUS = 'Y'
+	</select>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+

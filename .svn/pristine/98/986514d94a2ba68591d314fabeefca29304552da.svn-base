@@ -1,0 +1,165 @@
+package kr.or.ddit.salary.service;
+
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.annotations.Param;
+
+import kr.or.ddit.salary.vo.AllowanceCodeVO;
+import kr.or.ddit.salary.vo.AllowanceVO;
+import kr.or.ddit.salary.vo.DeductionCodeVO;
+import kr.or.ddit.salary.vo.DeductionVO;
+import kr.or.ddit.salary.vo.SalaryVO;
+
+public interface SalaryService {
+	
+	/**
+	 * 직원의 급여리스트 조회
+	 * @return
+	 */
+	public List<SalaryVO>salaryList(String payMonth,String payYear);
+	
+	/**
+	 * 선택한 직원의 급여 상세조회
+	 * @param salary
+	 * @return
+	 */
+	public SalaryVO salarySelected(String empId, String payYear, String payMonth);
+	
+	/**
+	 * 수당항목 리스트 조회
+	 * @return
+	 */
+	public List<AllowanceCodeVO>AllowanceList();
+	
+	
+	/**
+	 * 공제항목 리스트 조회
+	 * @return
+	 */
+	public List<DeductionCodeVO>DeductionList();
+	
+	
+	/**
+	 * 전직원 급여등록
+	 * @param salary
+	 * @return
+	 */
+	public boolean InsertSalary(int payYear, int payMonth);
+	
+	
+	/**
+	 * 전직원 공제등록
+	 * @param deducation
+	 * @return
+	 */
+	public boolean InsertDeducation(int payYear, int payMonth);
+	
+	/**
+	 * 전직원 수당등록 (급여등록시 공제와 동시진행)
+	 * @param allowance
+	 * @return
+	 */
+	public int InsertAllowance(int payYear, int payMonth);
+	
+	/**
+	 * 공제액 급여로 총액반영
+	 * @return
+	 */
+	public int deducationTotalUpdate(int payYear, int payMonth);
+	
+	/**
+	 * 수당액 급여로 총액반영
+	 * @return
+	 */
+	public int allowanceTotalUpdate(int payYear, int payMonth);
+	
+	
+	/**
+	 * 수당 공제총액 반영후 총지급액, 실지급액 수정
+	 * @return
+	 */
+	public int salaryTotalAmountUpdate(int payYear, int payMonth);
+	
+	/**
+	 * 급여대상자, 확정자, 총 급여금액 조회
+	 * @param salary
+	 * @return
+	 */
+	public SalaryVO salaryInfo(String payYear,String payMonth);
+	
+	/**
+	 * 년월별 전임직원 급여처리된 리스트조회
+	 * @return
+	 */
+	public List<SalaryVO>SalarySummaryByMonth();
+	
+	/**
+	 * 특정년도 임직원 급여 확정인원, 확정급여 조회
+	 * @param payYear
+	 * @param payMonth
+	 * @return
+	 */
+	public SalaryVO salarySelectedSummaryMonth(String payYear, String payMonth);
+	
+	
+	/**
+	 * 급여등록 미리보기
+	 * @return
+	 */
+	public SalaryVO salaryInsertEx(@Param("payYear")int payYear, @Param("payMonth")int payMonth);
+	
+	/**
+	 * 부서별 평균급여
+	 * @return
+	 */
+	public List<SalaryVO> departMentAvgSalry(String payYear, String payMonth);
+	
+	/**
+	 * 직급별 평균급여
+	 * @return
+	 */
+	public List<SalaryVO> rankAvgSalary(String payYear, String payMonth);
+	
+	/**
+	 * 상태값 조회
+	 * @return
+	 */
+	public Map<String, String> getPayStatus(String empId, Long salaryId);
+	
+	/**
+	 * 상태값 토글
+	 * @param empId
+	 * @param salaryId
+	 * @return
+	 */
+	public int togglePayStatus(String empId,Long salaryId);
+	
+	/**
+	 * 이체요청 토글 (요청완료<->요청대기)
+	 * @param empId
+	 * @param salaryId
+	 * @return
+	 */
+	public int togglePayRequest(String empId,Long salaryId);
+	
+	/**
+	 * 급여확정된 사원의 리스트 조회
+	 * @param payStatus
+	 * @return
+	 */
+	public List<SalaryVO> salarySendEmailConfirm(String payYear, String payMonth);
+	
+	/**
+	 * 부서별 최소급여와 최대급여 조회
+	 * @return
+	 */
+	public List<Map<String, Object>> MinMaxSalaryByDept();
+	
+	/**
+	 * 지급승인된 사원의 급여지급
+	 * @return
+	 */
+	public int salaryPaid(String empId,Long salaryId);
+}
+

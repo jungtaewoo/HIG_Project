@@ -1,0 +1,412 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
+<%@ taglib uri="http://www.springframework.org/security/tags"
+	prefix="security"%>
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="UTF-8">
+    <title>문서 양식 선택</title>
+    <!-- 필요한 라이브러리 (Font Awesome, Bootstrap 등) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+     <style>
+        /* 공통 스타일 */
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0; /* 기본 margin 제거 */
+    		padding: 20px; /* 페이지 주변 여백 */
+        }
+        /* container-fluid를 사용해 전체 폭 활용 */
+        .page-container {
+            width: 100%;
+            padding: 20px;
+        }
+        /* 카드 컴포넌트 시각적 강조 */
+		.card {
+		    border: 1px solid #dee2e6 !important; /* 연한 그레이 경계선 */
+		    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important; /* 그림자 강화 */
+		    border-radius: 10px;
+		}
+		
+		/* 카드 헤더와 본문 사이 구분 강조 */
+		.card-header {
+		    border-bottom: 1px solid #ced4da !important;
+		}
+		
+		/* 카드 내부 여백 유지 */
+		.card-body {
+		    background-color: white; /* 카드 내부 강조 */
+		    border-radius: 0 0 10px 10px; /* 하단 둥근 모서리 유지 */
+		}
+        /* 스크롤 영역 높이 */
+        .category-list,
+        .template-container {
+            height: calc(100vh - 220px);
+            overflow-y: auto;
+        }
+        /* 왼쪽 메뉴 버튼 */
+        .category-btn {
+            width: 100%;
+            text-align: left;
+            margin-bottom: 8px;
+            padding: 12px 15px;
+            transition: all 0.3s;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .category-btn:hover {
+            background-color: #e9ecef;
+        }
+        .category-btn.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+        /* 템플릿 목록 아이템 */
+        .template-item {
+            padding: 12px 15px;
+            transition: all 0.3s;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        .template-item:hover {
+            background-color: #f1f3f5;
+        }
+        .template-item a {
+            color: #495057;
+            text-decoration: none;
+            display: block;
+        }
+        /* 카테고리 제목 */
+        .category-title {
+            border-left: 4px solid #0d6efd;
+            padding-left: 10px;
+            margin-bottom: 15px;
+        }
+        /* 템플릿 리스트 기본 숨김 / active 시 표시 */
+        .template-list { display: none; }
+        .template-list.active { display: block; }
+
+        /* 모달 관련 */
+        .modal-xl {
+            max-width: 90%;
+        }
+        .modal-content {
+            background-color: #f8f9fa;
+        }
+         #approvalFormContainer {
+            border: 3px solid #aaa;
+            border-radius: 8px;
+            margin-top: 10px;
+            /* flex 배치를 유지하되, 가로폭이 자동으로 맞춰지도록 하고 중앙 정렬하도록 변경 */
+            display: flex;
+            justify-content: center;  /* 중앙 정렬 */
+            align-items: flex-start;
+            width: auto;
+            max-width: 800px;        /* 필요하다면 너비 제한 */
+            margin: 0 auto;          /* 컨테이너 자체를 중앙에 위치시킴 */
+            padding: 10px;
+        }
+        .approval-buttons-container {
+            display: flex;
+            justify-content: flex-start;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .modal-custom {
+		    max-width: 920px; /* 원하는 폭으로 설정 */
+		    margin: auto;
+		}
+		.modal-orgCustom{
+			 max-width: 900px;  
+	         margin: auto;
+		}
+		#orgTree {
+			  max-height: 500px;  /* 트리에 필요한 최대 높이 */
+			  overflow-y: auto;
+		}
+		/* FancyTree 컨테이너의 흰색 배경을 투명 처리 */
+		#orgTree .fancytree-container {
+		  background-color: transparent !important;
+		  border: none !important; /* 원한다면 테두리도 제거 */
+		}
+		
+		.top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            background-color: transparent; 
+            box-shadow: none;
+            border: none;
+        }	
+        .page-title {
+		     text-align: center;
+    		 padding: 20px 10px 10px 10px;
+		}
+        .card h2 {
+           font-size: 1.6rem;
+		   font-weight: 500;
+		   color: #343a40;
+		   display: flex;
+		   align-items: center;
+		   gap: 8px;
+		   margin: 0;
+       }
+	   .card .page-title h2 {
+	    	color: #25396F !important;
+		}		
+    </style>
+</head>
+<body>
+  <!-- ================= Quick Menu ================= -->
+<div class="top-bar">
+     <!-- 좌측: 버튼 그룹 -->
+    <div>	 
+      <button type="button" class="btn btn-outline-secondary" onclick="history.back();">
+        <i class="fas fa-arrow-left"></i> 
+      </button>
+    </div>
+    
+    
+    <!-- 우측: Breadcrumb -->
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item fw-bold text-primary">📌 Quick Menu</li>
+        <li class="breadcrumb-item active" aria-current="page">문서작성</a></li>
+        <li class="breadcrumb-item"><a href="/approval/mydrafts">제출문서</a></li>
+        <li class="breadcrumb-item"><a href="/approval/approverDrafts">결재현황</a></li>
+        <security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+        	<li class="breadcrumb-item"><a href="/approval/list">결재양식</a></li>
+        </security:authorize>
+      </ol>
+    </nav>
+
+   
+</div>
+
+
+<!-- 기안자의 부서와 직급 정보를 저장하는 hidden 필드 --> 
+<input type="hidden" id="draftDeptId" value="${currentDeptId}" />
+<input type="hidden" id="draftRank" value="${currentRank}" />
+<!-- 기안자가 결재라인을 추가하면 해당 결재자의 id값 매핑  -->
+<input type="hidden" class="approverId" value="${approver.approverId}" />
+<section class="section">
+  
+
+<div class="card">
+	<div class="page-title">
+    	<h2><i class="fas fa-file-signature me-2"></i>문서 작성</h2>
+  	</div>
+	
+<div class="page-container">
+    <div class="row">
+        <!-- 왼쪽 (col-md-3): 문서 종류 목록 -->
+        <div class="col-md-3 mb-4 mb-md-0">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5><i class="fas fa-folder me-2"></i>문서 종류</h5>
+                </div>
+                <div class="card-body p-3 category-list">
+                    <!-- "전체 양식 보기" 버튼 -->
+                    <button class="btn category-btn active" data-category="all" onclick="showTemplates('all')">
+                        <i class="fas fa-folder"></i> 전체 양식 보기
+                    </button>
+                    <!-- 동적 문서 종류 목록 -->
+                    <c:forEach var="category" items="${categoryList}">
+                        <button class="btn category-btn" data-category="${category}" onclick="showTemplates('${category}')">
+                            <i class="fas fa-folder"></i> ${category}
+                        </button>
+                    </c:forEach>
+                </div>
+            </div>
+        </div>
+
+        <!-- 중앙 (col-md-6): 문서 양식 목록 -->
+        <div class="col-md-6 mb-4 mb-md-0">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5><i class="fas fa-file-signature me-2"></i>문서 양식</h5>
+                </div>
+                <div class="card-body p-3 template-container">
+                    <!-- 문서 양식 목록 -->
+                    <c:forEach var="category" items="${categoryList}">
+                        <div id="templates-${fn:replace(category, ' ', '_')}" class="template-list">
+                            <h4 class="category-title">${category}</h4>
+                            <div class="list-group">
+                                <c:set var="hasTemplates" value="false" />
+                                <c:forEach var="template" items="${draftEmpTemplate}">
+                                    <c:if test="${template.templateCategory eq category}">
+                                        <c:set var="hasTemplates" value="true" />
+                                        <div class="template-item">
+                                            <a href="javascript:void(0);"
+                                               onclick="openApprovalForm('${template.templateId}', '${template.templateTite}')">
+                                                <i class="fas fa-file-alt template-icon"></i>
+                                                ${template.templateTite}
+                                            </a>
+                                        </div>
+                                    </c:if>
+                                </c:forEach>
+                                <!-- 해당 문서 양식이 없을 때 -->
+                                <c:if test="${hasTemplates eq 'false'}">
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-search mb-2" style="font-size: 2rem;"></i><br />
+                                        <span>해당 문서 양식이 없습니다.</span>
+                                    </div>
+                                </c:if>
+                            </div>
+                        </div>
+                    </c:forEach>
+                </div>
+            </div>
+        </div>
+
+        <!-- 오른쪽 (col-md-3): 내 임시저장 목록 -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+				  <h5 class="mb-0">
+				    <i class="fas fa-save me-2"></i>내 임시 저장
+				  </h5>
+				  <button class="btn btn-outline-secondary" onclick="location.reload()">
+				    <i class="fas fa-sync-alt"></i> 새로고침
+				  </button>
+				</div>
+                <div class="card-body">
+                    <div id="draftListContainer">
+                        <!-- 임시 저장 문서 목록이 여기에 표시됩니다. -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 문서 양식 모달 -->
+<div class="modal fade" id="approvalFormModal" tabindex="-1">
+    <div class="modal-dialog modal-custom">
+        <div class="modal-content">
+            <div class="modal-header">
+                <!-- 모달 타이틀: "문서 양식" -->
+                <h5 class="modal-title" id="approvalFormModalLabel">문서 양식</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="approval-buttons-container d-flex justify-content-end">
+                    <!-- 결재선 지정 버튼 → "결재선 선택" -->
+                    <button type="button" id="openOrgModalBtn" class="btn btn-primary">결재선 지정</button>
+                </div>
+                <div id="approvalFormContainer">
+                    <!-- 문서 양식 로딩 영역 -->
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary"></div>
+                        <p class="mt-2">문서 양식을 불러오는 중입니다...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <!-- 버튼 네이밍 변경 -->
+                <a id="downloadButton" class="btn btn-secondary" download>문서 다운로드</a>
+                <!-- 상신  -->
+                <button type="button" class="btn btn-primary" id="submitApprovalBtn">결재요청</button>
+                <!-- 재상신  -->
+                <button class="btn btn-primary" id="resubmitBtn">재요청</button>
+                <button class="btn btn-primary" id="tempSaveDraftBtn">임시 저장</button>
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 조직도 모달 (FancyTree 활용) -->
+<div class="modal fade" id="orgModal" tabindex="-1" aria-labelledby="orgModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-orgCustom">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orgModalLabel">결재선 지정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 10px;">
+                    <input type="text" id="empSearchInput" placeholder="이름, 팀, 부서,직급 검색"
+                           class="form-control" aria-label="Search">
+                    <button id="empSearchBtn" class="btn btn-primary">
+                     <i class="fas fa-search"></i> 검색
+                    </button>
+                    <button id="collapseAllBtn" class="btn btn-secondary">전체 닫기</button>
+					<button id="expandAllBtn" class="btn btn-secondary">전체 열기</button>
+					<button id="expandSameDeptBtn" class="btn btn-secondary">본인 부서</button>
+                </div>
+                <div id="orgTree" style="min-height: 400px; border: 1px solid #ddd; border-radius: 5px; padding: 10px;"></div>
+            	</div>
+            <div class="modal-footer">
+                <button type="button" id="saveApprovalLineBtn" class="btn btn-success saveApprovalLineBtn">지정</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</section>
+<!-- 별도 임시 저장 기능 JS 파일 -->
+<script type="module" src="${pageContext.request.contextPath}/resources/js/approval/approvalTempDraftSave.js"></script>
+<script type="module" src="${pageContext.request.contextPath}/resources/js/approval/approvalMyDraftDetail.js"></script>
+<!-- 기존 결재 관련 JS 파일들 -->
+<script src="${pageContext.request.contextPath}/resources/js/approval/approvalTemplate.js"></script>
+<script src="${pageContext.request.contextPath}/resources/js/approval/approvalDraft.js"></script>
+
+<script>
+    // 문서 양식 모달 열기 함수
+    async function openApprovalForm(templateId, templateTitle) {
+        if (!templateId) {
+            alert("템플릿 ID가 올바르지 않습니다.");
+            return;
+        }
+        document.getElementById('approvalFormModalLabel').textContent = templateTitle + ' 문서 양식';
+        document.getElementById('approvalFormContainer').innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary"></div>
+                <p class="mt-2">문서 양식을 불러오는 중입니다...</p>
+            </div>
+        `;
+        var modal = new bootstrap.Modal(document.getElementById('approvalFormModal'));
+        modal.show();
+        await loadTemplate(templateId); // 템플릿 HTML을 비동기로 로드
+
+        // 템플릿 타이틀이 "연차신청서"라면, 폼의 제목 입력값을 강제로 세팅
+        if(templateTitle === "연차신청서") {
+            $("input[name='draftTitle']").val("연차신청서");
+        }
+    }
+
+    // 카테고리별 문서 양식 목록 활성화 함수
+    function showTemplates(categoryName) {
+        document.querySelectorAll(".category-btn").forEach(btn => btn.classList.remove("active"));
+        const selected = document.querySelector(`.category-btn[data-category='${categoryName}']`);
+        if (selected) selected.classList.add("active");
+
+        // 모든 템플릿 목록 숨기기
+        document.querySelectorAll(".template-list").forEach(list => list.classList.remove("active"));
+        if (categoryName === "all") {
+            document.querySelectorAll(".template-list").forEach(list => list.classList.add("active"));
+        } else {
+            const id = "templates-" + categoryName.replace(/\s+/g, "_");
+            const selectedList = document.getElementById(id);
+            if (selectedList) selectedList.classList.add("active");
+        }
+    }
+
+    // 페이지 로드시 기본적으로 "all" 카테고리 표시
+    document.addEventListener("DOMContentLoaded", function() {
+        showTemplates('all');
+    });
+</script>
+</body>
+</html>

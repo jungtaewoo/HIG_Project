@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- * == 개정이력(Modification Information) == * * 수정일 수정자 수정내용 * ============ 
+	===================================== * 2025. 3. 12. 이진우 최초 생성 * 2025. 3. 
+	12. 정태우 VO 및 List 매핑 * * 2025. 3. 14. 정태우 상태코드객체 매핑 * 2025. 3. 15. 이진우 DB테이블 
+	수정으로 쿼리문 수정 -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.mybatis.mappers.employee.EmployeeMapper">
+
+	<resultMap type="EmployeeVO" id="EmployeeResultMap"
+		autoMapping="true">
+		<id property="empId" column="emp_id" />
+
+		<association property="department" javaType="DepartmentVO"
+			autoMapping="true" />
+		<association property="team" javaType="TeamVO"
+			autoMapping="true" />
+		<association property="job" javaType="JobVO"
+			autoMapping="true" />
+		<association property="position" javaType="PositionVO"
+			autoMapping="true" />
+		<association property="rank" javaType="RankVO"
+			autoMapping="true" />
+
+		<association property="account" javaType="accountVO"
+			autoMapping="true">
+			<id property="accountId" column="account_id" />
+		</association>
+		<association property="role" javaType="RoleVO"
+			autoMapping="true">
+			<id property="roleId" column="role_id" />
+		</association>
+		<collection property="attendanceList" ofType="AttendanceVO">
+			<id property="attendanceId" column="attendance_id" />
+			<result property="workStartTime" column="WORK_START" />
+			<result property="workEndTime" column="WORK_END" />
+			<result property="workingHours" column="WORKING_HOURS" />
+			<result property="attendanceStatus" column="ATTENDANCE_STATUS" />
+			<result property="statusId" column="status_id" />
+		</collection>
+		<collection property="empCertificate"
+			ofType="EmpCertificateVO">
+			<id property="certificateId" column="certificate_id" />
+			<result property="empId" column="emp_id" />
+			<association property="certificate"
+				javaType="CertificateVO" autoMapping="true">
+				<id property="certificateId" column="certificate_id" />
+			</association>
+		</collection>
+	</resultMap>
+
+
+	   <select id="selectEmpList" resultMap="EmployeeResultMap">
+      SELECT
+          e.*
+        , j.job_name
+        , d.department_name
+        , p.position_name
+        , t.team_name
+        , r.rank_name
+        , fd.file_path AS empPath
+      FROM
+          employee    e
+       LEFT JOIN job         j ON e.job_id = j.job_id
+       LEFT JOIN department  d ON e.department_id = d.department_id
+       LEFT JOIN position    p ON e.position_id = p.position_id
+       LEFT JOIN team        t ON e.team_id = t.team_id
+       LEFT JOIN rank        r ON e.rank_id = r.rank_id
+       LEFT JOIN file_detail fd ON e.emp_img = fd.detail_id
+       ORDER BY
+           e.rank_id desc,
+         e.DEPARTMENT_ID ASC,
+         e.TEAM_ID ASC,
+         e.HIRE_DATE ASC
+   </select>
+
+
+	<select id="selectEmp" resultMap="EmployeeResultMap">
+		SELECT
+		e.*,
+		j.JOB_NAME,
+		d.DEPARTMENT_NAME,
+		p.POSITION_NAME,
+		t.TEAM_NAME,
+		r.RANK_NAME,
+		fd.FILE_PATH as empPath
+		FROM EMPLOYEE e
+		LEFT JOIN JOB j ON e.JOB_ID = j.JOB_ID
+		LEFT JOIN DEPARTMENT d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+		LEFT JOIN POSITION p ON e.POSITION_ID = p.POSITION_ID
+		LEFT JOIN TEAM t ON e.TEAM_ID = t.TEAM_ID
+		LEFT JOIN RANK r ON e.RANK_ID = r.RANK_ID
+		LEFT join file_detail fd on e.EMP_IMG = fd.DETAIL_ID
+		WHERE e.EMP_ID =
+		#{empId}
+	</select>
+
+	<select id="empCount">
+		select
+		count(*)
+		from
+		employee
+	</select>
+
+	<select id="hireCount">
+		SELECT
+		COUNT(*)
+		FROM
+		employee e
+		WHERE
+		e.emp_status = 'Y'
+		and
+		EXTRACT(YEAR FROM e.hire_date) = EXTRACT(YEAR FROM SYSDATE)
+	</select>
+
+
+	<select id="resignCount">
+		SELECT
+		COUNT(*)
+		FROM employee e
+		join emp_resignation er on e.emp_id = er.emp_id
+		WHERE
+		e.emp_status = 'N'
+		and
+		EXTRACT(YEAR FROM er.resign_date) = EXTRACT(YEAR FROM SYSDATE)
+	</select>
+
+	<insert id="insertEmp">
+		INSERT INTO employee (
+		emp_id
+		, name
+		, address
+		, address_detail
+		, phone_number
+		, jumin_front
+		, jumin_back
+		, email
+		, final_level
+		, hire_date
+		, emp_status
+		, emp_img
+		) VALUES (
+		#{empId,jdbcType=VARCHAR}
+		, #{name,jdbcType=VARCHAR}
+		, #{address,jdbcType=VARCHAR}
+		, #{addressDetail,jdbcType=VARCHAR}
+		, #{phoneNumber,jdbcType=VARCHAR}
+		, #{juminFront,jdbcType=CHAR}
+		, #{juminBack,jdbcType=CHAR}
+		, #{email,jdbcType=VARCHAR}
+		, #{finalLevel,jdbcType=VARCHAR}
+		, TO_DATE(#{hireDate}, 'YYYY-MM-DD')
+		, '재직'
+		, #{empImg,jdbcType=NUMERIC}
+		)
+
+	</insert>
+
+	<!-- 직원 상태 업데이트시 근로계약서 업데이트 -규영박- -->
+	<update id="updateEmpStatus">
+		UPDATE EMPLOYEE
+		SET EMP_STATUS = #{empStatus}
+		WHERE EMP_ID = #{empId};
+
+		UPDATE EMP_CONTRACT
+		SET CONTRACT_STATUS =
+		CASE
+		WHEN #{empStatus} = '퇴사' THEN '종료'
+		WHEN #{empStatus} = '휴직' THEN '일시 중지'
+		WHEN #{empStatus} = '재직' THEN '유효'
+		ELSE CONTRACT_STATUS
+		END
+		WHERE EMP_ID = #{empId}
+	</update>
+
+	<update id="updateEmp">
+		UPDATE employee
+		<set>
+			<trim suffixOverrides=",">
+				<if test="empImg != null">EMP_IMG = #{empImg},</if>
+				<if test="name != null">NAME = #{name},</if>
+				<if test="hireDate != null">HIRE_DATE = #{hireDate},</if>
+				<if test="salary != null">SALARY = #{salary},</if>
+				<if test="email != null">EMAIL = #{email},</if>
+				<if test="address != null">ADDRESS = #{address},</if>
+				<if test="addressDetail != null">ADDRESS_DETAIL = #{addressDetail},</if>
+				<if test="finalLevel != null">FINAL_LEVEL = #{finalLevel},</if>
+				<if test="phoneNumber != null">PHONE_NUMBER = #{phoneNumber},</if>
+				<if test="juminFront != null">JUMIN_FRONT = #{juminFront},</if>
+				<if test="juminBack != null">JUMIN_BACK = #{juminBack}</if>
+				<if test="empStatus != null">EMP_STATUS = #{empStatus}</if>
+			</trim>
+		</set>
+		WHERE EMP_ID = #{empId}
+	</update>
+
+	<select id="tunurePercent">
+		SELECT
+		floor(months_between(sysdate, hire_date) / 12) AS tenureYear
+		, COUNT(*) AS count
+		FROM
+		employee
+		GROUP BY
+		floor(months_between(sysdate, hire_date) / 12)
+		ORDER BY
+		tenureYear
+	</select>
+
+	<select id="rankPercent" resultType="hashmap">
+		SELECT
+		r.rank_name
+		, COUNT(*) AS count
+		FROM
+		employee e
+		JOIN rank r ON e.rank_id = r.rank_id
+		GROUP BY r.rank_name
+		ORDER BY count DESC
+	</select>
+
+
+
+	<!--퇴사,휴직 쿼리 -->
+	<update id="updateRetireInfo" parameterType="employeeVO">
+		UPDATE EMPLOYEE
+		SET retire_date = #{retireDate},
+		retire_reason = #{retireReason},
+		emp_status = '퇴사'
+		WHERE emp_id = #{empId}
+	</update>
+
+	<update id="updateLeaveInfo" parameterType="employeeVO">
+		UPDATE EMPLOYEE
+		SET leave_start_date = #{leaveStartDate},
+		leave_end_date = #{leaveEndDate},
+		leave_reason = #{leaveReason},
+		emp_status = '휴직'
+		WHERE emp_id = #{empId}
+	</update>
+	
+	<select id="selectEmpListList" resultType="employeeVO">
+	    SELECT 
+	        emp_id,
+	        name,
+	        department_id,
+	        job_id,
+	        emp_status
+	    FROM EMPLOYEE
+	    WHERE emp_status != '퇴사'
+	</select>
+	<select id="selectRetireLeaveList" resultType="employeeVO">
+    SELECT 
+        e.EMP_ID,
+        e.NAME,
+        e.EMP_STATUS,
+        e.RETIRE_DATE,
+        e.RETIRE_REASON,
+        e.LEAVE_START_DATE,
+        e.LEAVE_END_DATE,
+        e.LEAVE_REASON,
+        d.DEPARTMENT_NAME,
+        t.TEAM_NAME
+    FROM EMPLOYEE e
+    LEFT JOIN DEPARTMENT d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+    LEFT JOIN TEAM t ON e.TEAM_ID = t.TEAM_ID
+    WHERE 
+        e.RETIRE_DATE IS NOT NULL
+        OR e.LEAVE_START_DATE IS NOT NULL
+</select>
+</mapper>

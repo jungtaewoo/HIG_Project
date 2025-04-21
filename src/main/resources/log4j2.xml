@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{1.} - %msg%n" />
+    </Console>
+  </Appenders>
+  <Loggers>
+    <!-- 루트 로거는 에러만 출력 -->
+    <Root level="error">
+      <AppenderRef ref="Console" />
+    </Root>
+    
+    <!-- kr.or.ddit 패키지: info 수준 -->
+    <Logger name="kr.or.ddit" level="info" additivity="false">
+      <AppenderRef ref="Console" />
+    </Logger>
+    
+    <!-- JDBC 관련 쿼리 로그: debug 수준 -->
+    <Logger name="jdbc.sqltiming" level="debug" additivity="false">
+      <AppenderRef ref="Console" />
+    </Logger>
+    <Logger name="jdbc.resultsettable" level="debug" additivity="false">
+      <AppenderRef ref="Console" />
+    </Logger>
+    
+    <!-- Spring 매핑 정보 출력: RequestMappingHandlerMapping은 trace 수준 -->
+    <Logger name="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping" level="info" additivity="false">
+      <AppenderRef ref="Console" />
+    </Logger>
+    
+    <!-- 나머지 Spring 로그는 info 수준 -->
+    <Logger name="org.springframework" level="info" additivity="false">
+      <AppenderRef ref="Console" />
+    </Logger>
+    <Logger name="org.springframework.context" level="info" additivity="false">
+      <AppenderRef ref="Console" />
+    </Logger>
+    <Logger name="org.springframework.beans" level="info" additivity="false">
+      <AppenderRef ref="Console" />
+    </Logger>
+    <Logger name="org.springframework.test" level="warn" additivity="false">
+      <AppenderRef ref="Console" />
+    </Logger>
+    <!-- Spring Web 관련 나머지 로그는 info로 설정 -->
+    <Logger name="org.springframework.web" level="info" additivity="false">
+      <AppenderRef ref="Console" />
+    </Logger>
+    <Logger name="org.apache.tiles" level="info" additivity="false">
+      <AppenderRef ref="Console" />
+    </Logger>
+  </Loggers>
+</Configuration>

@@ -1,0 +1,39 @@
+#doc-id {
+	width: 5%;
+}
+
+#title {
+	width: 5%;
+}
+
+#draft-date {
+	width: 1%;
+}
+
+#status {
+	width: 5%;
+}
+
+#draftor {
+	width: 5%;
+}
+
+#department {
+	width: 10%;
+}
+
+#approver {
+	width: 5%;
+}
+
+#approval-status {
+	width: 10%;
+}
+
+#approval-progress {
+	width: 10%;
+}
+
+#attachment {
+	width: 1%;
+}

@@ -1,0 +1,92 @@
+<!--
+ * == 개정이력(Modification Information) ==
+ *
+ *   수정일      			수정자           수정내용
+ *  ============   	============== =======================
+ *  2025. 3. 11.     	 KHS           최초 생성
+ *
+-->
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib uri="http://www.springframework.org/tags/form" prefix="form"%>
+<head>
+<title>부서 수정</title>
+<style>
+	.wrapper {
+	  margin-left: 200px;
+	  margin-right: 200px;
+	}
+</style>
+</head>
+	<div class="wrapper">
+	   <div class="page-container container-fluid">
+		  <div class="d-flex justify-content-between align-items-center mb-2">
+
+		    <!-- 좌측: 버튼 그룹 -->
+		    <div>
+		      <button type="button" class="btn btn-outline-secondary" onclick="history.back();">
+		        <i class="fas fa-arrow-left"></i>
+		      </button>
+		    </div>
+
+		    <!-- 우측: Breadcrumb -->
+		    <nav aria-label="breadcrumb">
+		      <ol class="breadcrumb mb-0">
+		        <li class="breadcrumb-item fw-bold text-primary"><a href="${pageContext.request.contextPath }/account/login/home"> 📌 Main</a></li>
+		        <li class="breadcrumb-item" aria-current="page"><a href="${pageContext.request.contextPath }/employee/organization">조직도</a></li>
+		        <li class="breadcrumb-item"><a href="${pageContext.request.contextPath }/department/list">부서 목록</a></li>
+		        <li class="breadcrumb-item active" aria-current="page">부서수정</a></li>
+		      </ol>
+		    </nav>
+
+		  </div>
+		</div>
+<div class="container">
+   	<div class="card">
+		<div class="card-body">
+		    <h2>부서 수정</h2>
+			<form:form method="post" modelAttribute="department" action="${pageContext.request.contextPath}/department/update/success" enctype="multipart/form-data">
+				<table class="table">
+		<!-- 			<tr> -->
+		<!-- 				<th>부서ID</th> -->
+		<!-- 				<td><input type="number" name="departmentId" -->
+		<%-- 					class="form-control" value="${department.departmentId}" readonly/></td> --%>
+		<!-- 			</tr> -->
+					<input type="hidden" name="departmentId" value="${department.departmentId}" />
+
+					<tr>
+						<th>부서이름</th>
+						<td><input type="text" name="departmentName"
+							class="form-control" value="${department.departmentName}" /></td>
+					</tr>
+					<tr>
+						<th>부서지점위치</th>
+						<td><input type="text" name="departmentLocation"
+							class="form-control" value="${department.departmentLocation}" /></td>
+					</tr>
+					<tr>
+						<th>부서의 전화번호</th>
+						<td><input type="text" name="departmentPhonenumber"
+							class="form-control" value="${department.departmentPhonenumber}" /></td>
+					</tr>
+					<tr>
+						<th>부서의 팩스번호</th>
+						<td><input type="text" name="departmentFaxnumber"
+							class="form-control" value="${department.departmentFaxnumber}" /></td>
+					</tr>
+		<!-- 			<tr> -->
+		<!-- 				<th>전화번호의 유형ex)대표번호, 팩스</th> -->
+		<!-- 				<td><input type="text" name="numberType" -->
+		<%-- 				class="form-control" value="${department.numberType}" /></td> --%>
+		<!-- 			</tr> -->
+				</table>
+
+				<div class="button-container" style="display: flex; justify-content: flex-end; gap: 10px;">
+					<button type="submit" class="btn btn-primary">수정</button>
+			        <a href="${pageContext.request.contextPath}/employee/organization" class="btn btn-danger">취소</a>
+		        </div>
+			</form:form>
+			</div>
+		 </div>
+	  </div>
+</div>

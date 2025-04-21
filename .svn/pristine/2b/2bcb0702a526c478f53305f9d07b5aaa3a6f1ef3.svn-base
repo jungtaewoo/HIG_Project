@@ -1,0 +1,32 @@
+<svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- 배경 - 로고가 보이도록 약간 어두운 배경 사용 -->
+  <rect width="500" height="300" fill="#2E3A59" rx="15" ry="15" />
+  
+  <!-- 디자인 요소 - 위쪽에 배치 -->
+  <g transform="translate(0, -30)">
+    <!-- 메인 디자인 요소 - D 형태, 화살표 없음 -->
+    <path d="M120,80 C180,80 180,180 120,180 L120,80 Z" fill="#FFFFFF" />
+    <path d="M130,90 C170,90 170,170 130,170 L130,90 Z" fill="#2E3A59" />
+    
+    <!-- 전자 회로 라인 디자인 -->
+    <path d="M190,130 L240,130 L260,110 L300,110 L320,130 L400,130" stroke="#FFFFFF" stroke-width="6" fill="none" />
+    <circle cx="240" cy="130" r="5" fill="#FFFFFF" />
+    <circle cx="300" cy="110" r="5" fill="#FFFFFF" />
+    <circle cx="400" cy="130" r="5" fill="#FFFFFF" />
+    
+    <!-- 부가 디자인 요소 -->
+    <path d="M190,150 L230,150 L250,170 L290,170" stroke="#FFFFFF" stroke-width="3" fill="none" />
+    <path d="M190,110 L230,110 L250,90 L290,90" stroke="#FFFFFF" stroke-width="3" fill="none" />
+  </g>
+  
+  <!-- 텍스트 - 더 눈에 띄는 폰트와 위치 조정 -->
+  <text x="250" y="215" font-family="'Segoe UI', Tahoma, sans-serif" font-size="30" font-weight="bold" text-anchor="middle" fill="#FFFFFF">
+    <tspan fill="#FFFFFF">Daedeok</tspan>
+    <tspan fill="#F0F0F0">Electronics</tspan>
+  </text>
+  
+  <!-- 밑줄 디자인 요소 -->
+  <path d="M120,235 L380,235" stroke="#FFFFFF" stroke-width="3" fill="none" />
+  <circle cx="120" cy="235" r="4" fill="#FFFFFF" />
+  <circle cx="380" cy="235" r="4" fill="#FFFFFF" />
+</svg>

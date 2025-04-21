@@ -1,0 +1,141 @@
+<!--
+ * == 개정이력(Modification Information) ==
+ *
+ *   수정일      			수정자           수정내용
+ *  ============   	============== =======================
+ *  2025. 3. 13.     	 KHS           최초 생성
+ *
+-->
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="security"%>
+<head>
+    <title>팀 수정</title>
+    <!-- 필요에 따라 부트스트랩 등 CSS 프레임워크 추가 -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/bootstrap.min.css" />
+    <style>
+	.wrapper {
+	  margin-left: 200px;
+	  margin-right: 200px;
+	}
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+	<div class="page-container container-fluid">
+	  <div class="d-flex justify-content-between align-items-center mb-2">
+
+	    <!-- 좌측: 버튼 그룹 -->
+	    <div>
+	      <button type="button" class="btn btn-outline-secondary" onclick="history.back();">
+	        <i class="fas fa-arrow-left"></i>
+	      </button>
+	    </div>
+
+	    <!-- 우측: Breadcrumb -->
+	    <nav aria-label="breadcrumb">
+	      <ol class="breadcrumb mb-0">
+	        <li class="breadcrumb-item fw-bold text-primary"><a href="${pageContext.request.contextPath }/account/login/home"> 📌 Main</a></li>
+	        <li class="breadcrumb-item" aria-current="page"><a href="${pageContext.request.contextPath }/employee/organization">조직도</a></li>
+	        <li class="breadcrumb-item active" aria-current="page">팀수정</a></li>
+	      </ol>
+	    </nav>
+
+	  </div>
+	</div>
+    <div class="container">
+	    	<div class="card">
+				<div class="card-body">
+	        <security:authentication property="principal" var="principal" />
+
+	        <h2>팀 수정</h2>
+	        <form action="${pageContext.request.contextPath}/team/update/commit" method="post">
+	            <!-- 팀 ID는 수정하지 않으므로 hidden -->
+	            <input type="hidden" name="teamId" value="${team.teamId}" />
+	            <table class="table">
+	                <!-- 부서 선택 -->
+	                <tr>
+	                    <th>부서</th>
+	                    <td>
+	                        <select name="departmentId" class="form-select" required>
+							    <c:forEach var="department" items="${departmentList}">
+							        <option value="${department.departmentId}"
+							            <c:if test="${department.departmentId eq team.department.departmentId}">
+							                selected="selected"
+							            </c:if>>
+							            ${department.departmentName}
+							        </option>
+							    </c:forEach>
+							</select>
+
+	                    </td>
+	                </tr>
+	                <!-- 팀 이름 -->
+	                <tr>
+	                    <th>팀 이름</th>
+	                    <td>
+	                        <input type="text" name="teamName" class="form-control" value="${team.teamName}" required/>
+	                    </td>
+	                </tr>
+	                <!-- 팀 전화번호 -->
+	                <tr>
+	                    <th>팀 전화번호</th>
+	                    <td>
+	                        <input type="text" name="teamPhonenumber" class="form-control" required/>
+	                    </td>
+	                </tr>
+	                <!-- 팀 팩스번호 -->
+	                <tr>
+	                    <th>팀 팩스번호</th>
+	                    <td>
+	                        <input type="text" name="teamFaxnumber" class="form-control"/>
+	                    </td>
+	                </tr>
+	                <!-- 버튼 영역 -->
+	                <tr>
+	                    <td colspan="2" class="text-end">
+	                        <button type="submit" class="btn btn-primary">수정완료</button>
+	                        <a href="${pageContext.request.contextPath}/employee/organization" class="btn btn-danger">취소</a>
+	                    </td>
+	                </tr>
+	            </table>
+	        </form>
+	    </div>
+	    </div>
+    </div>
+</div>
+</body>
+
+        <!-- 이제 필요 없어!!! -->
+        <!-- 팀 멤버 정보 -->
+<!--         <h3>팀원 정보</h3> -->
+<!--         trv id="teamMembers"> -->
+<%-- 		    <c:forEach var="member" items="${team.teamMembers}" varStatus="status"> --%>
+<!-- 		        <div class="teamMember"> -->
+<%-- 		            <input type="hidden" name="tminfo_${status.index}_id" value="${member.tmId}" /> --%>
+<%-- 		            <input type="hidden" name="tminfo_${status.index}_teamId" value="${team.teamId}" /> --%>
+
+<!-- 		            <label>팀원 구분:</label> -->
+<%-- 		            <select name="teamMembers[${status.index}].tmHr" required> --%>
+<%-- 		                <option value="팀장" ${member.tmHr eq '팀장' ? 'selected' : ''}>팀장</option> --%>
+<%-- 		                <option value="팀원" ${member.tmHr eq '팀원' ? 'selected' : ''}>팀원</option> --%>
+<!-- 		            </select> -->
+
+<!-- 		            <label>팀원 ID:</label> -->
+<%-- 		            <input type="text" value="${member.tmId}" readonly /> --%>
+<!-- 		            <button type="button" id="btnUpdateMember" onclick="updateMember(this)">수정</button> -->
+<!-- 		            <button type="button" id="btnDeleteMember" onclick="deleteMember(this)">삭제</button> -->
+<!-- 		        </div> -->
+<%-- 		    </c:forEach> --%>
+<!-- 		</div> -->
+
+<!--         새로운 팀원 추가 버튼 -->
+<!--         <button type="button" id="btnAddMember" onclick="addMember()">팀원 추가...</button> -->
+
+
+
+
+
+

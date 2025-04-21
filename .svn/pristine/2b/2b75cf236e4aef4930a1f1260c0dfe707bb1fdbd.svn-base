@@ -1,0 +1,46 @@
+package kr.or.ddit.annual.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import kr.or.ddit.annual.vo.AnnualHistoryVO;
+import kr.or.ddit.mybatis.mappers.annual.AnnualHistroyMapper;
+
+@Service
+public class AnnualHistoryServiceImpl implements AnnualHistoryService{
+
+	@Autowired
+	AnnualHistroyMapper dao;
+
+	@Override
+	public List<AnnualHistoryVO> TotalHisrotyList() {
+		return dao.TotalHisrotyList();
+	}
+
+	@Override
+	public List<AnnualHistoryVO> EmpHisrotyDetail(String empId){
+		return dao.EmpHisrotyDetail(empId);
+	}
+
+	@Override
+	public List<AnnualHistoryVO> TodayAnnualHistory() {
+		return dao.TodayAnnualHistory();
+	}
+	
+	@Override
+	public int TodayAnnualCount() {
+		return dao.TodayAnnualCount();
+	}
+
+	@Override
+	public int ThisMonthAnnualHistory() {
+		return dao.ThisMonthAnnualHistory();
+	}
+
+	@Override
+	public boolean existsAttendance(String empId, String workDate) {
+	    return dao.existsAttendance(empId, workDate) > 0;
+	}
+}

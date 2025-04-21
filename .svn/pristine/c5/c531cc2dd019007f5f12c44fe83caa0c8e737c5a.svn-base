@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+<!-- 연차신청서 -> 신청 후 -->
+<table class="__se_tbl" style="width: 800px; border-collapse: collapse !important; color: black; border: 0px solid black; font-size: 12px; font-family: malgun gothic,dotum,arial,tahoma;">
+    <tbody>
+        <tr>
+            <td style="width:300px; padding: 20px !important; border: 0px solid black; height: 90px !important; font-size: 22px; font-weight: bold; text-align: center; vertical-align: middle;" colspan="2" class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                연차신청서
+            </td>
+        </tr>
+        <tr>
+            <td style="width:300px; border: 0; padding: 20px !important" class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                <table class="__se_tbl" style="margin: 20px 0px; border: 1px solid black; color: black; font-family: malgun gothic,dotum,arial,tahoma; font-size: 12px; border-collapse: collapse !important;">
+                    <tbody>
+                        <tr>
+                            <td style="width: 100px; height: 22px; vertical-align: middle; border: 1px solid black; text-align: center; font-weight: bold; padding: 10px !important;">
+                                기안자
+                            </td>
+                            <td style="width: 200px; height: 22px; vertical-align: middle; border: 1px solid black; text-align: left; padding: 10px !important;">
+                                <input type="text" name="draftUser" style="width: 100%;">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="width:100px;padding: 10px !important; height: 22px; vertical-align: middle; border: 1px solid black; text-align: center; font-weight: bold;">
+                                기안부서
+                            </td>
+                            <td style="width:200px;padding: 10px !important; height: 22px; vertical-align: middle; border: 1px solid black; text-align: left;">
+                                <input type="text" name="draftDept" style="width: 100%;">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="width:100px;padding: 10px !important; height: 22px; vertical-align: middle; border: 1px solid black; text-align: center; font-weight: bold;">
+                                기안일
+                            </td>
+                            <td style="width:200px;padding: 10px !important; height: 22px; vertical-align: middle; border: 1px solid black; text-align: left;">
+                                <input type="date" name="draftDate" style="width: 100%;">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="width:100px;padding: 10px !important; height: 22px; vertical-align: middle; border: 1px solid black; text-align: center; font-weight: bold;">
+                                문서번호
+                            </td>
+                            <td style="width:200px;padding: 10px !important; height: 22px; vertical-align: middle; border: 1px solid black; text-align: left;">
+                                <input type="text" name="docNo" style="width: 100%;">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+            <td style="width: 500px; text-align: right; padding: 20px!important; border: 0!important; vertical-align: top !important" class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                <!-- 결재선 신청 및 승인 테이블을 가로로 배치 -->
+               <!-- 승인자 1 테이블 -->
+                <table border="1px" style="border-collapse: collapse !important; color: black; border: 1px solid black; font-size: 12px; font-family: malgun gothic,dotum,arial,tahoma; margin-bottom: 20px; display: inline-block;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 5px; text-align: center;">신청자</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>홍길동</td>
+                        </tr> 
+                        <tr>
+                            <td>2025/02/23</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- 승인자 1 테이블 -->
+                <table border="1px" style="border-collapse: collapse !important; color: black;  font-size: 12px; font-family: malgun gothic,dotum,arial,tahoma; margin-bottom: 20px; display: inline-block;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 5px; text-align: center;">승인자 1</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>승인자 1</td>
+                        </tr>
+                        <tr>
+                            <td>결재대기</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+               <!-- 승인자 2 테이블 -->
+                <table border="1px" style="border-collapse: collapse !important; color: black; font-size: 12px; font-family: malgun gothic,dotum,arial,tahoma; margin-bottom: 20px; display: inline-block;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 5px; text-align: center;">승인자 2</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>승인자 2</td>
+                        </tr>
+                        <tr>
+                            <td>결재대기</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<br>
+
+<table class="__se_tbl" style="width: 800px; margin-top : 0px; border-collapse: collapse !important; color: black; background: white; border: 1px solid black; font-size: 12px; font-family: malgun gothic,dotum,arial,tahoma;">
+    <tbody>
+        <tr>
+            <td style="padding: 5px; border: 1px solid black; height: 25px; text-align: center; color: rgb(0, 0, 0); font-size: 14px; font-weight: bold; vertical-align: middle;">
+                휴가 종류
+            </td>
+            <td style="padding: 5px; border: 1px solid black; height: 25px; text-align: left; color: rgb(0, 0, 0); font-size: 14px; font-weight: normal; vertical-align: middle;">
+                <input type="text" name="vacationType" style="font-family: malgun gothic, dotum, arial, tahoma; font-size: 11pt; line-height: normal; margin-top: 0px; margin-bottom: 0px;">
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 5px; border: 1px solid black; height: 25px; text-align: center; color: rgb(0, 0, 0); font-size: 14px; font-weight: bold; vertical-align: middle;">
+                기간 및 일시
+            </td>
+            <td style="padding: 3px; border: 1px solid black; width: 700px; height: 22px; text-align: left; color: rgb(0, 0, 0); font-size: 12px; vertical-align: middle;">
+                <input type="date" name="startDate" class="ipt_editor ipt_editor_date" style="font-size: 12px;"> ~ 
+                <input type="date" name="endDate" class="ipt_editor ipt_editor_date" style="font-size: 12px;">
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 5px; border: 1px solid black; height: 25px; text-align: center; color: rgb(0, 0, 0); font-size: 14px; font-weight: bold; vertical-align: middle;">
+                반차 여부
+            </td>
+            <td style="padding: 5px; border: 1px solid black; height: 25px; text-align: left; color: rgb(0, 0, 0); font-size: 14px; font-weight: normal; vertical-align: middle;">
+                <input type="checkbox" name="halfDay">
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 5px; border: 1px solid black; height: 25px; text-align: center; color: rgb(0, 0, 0); font-size: 14px; font-weight: bold; vertical-align: middle;">
+                연차 일수
+            </td>
+            <td style="padding: 3px; border: 1px solid black; width: 700px; height: 22px; text-align: left; color: rgb(0, 0, 0); font-size: 12px; vertical-align: middle;">
+                <input type="number" name="vacationDays" style="font-family: malgun gothic, dotum, arial, tahoma; font-size: 11pt; line-height: normal; margin-top: 0px; margin-bottom: 0px;">
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 5px; border: 1px solid black; height: 80px; text-align: center; color: rgb(0, 0, 0); font-size: 14px; font-weight: bold; vertical-align: middle;">
+                <b style="color: rgb(255, 0, 0);">*</b> 휴가 사유 
+            </td>
+            <td style="padding: 3px; border: 1px solid black; width: 700px; height: 100px; text-align: left; color: rgb(0, 0, 0); font-size: 12px; vertical-align: top;">
+                <textarea class="txta_editor" name="vacationReason" style="width: 100%;"></textarea>
+            </td>
+        </tr>
+    </tbody>
+</table>
+</body>
+</html>

@@ -1,0 +1,172 @@
+package kr.or.ddit.attendance.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.or.ddit.annual.service.AnnualMangeService;
+import kr.or.ddit.attendance.service.AttendanceService;
+import kr.or.ddit.attendance.vo.AttendanceVO;
+import kr.or.ddit.department.service.DepartmentService;
+import kr.or.ddit.department.vo.DepartmentVO;
+import kr.or.ddit.employee.service.EmployeeService;
+import kr.or.ddit.team.vo.TeamVO;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * @author 정태우
+ * @since 2025. 3. 12.
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      			수정자           수정내용
+ *  -----------   	-------------    ---------------------------
+ *  2025. 3. 12.     	정태우	          최초 생성
+ *
+ * </pre>
+ */
+@Controller
+@Slf4j
+public class AttendanceReadController {
+
+	@Autowired
+	AttendanceService service;
+
+	@Autowired
+	AnnualMangeService AMservice;
+	
+	@Autowired
+	DepartmentService Dservice;
+
+	/**
+	 * 전사 근태 기록을 조회
+	 * @param model
+	 * @return
+	 */
+	@GetMapping("/attendance/list")
+	public String AttendanceList(
+		  Model model
+		, @RequestParam(value="teamId",required = false) String teamId
+	) {
+		
+		model.addAttribute("departmentList",service.departmentList(teamId));
+		model.addAttribute("teamList",service.teamList(teamId));
+		model.addAttribute("attendanceList",service.attendanceList());
+		model.addAttribute("todayAlive",Dservice.TodayAlive());
+		return "tiles:attendance/attendanceList";
+	}
+	
+	@GetMapping("/attendanceRest/list")
+	@ResponseBody
+	public Map<String, Object> AttendanceListRest(Model model) {
+//		model.addAttribute("departmentList",service.departmentList(null));
+//		model.addAttribute("teamList",service.teamList(null));
+//		model.addAttribute("attendanceList",service.attendanceList());
+//		model.addAttribute("todayAlive",Dservice.TodayAlive());
+		Map<String, Object> result = new HashMap<>();
+		result.put("departmentList", service.departmentList(null));
+		result.put("teamList", service.teamList(null));
+		result.put("attendanceList", service.attendanceList());
+		result.put("todayAlive", Dservice.TodayAlive());
+		return result;
+	}
+
+	/**
+	 * 한명의 직원에 근태 기록을 조회 (현재 안씀)
+	 * @param model
+	 * @param empId
+	 * @param startDate
+	 * @param endDate
+	 * @return
+	 */
+	@GetMapping("/attendance/Detail")
+	public String AttendanceDetail(
+		   Model model
+		, @RequestParam("empId") String empId
+		, @RequestParam(value = "startDate", required = false) String startDate
+		, @RequestParam(value = "endDate", required = false) String endDate
+	){
+		model.addAttribute("attendanceList",service.attendanceDetail(empId,startDate,endDate));
+		model.addAttribute("employee",service.Employee(empId));
+		return "tiles:attendance/attendanceDetail";
+
+	}
+
+	/**
+	 * 한명의 근태 기록을 달 별로 조회
+	 * @param model
+	 * @param empId
+	 * @param workDate
+	 * @return
+	 */
+	@GetMapping("/myAttendance")
+	public String CheckList(Model model
+			, @RequestParam("empId") String empId
+			, @RequestParam(value="workDate", required = false) String workDate
+	) {
+		model.addAttribute("employee",service.Employee(empId));
+		model.addAttribute("myAttendance",service.myAttendance(empId,workDate));
+		model.addAttribute("annualManageList",AMservice.annualManageList());
+		return "tiles:attendance/myAttendance";
+	}
+
+	/**
+	 * 전사 근태 조회에서 부서,팀,날짜 별로 조회할 수 있음
+	 * @param departmentId
+	 * @param teamId
+	 * @param date
+	 * @return
+	 */
+	@GetMapping("/filter")
+    @ResponseBody
+    public  Map<String, Object> filterAttendance(
+        @RequestParam(value = "departmentId", required = false) String departmentId,
+        @RequestParam(value = "teamId", required = false) String teamId,
+        @RequestParam(value = "date", required = false) String date
+    ) {
+		Map<String, Object> result = new HashMap<>();
+		List<AttendanceVO> attendanceList = service.attendanceList(departmentId, teamId, date);
+	    List<DepartmentVO> TodayAlive = Dservice.TodayAlive(date);
+	    result.put("attendanceList", attendanceList);
+	    result.put("TodayAlive", TodayAlive);
+        return result;
+    }
+
+
+//	/** 
+//	 *  QR스캔 시 메인 프로필 출퇴기록 업데이트
+//	 * @param empId
+//	 * @return
+//	 */
+//	@GetMapping("/content/update")
+//	@ResponseBody
+//	public Map<String, Object> updateAttendance(@RequestParam("empId")String empId) {
+//	    Map<String, Object> response = new HashMap<>();
+//	    System.err.println("이거 뭐하는 거였더라 ㅠㅠ?");
+//	    response.put("response", service.updateAttendance(empId));
+//		return response;
+//	}
+//	
+	@PostMapping("/annaulCheck/Attendance")
+	public Map<String, Object> annaulCheckAttendance(){
+		Map<String, Object> result = new HashMap<>();
+		
+		
+		return null;
+	}
+	
+}

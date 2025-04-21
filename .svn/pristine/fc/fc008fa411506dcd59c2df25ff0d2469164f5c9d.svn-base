@@ -1,0 +1,689 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://www.springframework.org/tags/form" prefix="form" %>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="security" %>
+<style>
+.card-body {
+    display: flex;
+    flex-direction: column;
+}
+#desc {
+	font-size: 0.75rem;
+	color: #666;
+	text-align: left;
+	white-space: nowrap; /* 줄바꿈 방지 */
+}
+
+#calendar {
+    width: 80%;
+    margin: 0 auto; /* 중앙 정렬 */
+    caret-color: transparent;
+}
+/* 전체 스타일 */
+.schedule-item {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 8px 16px;  /* 패딩을 더 줄여서 세로 크기 축소 */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 12px;  /* 카드 간격을 줄임 */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    font-family: 'Arial', sans-serif;
+    max-width: 500px;  /* 카드 너비를 그대로 유지 */
+    word-wrap: break-word;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.schedule-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* 일정 헤더 */
+.schedule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;  /* 일정 간격 줄이기 */
+}
+
+.schedule-title {
+    font-size: 0.85rem;  /* 타이틀 크기 줄이기 */
+    font-weight: bold;
+    color: #007bff;
+}
+
+.schedule-empName {
+    font-size: 0.85rem;  /* 직원 이름 크기 줄이기 */
+    color: #555;
+    font-style: italic;
+}
+
+/* 일정 설명 */
+.schedule-details {
+    font-size: 0.85rem;  /* 일정 설명 텍스트 크기 줄이기 */
+    color: #444;
+    margin: 6px 0;  /* 마진 축소 */
+}
+
+.schedule-context {
+    font-size: 1rem;  /* 설명 텍스트 크기 더 줄이기 */
+    color: #666;
+    margin-bottom: 6px;
+}
+
+/* 일정 날짜 */
+.schedule-dates-wrapper {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;  /* 날짜 글씨 크기 줄이기 */
+    color: #888;
+}
+
+.schedule-startDate,
+.schedule-endDate {
+    display: flex;
+    align-items: center;
+}
+
+.schedule-startDate i,
+.schedule-endDate i {
+    margin-right: 4px;  /* 아이콘 간격 더 좁히기 */
+}
+
+.schedule-startDate {
+    color: #388e3c;
+}
+
+.schedule-endDate {
+    color: #f44336;
+}
+
+/* 아이콘 스타일 */
+.schedule-header i {
+    font-size: 1rem;  /* 아이콘 크기 줄이기 */
+    color: #007bff;
+}
+
+/* 버튼 스타일 */
+button[type="submit"] {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 16px;  /* 버튼 패딩 줄이기 */
+    font-size: 0.9rem;  /* 버튼 글꼴 크기 줄이기 */
+    border-radius: 20px;  /* 버튼 모서리 둥글게 */
+    transition: background-color 0.3s ease;
+    border: none;
+}
+#scheduleList {
+    max-height: 600px;  /* 최대 높이 지정 */
+    overflow-y: auto;   /* 세로 스크롤 활성화 */
+    overflow-x: hidden; /* 가로 스크롤 숨김 */
+    padding: 5px; /* 내부 여백 */
+}
+button[type="submit"]:hover {
+    background-color: #0056b3;
+}
+.color-circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1px solid #ccc;
+    vertical-align: middle;
+}
+
+#calendar-legend {
+	margin-left:205px;
+    margin-bottom: 1rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    text-align: left;
+}
+</style>
+
+
+<script
+	src="${pageContext.request.contextPath}/resources/fullcalendar-6.1.15/dist/index.global.js"></script>
+<security:authentication property="principal" var="principal" />
+<div class="card">
+	<div class="card-body">
+
+		<!-- 설명: 캘린더 위 -->
+		<div id="calendar-legend" class="mb-3">
+			<span class="me-3">
+				<span class="color-circle" style="background-color: black;"></span>
+				<strong style="color: black;">전체일정</strong>
+			</span>
+			<span>
+				<span class="color-circle" style="background-color: green;"></span>
+				<strong style="color: green;">개인일정</strong>
+			</span>
+		</div>
+
+		<!-- 캘린더와 설명을 함께 중앙정렬 -->
+		<div class="calendar-wrapper">
+			<div id="calendar"></div>
+		</div>
+
+	</div>
+</div>
+<!-- Modal -->
+<div class="modal fade" id="exampleModal__" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">일정 상세보기</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <!-- 왼쪽 - 일정 리스트 -->
+                    <div class="col-md-6">
+                        <p id="modalDate" class="fs-5 fw-bold">날짜:</p>
+                        <div id="scheduleList" class="list-group list-group-flush">
+                            <!-- 동적으로 추가될 일정들 -->
+                        </div>
+                    </div>
+
+                    <!-- 오른쪽 - 일정 저장 폼 -->
+                    <div class="col-md-6">
+                        <h5>일정 저장</h5>
+                        <form:form id="scheduleForm" modelAttribute="schedule" action="${pageContext.request.contextPath}/schedule/insert" method="POST">
+                            <div class="mb-3">
+                                <label for="inputTitle" class="form-label">제목</label>
+                                <input type="text" class="form-control" id="inputTitle" name="scheduleTitle" placeholder="일정 제목">
+                            </div>
+                                <input type="hidden" class="form-control" id="inputName" name="empId" value="${principal.realUser.empId}">
+                            <div class="mb-3">
+                                <label for="inputStartDate" class="form-label">시작</label>
+                                <input type="datetime-local" class="form-control" id="inputStartDate" name="startDate" >
+                            </div>
+                            <div class="mb-3">
+                                <label for="inputEndDate" class="form-label">종료</label>
+                                <input type="datetime-local" class="form-control" id="inputEndDate" name="endDate">
+                            </div>
+                            <div class="mb-3">
+                                <label for="inputDescription" class="form-label">설명</label>
+                                <textarea class="form-control" id="inputDescription" name="scheduleContext" rows="3" placeholder="일정 설명"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="inputVisibility" class="form-label">공개 범위</label>
+                                <select class="form-select" id="inputVisibility" name="scheduleVisibility">
+                                    <option value="P">전체</option>
+                                    <option value="D">나만보기</option>
+                                </select>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" id="insertButton">저장</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                            </div>
+                        </form:form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 수정 삭제 모달 -->
+<div class="modal fade" id="editDeleteModal" tabindex="-1" aria-labelledby="editDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editDeleteModalLabel">일정 수정/삭제</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form:form id="editForm" method="post" action="${pageContext.request.contextPath}/schedule/update" modelAttribute="schedule">
+                    <div class="mb-3">
+                    	<input type="hidden" class="form-control" id="editScheduleId" name="scheduleId" value="${schedule.scheduleId}">
+                    	<input type="hidden" class="form-control" id="editEmpId" name="empId" value="${schedule.empId}">
+                        <label for="editTitle" class="form-label">제목</label>
+                        <input type="text" class="form-control" id="editTitle" name="scheduleTitle" placeholder="제목" value="${schedule.scheduleTitle}">
+                    </div>
+
+                    <!-- 공개 범위 추가 -->
+                    <div class="mb-3">
+	                        <label for="updateVisibility" class="form-label">공개 범위</label>
+	                        <select class="form-select" id="updateVisibility" name="scheduleVisibility">
+	                            <option value="P" ${schedule.scheduleVisibility == 'P' ? 'selected' : ''}>전체</option>
+	                            <option value="D" ${schedule.scheduleVisibility == 'D' ? 'selected' : ''}>나만보기</option>
+	                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editStartDate" class="form-label">시작 / 종료</label>
+                        <div class="d-flex justify-content-between">
+                            <input type="datetime-local" class="form-control me-2" id="editStartDate" name="startDate" value="${schedule.startDate}">
+                            <input type="datetime-local" class="form-control ms-2" id="editEndDate" name="endDate" value="${schedule.endDate}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editDescription" class="form-label">내용</label>
+                        <textarea class="form-control" id="editDescription" name="scheduleContext" rows="3" placeholder="일정 내용">${schedule.scheduleContext}</textarea>
+                    </div>
+            </div>
+            <div class="modal-footer">
+				    <button type="submit" class="btn btn-primary" id="saveButton">수정 저장</button>
+             	    <button id="deleteEventButton" class="btn btn-danger">삭제</button>
+                </form:form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var scheduleList = [];
+    <c:if test="${not empty scheduleList}">
+        <c:forEach items="${scheduleList}" var="x">
+            scheduleList.push({
+            	scheduleId : "${x.scheduleId}",
+                empId: "${x.empId}",
+                empName : "${x.empName}",
+                scheduleTitle: "${x.scheduleTitle}",
+                scheduleContext: `${x.scheduleContext}`,
+                startDate: "${x.startDate}",
+                endDate: "${x.endDate}",
+                scheduleVisibility: "${x.scheduleVisibility}",
+                colorCode: "${x.colorCode}"
+            });
+        </c:forEach>
+    </c:if>;
+
+ 	// 저장시 Title, desc 널값 방지
+    document.querySelector("#insertButton")?.addEventListener("click", function() {
+    	    // 입력값 가져오기
+    	    const title = document.getElementById("inputTitle").value.trim();
+    	    const desc = document.getElementById("inputDescription").value.trim();
+
+    	    // 널값 검사
+    	    if (!title || !desc ) {
+    	        alert("제목과 설명을 입력해주세요.");
+    	        return;
+    	    }
+    	    // 유효성 통과 시 폼 submit
+    	    document.getElementById("scheduleForm").submit();
+    });
+
+  	//일정 변경
+    const startInput = document.querySelector("#inputStartDate");
+	const endInput = document.querySelector("#inputEndDate");
+
+	let preStartDate = "";
+	let preEndDate = "";
+
+	// 포커스 시 기존 값 저장
+	startInput?.addEventListener("focus", function () {
+	    preStartDate = startInput.value;
+	});
+	endInput?.addEventListener("focus", function () {
+	    preEndDate = endInput.value;
+	});
+
+	// 시작일 변경 시 검사
+	startInput?.addEventListener("change", function () {
+	    const startValue = startInput.value;
+	    const endValue = endInput.value;
+
+	    if (!startValue || !endValue) return;
+
+	    const startDate = new Date(startValue);
+	    const endDate = new Date(endValue);
+
+	    if (startDate > endDate) {
+	        alert("시작일이 종료일보다 늦을 수 없습니다.");
+	        startInput.value = preStartDate;
+	        startInput.focus();
+	    }
+	});
+
+	// 종료일 변경 시 검사
+	endInput?.addEventListener("change", function () {
+	    const startValue = startInput.value;
+	    const endValue = endInput.value;
+
+	    if (!startValue || !endValue) return;
+
+	    const startDate = new Date(startValue);
+	    const endDate = new Date(endValue);
+
+	    if (startDate > endDate) {
+	        alert("종료일이 시작일보다 빠를 수 없습니다.");
+	        endInput.value = preEndDate;
+	        endInput.focus();
+	    }
+	});
+
+
+    let now = new Date();
+    let formattedDate = now.toISOString().split('T')[0];
+
+    var calendarEl = document.getElementById('calendar');
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+    	 locale: 'ko', // 한국어
+    	dateClick: function(info) {
+    	    var clickedDate = info.dateStr;
+
+    	    // 클릭한 날짜에 해당하는 일정들을 필터링
+    	    var filteredSchedules = scheduleList.filter(function(event) {
+    	        var eventStartDate = new Date(event.startDate);
+    	        var eventEndDate = new Date(event.endDate);
+    	        var clickedDateObj = new Date(clickedDate);
+    	        return eventStartDate.toDateString() === clickedDateObj.toDateString();
+    	    });
+
+    	    // 날짜를 동적으로 삽입하기 위해 모달 내 p 태그를 생성
+    	    var modalDate = document.getElementById('modalDate');
+    	    modalDate.innerHTML = `날짜: \${clickedDate}`;
+
+    	    // 일정 리스트 추가
+    	    var scheduleListContainer = document.getElementById('scheduleList');
+    	    scheduleListContainer.innerHTML = ''; // 이전 리스트를 비운다
+
+    	    if (filteredSchedules.length > 0) {
+    	        filteredSchedules.forEach(function(schedule) {
+    	            const currentUserId = "${principal.realUser.empId}"; 
+
+    	            // 공개 범위가 "나만보기(D)"일 경우, 작성자만 볼 수 있도록 처리
+    	            if (schedule.scheduleVisibility === 'D' && schedule.empId !== currentUserId) {
+    	                return; // 다른 사람은 해당 일정 안 보이게
+    	            }
+    	            var listItem = document.createElement('li');
+    	            listItem.classList.add('list-group-item');
+    	            listItem.innerHTML = `
+    	                <div class="schedule-item">
+    	                    <div class="schedule-header">
+    	                        <span class="schedule-title">\${schedule.scheduleTitle}</span>
+    	                        <span class="schedule-empName">\${schedule.empName}</span>
+    	                    </div>
+    	                    <div class="schedule-details">
+    	                        <div class="schedule-context">\${schedule.scheduleContext}</div>
+    	                    </div>
+    	                    <div class="schedule-dates">
+    	                        <div class="schedule-dates-wrapper">
+    	                            <span class="schedule-startDate">
+    	                                <i class="fas fa-calendar-day"></i> \${schedule.startDate}
+    	                            </span>
+    	                            <span class="schedule-endDate">
+    	                                <i class="fas fa-calendar-alt"></i> \${schedule.endDate}
+    	                            </span>
+    	                        </div>
+    	                    </div>
+    	                </div>
+    	            `;
+    	            scheduleListContainer.appendChild(listItem);
+    	        });
+    	    } else {
+    	        scheduleListContainer.innerHTML = '<li class="list-group-item">이 날짜에는 일정이 없습니다.</li>';
+    	    }
+
+    	    let startDate = document.querySelector("#inputStartDate");
+    	    let endDate = document.querySelector("#inputEndDate");
+
+			startDate.value = `\${clickedDate}T09:00`;
+			endDate.value = `\${clickedDate}T18:00`;
+
+
+    	    var start = new Date(startDate.value);
+    	    var end = new Date(endDate.value);
+    	    var currentDate = new Date(start);
+
+    	    // 클릭된 날짜를 기준으로 여러 날짜에 대해 일정 추가
+    	    var currentDate = new Date(startDate);
+    	    while (currentDate <= end) {
+    	        let currentFormattedDate = currentDate.toISOString().split('T')[0];
+
+    	        // 색상 선택에 따른 색상 코드 설정
+    	        let visibility = document.querySelector("#inputVisibility").value;
+    	        let colorCode = visibility === 'P' ? '#000000' : '#2A9D8F';  // P와 D에 맞는 색상 설정
+    	        // 이벤트 객체 추가
+    	        scheduleList.push({
+    	            scheduleId: new Date().getTime(),  // unique scheduleId
+    	            empId: "${principal.realUser.empId}",
+    	            scheduleTitle: document.getElementById('inputTitle').value,
+    	            scheduleContext: document.getElementById('inputDescription').value,
+    	            startDate: currentFormattedDate + 'T00:00',
+    	            endDate: currentFormattedDate + 'T23:59',
+    	            scheduleVisibility: visibility,
+    	            colorCode: colorCode
+    	        });
+
+    	        // 날짜를 하루씩 증가
+    	        currentDate.setDate(currentDate.getDate() + 1);
+    	    }
+
+    	    // 캘린더에 이벤트 추가
+    	    calendar.addEventSource(scheduleList);
+
+    	    // 모달 띄우기
+    	    var myModal = new bootstrap.Modal(document.getElementById('exampleModal__'));
+    	    myModal.show();
+    	},
+
+        headerToolbar: {
+            left: 'prevYear,prev,next,nextYear today',
+            center: 'title',
+            right: 'dayGridMonth,dayGridWeek,dayGridDay'
+        },
+        initialDate: formattedDate,
+        navLinks: true,
+        editable: true,
+        dayMaxEvents: true,
+        events: scheduleList
+        .filter(event => {
+            const loggedInEmpId = '${principal.realUser.empId}';
+            if (event.scheduleVisibility === 'P') return true;
+            return event.empId === loggedInEmpId; //일정 상태가 D일 경우 작성자 달력에만 일정이 뜸
+        }).map(event => ({
+        	empId : event.empId,
+        	scheduleId : event.scheduleId,
+            title: event.scheduleTitle,
+            empName : event.empName,
+            start: event.startDate,
+            end: event.endDate,
+            description: event.scheduleContext,
+            backgroundColor: event.scheduleVisibility === 'P' ? 'black' : 'green',   // P -> black, D -> green
+            borderColor: event.scheduleVisibility === 'P' ? 'black' : 'green',
+            scheduleVisibility: event.scheduleVisibility
+        })),
+        eventTimeFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        },
+        // 일정을 드래그해서 일정을 변경 기존 데이터들은 그대로 가져가고 일자만 바뀜
+        eventDrop:function(info){
+        	// 변경된 시작일과 종료일 추출
+            let updatedStartDate = info.event.start.toLocaleString('sv-SE').slice(0, 16);
+            let updatedEndDate = info.event.end.toLocaleString('sv-SE').slice(0, 16);
+            let empId = info.event.extendedProps.empId;
+            let title = info.event.title;
+            let description = info.event.extendedProps.description;
+            let scheduleVisibility = info.event.extendedProps.scheduleVisibility;
+            const loggedInEmpId = '${principal.realUser.empId}';
+
+            console.log(empId)
+            console.log(loggedInEmpId)
+            if (empId !== loggedInEmpId) {
+            	// 본인이 아니면 일정 수정 불가
+            	alert("남의 일정은 변경할 수 없습니다")
+                window.location.reload();
+            	return;
+            }
+
+            // 서버에 전달할 데이터 준비 (이벤트 ID, 시작일, 종료일)
+            let updatedEventData = {
+                scheduleId: info.event.extendedProps.scheduleId,  // 일정 ID
+                startDate: updatedStartDate,
+                endDate: updatedEndDate,
+                empId:empId,
+                scheduleTitle:title,
+                scheduleContext:description,
+                scheduleVisibility:scheduleVisibility
+            };
+			console.log(updatedEventData)
+
+            // Ajax로 서버에 데이터 전송 (일정 업데이트)
+            $.ajax({
+                url: "/schedule/update",  // 서버에서 처리할 URL (수정된 일정을 처리할 URL)
+                type: "POST",             // POST 방식
+                data: updatedEventData,   // 변경된 시작일과 종료일 데이터를 전송
+                dataType: "json",         // 응답을 JSON으로 처리
+                success: function(response) {
+                    window.location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error(error);  // 에러 출력
+                    alert("일정을 업데이트하는 데 문제가 발생했습니다.");
+                    window.location.reload();
+                }
+            });
+
+        },
+        //일정을 클릭하면 수정/삭제 할 수 있는 모달 창
+        eventClick: function(info) {
+            // 모달에 클릭된 이벤트 정보 채우기
+            document.getElementById('editTitle').value = info.event.title;
+            document.getElementById('editDescription').value = info.event.extendedProps.description || '';
+            document.getElementById('editStartDate').value = info.event.start.toLocaleString('sv-SE').slice(0, 16);
+            document.getElementById('editEndDate').value = info.event.end.toLocaleString('sv-SE').slice(0, 16);
+            document.getElementById('updateVisibility').value = info.event.extendedProps.scheduleVisibility;
+            document.getElementById('editScheduleId').value = info.event.extendedProps.scheduleId;
+            const empId =  document.getElementById('editEmpId').value = info.event.extendedProps.empId;
+            const loggedInEmpId = '${principal.realUser.empId}';
+
+            if (empId === loggedInEmpId) {
+                // 본인일 경우에만 버튼 보이게
+                document.querySelector('#saveButton').style.display = 'inline-block';
+                document.querySelector('#deleteEventButton').style.display = 'inline-block';
+            } else {
+                // 본인이 아니면 숨김
+                document.querySelector('#saveButton').style.display = 'none';
+                document.querySelector('#deleteEventButton').style.display = 'none';
+            }
+
+            // 수정/삭제 모달을 띄운다
+            var myModal = new bootstrap.Modal(document.getElementById('editDeleteModal'));
+            myModal.show();
+
+            // 수정 폼 제출 시 일정 수정
+            let updateForm = document.getElementById('editForm');
+
+            // 수정된 폼 데이터를 폼 필드에 반영한 후 FormData를 생성해야 합니다
+            updateForm.onsubmit = function(e) {
+                e.preventDefault();
+
+                // 시작일과 종료일 가져오기
+                const startInput = document.getElementById('editStartDate');
+                const endInput = document.getElementById('editEndDate');
+
+                const startDate = new Date(startInput.value);
+                const endDate = new Date(endInput.value);
+
+                // 유효성 검사
+                if (startDate > endDate) {
+                    alert("시작일이 종료일보다 늦을 수 없습니다.");
+                    startInput.focus();
+                    return;
+                }
+
+ 				let formData = new FormData(updateForm);
+
+                // Ajax로 서버에 수정된 데이터 전송
+                $.ajax({
+                    url: updateForm.action,  // 폼의 action을 사용
+                    type: "post",            // POST 방식
+                    data: formData,          // FormData를 전송
+                    processData: false,      // jQuery가 데이터를 처리하지 않도록 설정 (FormData는 이미 처리됨)
+                    contentType: false,      // jQuery가 content-type을 설정하지 않도록 설정 (FormData는 이미 설정됨)
+                    dataType: "json",        // 응답 데이터를 JSON으로 처리
+                    success: function(data) {
+                    	window.location.reload();
+                    },
+                    error: function() {
+                        alert("데이터를 불러오는 중 오류가 발생했습니다.");
+                    }
+                });
+
+                // 수정된 값으로 이벤트 업데이트
+                info.event.setProp('title', document.getElementById('editTitle').value);
+                info.event.setStart(document.getElementById('editStartDate').value);
+                info.event.setEnd(document.getElementById('editEndDate').value);
+                info.event.setExtendedProp('description', document.getElementById('editDescription').value);
+
+                // 수정된 공개 범위에 맞는 색상 반영
+                var visibility = document.getElementById('updateVisibility').value;
+                var color = visibility === 'P' ? 'blue' : 'green';
+                info.event.setProp('backgroundColor', color);
+                info.event.setProp('borderColor', color);
+
+                myModal.hide();
+            };
+
+            // 삭제 버튼 클릭 시
+            document.getElementById('deleteEventButton').onclick = function() {
+
+                let formData = new FormData(updateForm);
+
+                // 삭제 확인 모달 먼저 띄우기
+                Swal.fire({
+                    title: '정말 삭제하시겠습니까?',
+                    text: "삭제된 일정은 복구할 수 없습니다.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: '삭제',
+                    cancelButtonText: '취소'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // 유저가 '삭제' 누르면 AJAX 요청
+                        $.ajax({
+                            url: "/schedule/delete",
+                            type: "post",
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            dataType: "json",
+                            success: function(data) {
+                                // 캘린더에서 이벤트 삭제
+                                info.event.remove();
+
+                                // 모달 닫기
+                                myModal.hide();
+
+                                // ✅ SweetAlert2로 성공 알림
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '삭제 완료',
+                                    text: '일정이 성공적으로 삭제되었습니다.',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                            },
+                            error: function() {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: '오류 발생',
+                                    text: '삭제 중 문제가 발생했습니다.'
+                                });
+                            }
+                        });
+                    }
+
+                });
+            };
+
+        }
+    });
+
+    calendar.render();
+});
+</script>
+

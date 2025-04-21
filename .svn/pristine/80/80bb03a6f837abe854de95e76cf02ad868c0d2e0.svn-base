@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.empcardss.EmpCardMapper">
+	
+	<resultMap type="EmpCardVO" id="EmpCardResultMap" autoMapping="true">
+		<id property="cardId" column="card_id" />
+		
+		<association property="employee" javaType="EmployeeVO" autoMapping="true"/>
+		<association property="Attendance" javaType="AttendanceVO" autoMapping="true"/>
+		<association property="department" javaType="DepartmentVO" autoMapping="true"/>
+		<association property="team" javaType="TeamVO" autoMapping="true"/>
+		<association property="rank" javaType="RankVO" autoMapping="true"/>
+		<association property="job" javaType="JobVO" autoMapping="true"/>
+		<association property="position" javaType="PositionVO" autoMapping="true"/>
+
+	</resultMap>
+	
+	<select id="selectRecordList" resultMap="EmpCardResultMap">
+		SELECT 
+		     c.CARD_ID
+		    , e.EMP_ID
+		    , e.NAME
+		    , d.DEPARTMENT_NAME
+		    , t.TEAM_NAME
+		FROM 
+		    EMP_CARD c
+		JOIN 
+		    EMPLOYEE e ON c.EMP_ID = e.EMP_ID
+		JOIN 
+		    DEPARTMENT d ON e.DEPARTMENT_ID = d.DEPARTMENT_ID
+		JOIN 
+		    TEAM t ON e.TEAM_ID = t.TEAM_ID
+	</select>
+	
+	<select id="selectRecord">
+		SELECT
+		     card_id
+		  , emp_id
+		  , certificate_id
+		  , pa_id
+		  , resignation_date
+		  , resignation_reason
+		  , passbook
+		  , reward_penalty
+		  , work_status
+		  , emergency_number
+		  , health
+		  , hobby
+		  , specialty
+		  , maritalstatus
+		  , children
+		  , familyinfo
+		  , household
+		  , school
+		  , major
+		  , graduation
+		  , degree
+		  , languagescore
+		  , workexperience
+		  , promotionhistory
+		  , performence
+		  , evaluation
+		  , kpi
+		  , feedback
+		  , selfassessment
+		  , bonusincentives
+		  , performancebonus
+		  , benefit
+		  , internaltraining
+		  , externaltraining
+		  , safetytraining
+		  , healthcheck
+		  , nationality
+		  , gender
+		FROM
+		    emp_card
+	
+	</select>
+	
+	<update id="updateRecord">
+		update
+	</update>
+	
+	<insert id="insertRecord">
+		insert
+	</insert>
+	
+</mapper>
+

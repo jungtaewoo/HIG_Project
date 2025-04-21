@@ -1,0 +1,557 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<style>
+body {
+	font-family: 'Pretendard', sans-serif;
+	background-color: #f4f6f8;
+	color: #333;
+}
+
+.container {
+	margin-top: 30px;
+	width: 1600px;
+}
+
+.card {
+	margin-bottom: 30px;
+	border: none;
+	border-radius: 15px;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+	overflow: hidden;
+	width: 1600px;
+}
+
+.card-header {
+	font-size: 1.3rem;
+	font-weight: 600;
+	background-color: #ffffff;
+	padding: 20px;
+	border-bottom: 1px solid #e0e0e0;
+	width: 1600px;
+}
+
+.card-body {
+	padding: 25px;
+	background-color: #ffffff;
+	width: 1600px;
+}
+
+.form-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 20px;
+	align-items: flex-end;
+}
+
+.filter-section {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 20px;
+}
+
+.filter-group {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	min-width: 150px;
+}
+
+.filter-group label {
+	font-weight: 600;
+	margin-bottom: 6px;
+	text-align: center;
+}
+
+.filter-group select, .filter-group input[type="date"] {
+	width: 160px;
+	text-align: center;
+	border-radius: 6px;
+	padding: 6px 10px;
+}
+
+.button-group {
+	display: flex;
+	gap: 10px;
+}
+
+label {
+	font-weight: 600;
+	margin-bottom: 8px;
+	display: inline-block;
+}
+
+select, input[type="date"] {
+	width: 100%;
+	padding: 10px 12px;
+	border: 1px solid #ced4da;
+	border-radius: 8px;
+	background-color: #f9f9f9;
+	transition: border-color 0.3s ease-in-out;
+}
+
+select:focus, input[type="date"]:focus {
+	border-color: #0d6efd;
+	outline: none;
+	background-color: #ffffff;
+}
+
+.btn-group {
+	display: flex;
+	gap: 12px;
+}
+
+button.btn {
+	padding: 10px 18px;
+	font-weight: 500;
+	border-radius: 8px;
+	transition: all 0.2s ease-in-out;
+}
+
+button.btn:hover {
+	transform: translateY(-1px);
+}
+
+.table th, .table td {
+	vertical-align: middle;
+	padding: 14px;
+}
+
+.table th {
+	background-color: #f1f3f5;
+	font-weight: bold;
+	color: #495057;
+}
+
+.table td {
+	background-color: #ffffff;
+	white-space: nowrap;
+}
+
+.filter-section select {
+	width: 200px;
+}
+
+.emp-link {
+	display: inline-block;
+	padding: 6px 14px;
+	color: #0d6efd;
+	border-radius: 6px;
+	font-weight: 500;
+	font-size: 17px;
+	text-decoration: none;
+	transition: background-color 0.25s ease, color 0.25s ease, box-shadow
+		0.25s ease;
+}
+
+.emp-link:hover {
+	background-color: #dbeaff;
+	color: #084298;
+	box-shadow: 0 2px 6px rgba(0, 123, 255, 0.25);
+}
+
+.emp-link:active {
+	background-color: #c7dbff;
+	color: #052c65;
+}
+</style>
+<link
+	href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker.min.css"
+	rel="stylesheet">
+<script
+	src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
+
+
+<div class="container-fluid" style="max-width: 1600px; margin: 0 auto; padding: 20px;">
+	<div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+		<!-- 좌측: 버튼 -->
+		<div class="mb-2">
+			<button type="button" class="btn btn-outline-secondary" onclick="history.back();">
+				<i class="fas fa-arrow-left"></i>
+			</button>
+		</div>
+
+		<!-- 우측: Breadcrumb -->
+		<nav aria-label="breadcrumb" class="mb-2">
+			<ol class="breadcrumb mb-0">
+				<li class="breadcrumb-item fw-bold text-primary">
+					<a href="${pageContext.request.contextPath}/account/login/home">📌Main</a>
+				</li>
+				<li class="breadcrumb-item active" aria-current="page">전직원 근태현황</li>
+				<li class="breadcrumb-item">
+					<a href="${pageContext.request.contextPath}/annualList">연차 보유현황</a>
+				</li>
+			</ol>
+		</nav>
+	</div>
+
+	<div class="row">
+		<div class="col-12">
+			<!-- 차트 카드 -->
+			<div class="card">
+				<div class="card-header">
+					<h3>전직원 근태현황</h3>
+				</div>
+				<div class="card-body">
+					<div id="chart-profile-visit"></div>
+				</div>
+			</div>
+
+			<!-- 필터 카드 -->
+			<div class="card mt-3">
+				<div class="card-body">
+					<div class="row">
+						<div class="col-12 col-sm-6 col-md-3 mb-3">
+							<label for="department">부서</label>
+							<select id="department" class="form-control">
+								<option value="">전체</option>
+								<c:forEach items="${departmentList}" var="departmentVO">
+									<option value="${departmentVO.departmentId}">
+										${departmentVO.departmentName}
+									</option>
+								</c:forEach>
+							</select>
+						</div>
+
+						<div class="col-12 col-sm-6 col-md-3 mb-3">
+							<label for="team">팀</label>
+							<select id="team" class="form-control">
+								<option value="">전체</option>
+								<c:forEach items="${teamList}" var="teamVO">
+									<option value="${teamVO.teamId}" data-departmentId="${teamVO.departmentId}" class="team-option">
+										${teamVO.teamName}
+									</option>
+								</c:forEach>
+							</select>
+						</div>
+
+						<div class="col-12 col-sm-6 col-md-3 mb-3">
+							<label for="date">날짜 선택</label>
+							<input type="date" id="date" name="date" class="form-control">
+						</div>
+
+						<div class="col-12 col-sm-6 col-md-3 d-flex align-items-end">
+							<div class="w-100">
+								<button class="btn btn-outline-success w-100 mb-2" onclick="downloadExcel()">Excel 다운로드</button>
+								<button class="btn btn-outline-danger w-100" onclick="exportPDF()">PDF 출력</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- 테이블 카드 -->
+			<div class="card mt-3">
+				<div class="card-body">
+					<div id="table-container"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+
+//PDF 다운로드
+function exportPDF() {
+	const element = document.querySelector("#table1");
+
+	const opt = {
+		margin: 1,
+		filename: '출퇴현황.pdf',
+		html2canvas: { scale: 2 },
+		jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+	};
+
+	html2pdf().from(element).set(opt).save();
+}
+
+// Excel 다운로드
+function downloadExcel() {
+	var table = document.querySelector("#table1");
+	var wb = XLSX.utils.table_to_book(table, { sheet: "출퇴현황" });
+	XLSX.writeFile(wb, "출퇴현황.xlsx");
+}
+document.addEventListener("DOMContentLoaded", function() {
+	fetchFilteredData();
+	
+	
+
+	// 현재 날짜를 YYYY-MM-DD 형식으로 설정
+	var today = new Date();
+	var day = ("0" + today.getDate()).slice(-2);
+	var month = ("0" + (today.getMonth() + 1)).slice(-2);
+	var year = today.getFullYear();
+
+	document.getElementById('date').value = year + "-" + month + "-" + day;
+
+	var departmentList = [
+		<c:forEach items="${departmentList}" var="x">
+			{
+				"departmentName": "${x.departmentName}",
+			"departmentId": "${x.departmentId}",
+			"employeeCount": "${x.departmentEmployeeCount}" // 부서별 인원수
+            } <c:if test="${not empty x}">,</c:if>
+		</c:forEach>
+	];
+
+	var arr_dept = [
+		<c:forEach items="${departmentList}" var="x">
+			"${x.departmentName}",
+		</c:forEach>
+	];
+
+	var departmentAliveCount = [
+		<c:forEach items="${todayAlive}" var="x">
+			{"departmentName" : "${x.departmentName}",
+			"AliveemployeeCount": "${x.departmentArrivedEmployeeCount}" //부서별 출근한 인원수
+        } <c:if test="${not empty x}">,</c:if>
+		</c:forEach>
+	];
+
+	var dac = departmentAliveCount; // 날짜별 근태가 있는 부서의 리스트와 근태찍은 인원 수
+
+	const AliveCount = [];
+	dac.forEach(function(department) {
+		AliveCount.push(department.AliveemployeeCount);
+	});
+	
+	document.getElementById("department").addEventListener("change", filterTeams);
+	 
+	// 부서에 하위 팀만 보여주는 함수
+	function filterTeams() {
+		var selectedDept = document.getElementById("department").value;
+		var teamSelect = document.getElementById("team");  // 팀 셀렉트 박스
+		var teamOptions = document.querySelectorAll(".team-option");
+
+		// 팀 셀렉트를 "전체"로 리셋
+		teamSelect.value = "";
+		teamOptions.forEach(function(option) {
+			if (selectedDept === "" || option.dataset.departmentid === selectedDept) {
+				option.style.display = "block";
+			} else {
+				option.style.display = "none";
+			}
+		});
+
+		fetchFilteredData(); // 부서가 변경되었을 때 필터링된 데이터 가져오기
+	}
+
+	// 팀 변경 시 필터링된 데이터를 가져오는 함수
+	$("#team").change(function() {
+		fetchFilteredData(); // 팀 선택 시 필터링된 데이터 새로 불러오기
+	});
+
+	// 날짜 변경 시 필터링된 데이터를 가져오는 함수
+	$("#date").change(function() {
+		fetchFilteredData(); // 날짜 변경 시 데이터 새로 불러오기
+	});
+
+	// 필터링된 데이터를 가져오는 함수
+	function fetchFilteredData() {
+		var departmentId = $("#department").val();
+		var teamId = $("#team").val();
+		var date = $("#date").val();
+
+		$.ajax({
+			url: "/filter",
+			type: "GET",
+			data: {
+				departmentId: departmentId,
+				teamId: teamId,
+				date: date
+			},
+			dataType: "json",
+			success: function(data) {
+				updateTable(data.attendanceList);
+				updateChart(data);  // 차트 업데이트 추가
+			},
+			error: function() {
+				alert("데이터를 불러오는 중 오류가 발생했습니다.");
+			}
+		});
+	}
+
+	function updateTable(data) {
+	    // 기존 테이블 제거
+	    $("#table1").remove();
+
+	    // 새 테이블 생성
+	    var table = $("<table>").attr("id", "table1").addClass("table table-bordered").css("table-layout", "fixed").css("width", "100%"); 
+	    var thead = $("<thead>").html(`
+	        <tr>
+	    		<th style="width: 12%;">부서</th>
+	            <th style="width: 12%;">팀</th>
+	            <th style="width: 14%;">이름</th>
+	            <th style="width: 10%;">출근</th>
+	            <th style="width: 10%;">퇴근</th>
+	            <th style="width: 14%;">근무시간</th>
+	            <th style="width: 14%;">연장근무</th>
+	            <th style="width: 14%;">야간근무</th>
+	            <th style="width: 10%;">상태</th>
+	        </tr>
+	    `);
+	    var tbody = $("<tbody>");
+
+	    if (data.length === 0) {
+	        tbody.append("<tr><td class='text-center' colspan='9'>데이터가 없습니다.</td></tr>");
+	    } else {
+	        $.each(data, function(index, x) {
+	            var row = `
+	                <tr>
+	                    <td>\${x.employee.department.departmentName || "-"}</td>
+	                    <td>\${x.employee.team.teamName || "-"}</td>
+	                    <td><a class="emp-link" href="/myAttendance?empId=\${x.empId}">\${x.employee.name}</a> </td>
+	                    <td>\${x.workStartTime || ""}</td>
+	                    <td>\${x.workEndTime || ""}</td>
+	                    <td>\${x.workingHours ? x.workingHours + "시간 " + (x.workingMinutes || 0) + "분" : ""}</td>
+	                    <td>\${x.overtimeHours ? x.overtimeHours + "시간 " + (x.overtimeMinutes || 0) + "분" : ""}</td>
+	                    <td>\${x.nightWorkHours ? x.nightWorkHours + "시간 " + (x.nightWorkMinutes || 0) + "분" : ""}</td>
+	                    <td>\${x.attendanceStatus || ""}</td>
+	                </tr>
+	            `;
+	            tbody.append(row);
+	        });
+	    }
+
+	    table.append(thead).append(tbody);
+
+	    // 삽입 위치는 페이지에 맞게 조정
+	    $("#table-container").html(table);  // 예: <div id="table-container"></div>가 있는 경우
+	    new simpleDatatables.DataTable(document.getElementById("table1"));
+	}
+
+	var barOptions = {
+			  series: [
+			    {
+			      name: "출근",
+			      data: AliveCount + "명",
+			    },
+			  ],
+			  chart: {
+			    type: "bar",
+			    height: 350,
+			  },
+			  title: {
+			    text: "오늘의 출근 현황",
+			    align: "center",
+			    style: {
+			      fontSize: "18px",
+			      fontWeight: "bold",
+			      color: "#333",
+			    },
+			  },
+			  plotOptions: {
+			    bar: {
+			      horizontal: false,
+			      columnWidth: "35%",
+			      endingShape: "rounded",
+			    },
+			  },
+			  dataLabels: {
+			    enabled: true,
+			    formatter: function (val) {
+			      return val + "명";
+			    },
+			    style: {
+			      colors: ['#000000'], // 🟦 진한 블루: 데이터 라벨 색상
+			      fontSize: '14px',
+			      fontWeight: 'bold',
+			    },
+			  },
+			  stroke: {
+			    show: true,
+			    width: 2,
+			    colors: ["transparent"],
+			  },
+			  xaxis: {
+			    categories: departmentList.map(function (department) {
+			      return `\${department.departmentName}`;
+			    }),
+			    labels: {
+			      rotate: 0,
+			      style: {
+			        fontSize: '14px',
+			        fontFamily: 'Pretendard, sans-serif',
+			        fontWeight: 500,
+			        colors: '#333',
+			      },
+			    },
+			  },
+			  yaxis: {
+			    min: 0,
+			    max: 30,
+			  },
+			  fill: {
+			    opacity: 1,
+			    colors: ['#60A5FA'], // 🟦 연한 블루: 막대 색상
+			  },
+			  tooltip: {
+			    y: {
+			      formatter: function (val) {
+			        return val + "명";
+			      },
+			    },
+			  },
+			}
+
+
+	// ApexCharts 차트 생성
+	var chartBar = new ApexCharts(
+		document.querySelector("#chart-profile-visit"),
+		barOptions
+	);
+
+	// 차트 렌더링
+	chartBar.render();
+
+	// 차트 업데이트 함수
+	function updateChart(mylist) {
+    const attendanceList = mylist.attendanceList;
+    const todayAlive = mylist.TodayAlive;
+
+    // 1. attendanceList에서 부서명만 중복 없이 추출
+    const departmentSet = new Set();
+    for (let i = 0; i < attendanceList.length; i++) {
+        const deptName = attendanceList[i].employee.department.departmentName;
+        if (deptName) {
+            departmentSet.add(deptName);
+        }
+    }
+
+    const departmentNames = Array.from(departmentSet);
+    const aliveCounts = [];
+
+    // 2. departmentNames 기준으로 TodayAlive에서 출근자 수 매칭
+    for (let i = 0; i < departmentNames.length; i++) {
+        const deptName = departmentNames[i];
+        const aliveDept = todayAlive.find(dept => dept.departmentName === deptName);
+
+        if (aliveDept) {
+            aliveCounts.push(Number(aliveDept.departmentArrivedEmployeeCount || 0));
+        } else {
+            aliveCounts.push(0); // 출근자가 1명도 없는 부서
+        }
+    }
+
+    // 3. 차트 업데이트
+    chartBar.updateOptions({
+        xaxis: {
+            categories: departmentNames
+        }
+    });
+
+    chartBar.updateSeries([{
+        name: "출근",
+        data: aliveCounts
+    }]);
+}
+});
+</script>
+
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>

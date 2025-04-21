@@ -1,0 +1,60 @@
+/** 
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *   
+ *   수정일      			수정자           수정내용
+ *  -----------   	-------------    ---------------------------
+ * 2025. 4. 13.     	youngjun            최초 생성
+ *
+ * </pre>
+ */
+
+document.addEventListener('DOMContentLoaded', function(){
+   const allTab = document.getElementById('all-tab');
+   const retiredTab = document.getElementById('retired-tab');
+   const allAccountsDiv = document.getElementById('allAccountsTable').closest('.card'); 
+   const retiredAccountsDiv = document.getElementById('retiredAccountDiv').closest('.card'); 
+   const showRetiredtoggle = document.getElementById('showRetiredtoggle');
+   const allAccountsTable = document.getElementById('allAccountsTable');
+   const retiredAccountsTable = document.getElementById('retiredAccountDiv'); 
+
+	
+	retiredAccountsDiv.style.display = 'none';//최초 로드시 퇴사자 숨김
+	
+	allTab.addEventListener('click',function(){
+		allAccountsDiv.style.display ='block';
+		retiredAccountsDiv.style.display ='none';
+		allTab.classList.add('active');
+		retiredTab.classList.remove('active');
+	});
+	
+	retiredTab.addEventListener('click',function(){
+		allAccountsDiv.style.display = 'none';
+		retiredAccountsDiv.style.display = 'block';
+		allTab.classList.remove('active');
+		retiredTab.classList.add('active');
+	});
+	
+	//퇴사자포함 여부 토글
+	showRetiredtoggle.addEventListener('change', function(){
+		const inRetired = this.checked;
+		const tableRows = allAccountsTable.querySelectorAll('tbody tr');
+
+		tableRows.forEach(row=>{
+			const isRetired = row.dataset.retired ==='true';
+
+			if(inRetired) {
+				row.style.display='';
+			}else {
+				if(isRetired) {
+					row.style.display ='none';
+				}else {
+					row.style.display  = '';
+				}
+			}
+		});
+	});
+	
+	
+	
+});

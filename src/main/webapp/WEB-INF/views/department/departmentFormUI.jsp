@@ -1,0 +1,134 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://www.springframework.org/tags/form" prefix="form" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>부서 등록</title>
+    <!-- SweetAlert2 CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- jQuery CDN -->
+    <style>
+     .button-container {
+         display: flex;
+         justify-content: flex-end;
+         gap: 10px;
+     }
+	.wrapper {
+	  margin-left: 200px;
+	  margin-right: 200px;
+	}
+    </style>
+</head>
+
+
+
+<div class="wrapper">
+    <form id="deptForm" method="post" modelAttribute="board" action="${pageContext.request.contextPath}/department/register/commit" enctype="multipart/form-data">
+		<div class="page-container container-fluid">
+		  <div class="d-flex justify-content-between align-items-center mb-2">
+
+		    <!-- 좌측: 버튼 그룹 -->
+		    <div>
+		      <button type="button" class="btn btn-outline-secondary" onclick="history.back();">
+		        <i class="fas fa-arrow-left"></i>
+		      </button>
+		    </div>
+
+		    <!-- 우측: Breadcrumb -->
+		    <nav aria-label="breadcrumb">
+		      <ol class="breadcrumb mb-0">
+		        <li class="breadcrumb-item fw-bold text-primary"><a href="${pageContext.request.contextPath }/account/login/home"> 📌 Main</a></li>
+		        <li class="breadcrumb-item" aria-current="page"><a href="${pageContext.request.contextPath }/employee/organization">조직도</a></li>
+		        <li class="breadcrumb-item" aria-current="page"><a href="${pageContext.request.contextPath }/department/list">부서 목록</a></li>
+		        <li class="breadcrumb-item active" aria-current="page">부서등록</a></li>
+		      </ol>
+		    </nav>
+
+		  </div>
+		</div>
+
+<div class="container">
+   	<div class="card">
+		<div class="card-body">
+
+	        <h3>부서 등록</h3>
+	        <table class="table">
+	            <tr>
+	                <th>부서이름</th>
+	                <td><input type="text" name="departmentName" class="form-control" /></td>
+	            </tr>
+	            <tr>
+	                <th>부서지점위치</th>
+	                <td><input type="text" name="departmentLocation" class="form-control" /></td>
+	            </tr>
+	            <tr>
+	                <th>부서의 전화번호</th>
+	                <td><input type="text" name="departmentPhonenumber" class="form-control" /></td>
+	            </tr>
+	            <tr>
+	                <th>부서의 팩스번호(선택)</th>
+	                <td><input type="text" name="departmentFaxnumber" class="form-control" /></td>
+	            </tr>
+	        </table>
+	        <div class="button-container">
+	<!--             <button type="button" id="submitBtn" class="btn btn-primary">등록</button> -->
+	            <button id="success" class="btn btn-primary">등록</button>
+	            <a href="${pageContext.request.contextPath}/employee/organization" class="btn btn-danger">취소</a>
+	        </div>
+         </form>
+        </div>
+       </div>
+     </div>
+  </div>
+    <script>
+        // "스윗알러트 등록" 버튼을 클릭하면 AJAX로 폼 제출
+        document.getElementById("success").addEventListener("click", function(event) {
+            event.preventDefault();  // 기본 제출 막기
+
+            // SweetAlert으로 확인 메시지 띄우기
+            Swal.fire({
+                title: "부서를 추가하시겠습니까?",
+                text: "입력한 내용으로 부서를 추가합니다.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#435ebe",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "등록",
+                cancelButtonText: "취소"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // 폼 데이터를 AJAX로 제출하기
+                    var formData = new FormData(document.getElementById("deptForm"));
+
+                    $.ajax({
+                        url: "${pageContext.request.contextPath}/department/register/commit",
+                        method: "POST",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            // 성공 메시지 표시 후 확인 버튼 누르면 다음 화면으로 이동
+                            Swal.fire({
+                                title: "부서 추가에 성공했습니다.",
+                                icon: "success",
+                                confirmButtonText: "확인"
+                            }).then(() => {
+                                // 예를 들어 부서 목록 페이지로 이동
+                                window.location.href = "${pageContext.request.contextPath}/employee/organization";
+                            });
+                        },
+                        error: function(xhr, status, error) {
+                            Swal.fire({
+                                title: "오류 발생",
+                                text: "등록 중 오류가 발생했습니다.",
+                                icon: "error",
+                                confirmButtonText: "확인"
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    </script>

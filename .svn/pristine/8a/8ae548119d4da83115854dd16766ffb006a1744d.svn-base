@@ -1,0 +1,133 @@
+package kr.or.ddit.salary.controller;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.or.ddit.department.service.DepartmentService;
+import kr.or.ddit.department.vo.DepartmentVO;
+import kr.or.ddit.salary.service.SalaryService;
+import kr.or.ddit.salary.vo.SalaryVO;
+import lombok.extern.slf4j.Slf4j;
+
+//전 직원리스트
+@Slf4j
+@Controller
+public class SalaryReadController {
+   
+   @Autowired
+   private SalaryService service;
+   @Autowired
+   private DepartmentService Dservice;
+   //전체리스트 조회
+   @GetMapping("/salary/list")
+   public String salaryList(Model model
+      ,@RequestParam(value="payYear",required = false) String payYear
+      ,@RequestParam(value="payMonth",required = false) String payMonth
+      ){
+      //1.전체 사원리스트
+      //2.2025.03 월만 필요 (년,월)
+//       LocalDate now = LocalDate.now();
+//       model.addAttribute("defaultYear", now.getYear());
+//       model.addAttribute("defaultMonth", now.getMonthValue());
+      List<SalaryVO>salaryList = service.salaryList(payYear,payMonth);
+      SalaryVO salaryInfo = service.salaryInfo(payYear,payMonth);
+      
+      List<SalaryVO>salarySummary = service.SalarySummaryByMonth();
+      model.addAttribute("salarySummary", salarySummary);
+      
+      model.addAttribute("salaryList", salaryList);
+      model.addAttribute("salaryInfo", salaryInfo);
+      return "tiles:salary/salaryList";
+   }
+   
+   //전체리스트 조회 == 기간별, 비동기 처리로 일반 List와 별도로 둠.
+   @GetMapping("/salary/list/data")
+   @ResponseBody
+   public Map<String, Object> getSalaryListData(@RequestParam(value="payYear",required = false)String payYear,
+                                     @RequestParam(value="payMonth",required = false) String payMonth) {
+      
+	      //급여와 관련된 정보 뿌리기
+       SalaryVO salaryInfo = service.salaryInfo(payYear, payMonth);
+       List<SalaryVO> deptAvg = service.departMentAvgSalry(payYear, payMonth);
+       List<SalaryVO> rankAvg = service.rankAvgSalary(payYear, payMonth);
+	   
+	   Map<String, Object> result = new HashMap<>();
+      //기간별 리스트 뿌리기 
+      result.put("salaryList", service.salaryList(payYear, payMonth));
+        
+      result.put("totalemp", salaryInfo.getTotalemp());//전체직원
+      result.put("totalTargetCount", salaryInfo.getTotalTargetCount());//기간별급여등록대상직원
+       result.put("totalNetSalary", salaryInfo.getTotalNetSalary());//총실지급액
+       result.put("confirmedCount", salaryInfo.getConfirmedCount());//확정인원
+       
+       result.put("paymentRequestCount", salaryInfo.getPaymentRequestCount());//요청인원
+       
+       result.put("totalSalaryCount", salaryInfo.getTotalSalaryCount());//급여등록자
+       result.put("paidCount", salaryInfo.getPaidCount());//지급완료자
+       
+       result.put("deptChartData", deptAvg);
+       result.put("rankChartData", rankAvg);
+       
+       List<Map<String, Object>> MinMaxSalaryByDept = service.MinMaxSalaryByDept();
+       result.put("MinMaxSalaryByDept", MinMaxSalaryByDept); 
+      
+       return result; // JSON으로 자동 변환
+//       return service.salaryList(payYear, payMonth); // JSON으로 자동 변환
+   }
+   
+   //선택한 사원 조회
+   @GetMapping("/salary/detail/{empId}/{payYear}/{payMonth}")
+   public String salaryDetail(Model model, @PathVariable("empId") String empId,
+         @PathVariable("payYear")String payYear, @PathVariable("payMonth")String payMonth){
+      SalaryVO salarySelected = service.salarySelected(empId,payYear,payMonth);
+      model.addAttribute("salarySelected", salarySelected);
+      
+      return"salary/salarDetail";
+   } 
+   
+   // 요약 + 차트 데이터 직급, 부서별 평균급여 포함
+   @GetMapping("/salary/summary")
+   @ResponseBody
+   public Map<String, Object> getSalarySummary(@RequestParam(value="payYear",required = false)String payYear, 
+                                    @RequestParam(value="payMonth",required = false) String payMonth
+         ) {
+       Map<String, Object> result = new HashMap<>();
+      SalaryVO summary = service.salarySelectedSummaryMonth(payYear, payMonth);
+       SalaryVO salaryInfo = service.salaryInfo(payYear, payMonth);
+             
+       List<SalaryVO> deptAvg = service.departMentAvgSalry(payYear, payMonth);
+       List<SalaryVO> rankAvg = service.rankAvgSalary(payYear, payMonth);
+       List<DepartmentVO> employeeByDept = Dservice.getEmployeeCountByDepartment();
+       List<Map<String, Object>> MinMaxSalaryByDept = service.MinMaxSalaryByDept();
+       
+       result.put("totalemp", salaryInfo.getTotalemp());//전체직원
+       result.put("MinMaxSalaryByDept", MinMaxSalaryByDept);
+       result.put("totalNetSalary", salaryInfo.getTotalNetSalary());//총실지급액
+       result.put("confirmedCount", salaryInfo.getConfirmedCount());//확정인원
+       result.put("paymentRequestCount", salaryInfo.getPaymentRequestCount());//확정인원
+       result.put("totalSalaryCount", salaryInfo.getTotalSalaryCount());//급여등록자
+       result.put("deptChartData", deptAvg);
+       result.put("rankChartData", rankAvg);
+       result.put("employeeByDept", employeeByDept);
+       return result;
+   }
+   
+
+}

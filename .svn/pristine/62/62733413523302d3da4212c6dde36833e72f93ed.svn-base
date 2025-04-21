@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+ * == 개정이력(Modification Information) ==
+ *   결재자 관리 Mapper
+ *   수정일        수정자           수정내용
+ *  ============  =============    =======================
+ * 2025. 3. 18   CHOI            결재자 기준
+ * 2025. 3. 28   CHOI            결재라인 후보 조회 추가
+-->
+<mapper namespace="kr.or.ddit.mybatis.mappers.approval.ApproverMapper">
+	 
+    <!-- 기존 결재자 관련 resultMap -->
+    <resultMap id="draftApproverMap" type="kr.or.ddit.approval.vo.DraftApproverVO">
+        <id property="aprId" column="APR_ID"/> <!-- 결재자 순번(PK) -->
+        <result property="draftId" column="DRAFT_ID"/>
+        <result property="approverId" column="APPROVER_ID"/>
+        <result property="aprSeq" column="APR_SEQ"/>
+        <result property="aprYn" column="APR_YN"/>
+        <result property="aprDate" column="APR_DATE"/>
+        <result property="aprStatus" column="APR_STATUS"/>
+        <result property="aprReason" column="APR_REASON"/>
+        <result property="empSid" column="EMP_SID"/>
+
+        <!-- 추가된 필드 (문서 정보) -->
+        <result property="draftTitle" column="DRAFT_TITLE"/>
+        <result property="draftDate" column="DRAFT_DATE"/>
+        <result property="draftStatus" column="DRAFT_STATUS"/>
+        <result property="draftEmpId" column="DRAFT_EMP_ID" />
+        <result property="draftEmpName" column="DRAFT_EMP_NAME"/>
+        <result property="approverName" column="APPROVER_NAME"/>
+        <!-- 결재상태 -> 종결함에서 쓰임  -->
+        <result column="USER_STATUS" property="userStatus"/>
+        
+        
+        <!-- 기안자의 직급 -->
+         <result property="drafterRankName" column="DRAFTER_RANK_NAME"/>
+        <!-- 부서 정보  -->
+        <result property="draftDepartment" column="DRAFT_DEPARTMENT"/>
+        <result property="draftDepartmentName" column="DRAFT_DEPARTMENT_NAME"/>
+        <result property="approverDepartmentName" column="APPROVER_DEPARTMENT_NAME"/>
+		<result property="approverRankName" column="APPROVER_RANK_NAME"/>
+        
+        <!-- 다음 결재자 정보 -->
+	    <result property="nextApproverName" column="NEXT_APPROVER_NAME"/>
+	    <result property="nextApproverRank" column="NEXT_APPROVER_RANK_NAME"/>
+        
+        
+        <!-- 파일 정보 (파일이 있을 경우) -->
+	    <result property="fileId" column="FILE_ID"/>
+	    <result property="fileName" column="FILE_NAME"/>
+	    <result property="fileSavename" column="FILE_SAVENAME"/>
+	    <result property="filePath" column="FILE_PATH"/>
+	    <result property="fileSize" column="FILE_SIZE"/>
+	    <result property="fileType" column="FILE_TYPE"/>
+	    <result property="fileUploadDate" column="file_upload_date"/>
+	    
+	    <!-- 연차 이력 -->
+        <result property="leaveDate" column="LEAVE_DATE"/>
+        <result property="leaveEndDate" column="LEAVE_END_DATE"/>
+        <result property="reason" column="REASON"/>
+        <result property="annualCode" column="ANNUAL_CODE"/>
+
+        <!-- 연차 유형 -->
+        <result property="annualName" column="ANNUAL_NAME"/>
+	    
+	    <!-- 결재자 목록 -->
+        <collection property="draftApproverList" ofType="kr.or.ddit.approval.vo.DraftApproverVO">
+            <id property="aprId" column="APR_ID"/>
+            <result property="approverId" column="APPROVER_ID"/>
+            <result property="aprSeq" column="APR_SEQ"/>
+            <result property="aprStatus" column="APR_STATUS"/>
+            <result property="aprReason" column="APR_REASON"/>
+            <result property="empSid" column="EMP_SID"/>
+            <result property="approverName" column="APPROVER_NAME"/>
+            <result property="aprYn" column="APR_YN"/>
+            <result property="aprDate" column="APR_DATE"/>
+            <result property="approverRankName" column="APPROVER_RANK_NAME"/>
+        </collection>
+	</resultMap>
+    
+    <!-- EmployeeVO에 대한 resultMap -->
+    <resultMap id="employeeMap" type="kr.or.ddit.employee.vo.EmployeeVO">
+        <id property="empId" column="EMP_ID"/>
+        <result property="name" column="NAME"/>
+        <result property="departmentId" column="DEPARTMENT_ID"/>
+         <result property="departmentName" column="DEPARTMENT_NAME"/> <!-- 추가 -->
+        <result property="rankId" column="RANK_ID"/>
+	    <result property="rankName" column="RANK_NAME"/>
+	    <result property="teamId" column="TEAM_ID"/>
+	    <result property="teamName" column="TEAM_NAME"/>
+    </resultMap>
+    
+    
+    <!-- 결재자 DRAFT_ID를 조회하는 쿼리 -->
+    <select id="selectApproversByDraftId" parameterType="java.lang.Long" resultType="DraftApproverVO">
+	    SELECT 
+	        APR_ID,
+	        DRAFT_ID,
+	        APPROVER_ID,
+	        APR_SEQ,
+	        APR_YN,
+	        APR_STATUS,
+	        APR_DATE,
+	        APR_REASON,
+	        APPROVER_NAME
+	    FROM DRAFT_APPROVER
+	    WHERE DRAFT_ID = #{draftId}
+	    ORDER BY APR_SEQ
+	</select>
+    
+    
+    
+    
+    <!-- 결재라인 후보 조회 쿼리: 로그인한 사원(empId)보다 모든 직급의 사원(본인제외)들 조회 부서,팀정보도 같이
+      본인 제외 ->  모든 사원들한테만 결재라인이 올라감 -->
+    <select id="getLineApprovers" resultMap="employeeMap" parameterType="String">
+	    SELECT 
+		    e.emp_id AS EMP_ID, 
+		    e.name AS NAME, 
+		    e.department_id AS DEPARTMENT_ID,
+		    d.department_name AS DEPARTMENT_NAME,
+		    e.rank_id AS RANK_ID,
+		    r.rank_name AS RANK_NAME,
+		    e.team_id AS TEAM_ID,
+		    t.team_name AS TEAM_NAME
+		FROM employee e
+		    JOIN rank r ON e.rank_id = r.rank_id
+		    JOIN department d ON e.department_id = d.department_id
+		    JOIN team t ON e.team_id = t.team_id
+		    JOIN account a ON e.emp_id = a.account_id
+		WHERE e.department_id IS NOT NULL
+		AND	  e.emp_Id != #{empId}
+		ORDER BY r.rank_id
+	</select>
+	
+	<!-- 시연용 즐겨찾기 결재라인 -->
+	<select id="getFavoriteApprovers" resultMap="employeeMap" parameterType="map">
+	  SELECT 
+	      e.emp_id AS EMP_ID, 
+	      e.name AS NAME, 
+	      e.department_id AS DEPARTMENT_ID,
+	      d.department_name AS DEPARTMENT_NAME,
+	      e.rank_id AS RANK_ID,
+	      r.rank_name AS RANK_NAME,
+	      e.team_id AS TEAM_ID,
+	      t.team_name AS TEAM_NAME
+	  FROM employee e
+	      JOIN rank r ON e.rank_id = r.rank_id
+	      JOIN department d ON e.department_id = d.department_id
+	      JOIN team t ON e.team_id = t.team_id
+	      JOIN account a ON e.emp_id = a.account_id
+	  WHERE e.department_id IS NOT NULL
+	    AND e.emp_id IN ('2020010001', '2025031589', '2025031903', '2025050301', '2023050904', '2025032501', '2025032001', '2023050704')
+	    <if test="empId != null and empId != ''">
+	      AND TRIM(e.emp_id) <![CDATA[ <> ]]> TRIM(#{empId})
+	    </if>
+	  ORDER BY r.rank_id
+	</select>
+
+	
+	
+	<!-- EmployeeVO를 반환하는 getEmployeeById 쿼리 -->
+	<select id="getEmployeeById" resultType="EmployeeVO" parameterType="String">
+	    SELECT 
+	         e.emp_id AS empId,
+	         e.name AS name,
+	         e.department_id AS departmentId,
+	         d.department_name AS departmentName,
+	         e.rank_id AS rankId,
+	         r.rank_name AS rankName,
+	         e.team_id AS teamId,
+	         t.team_name AS teamName
+	    FROM employee e
+	    JOIN department d ON e.department_id = d.department_id
+	    JOIN rank r ON e.rank_id = r.rank_id
+	    JOIN team t ON e.team_id = t.team_id
+	    WHERE e.emp_id = #{empId}
+	</select>
+	
+	
+	
+    
+    
+    <!-- 나머지 기존 쿼리들은 그대로 유지 -->
+    <!-- 예: getMyApprovalInfo, getMyApprovalInfoDetail, updateApprovalStatus, countPendingApprovals, updateDraftStatus, updateDraftBoxStatus -->
+    
+    <select id="getMyApprovalInfo" resultMap="draftApproverMap" parameterType="String">
+	    SELECT
+	        da.draft_id,
+	        dm.draft_title,
+	        dm.draft_date,
+	        dm.draft_status,
+	        dm.emp_id            AS draft_emp_id,
+	        e_draft.name         AS draft_emp_name,
+	        d_draft.department_name AS DRAFT_DEPARTMENT_NAME,  -- 기안자 부서
+	        da.approver_id,
+	        e_approver.name      AS approver_name,
+	        d_approver.department_name AS APPROVER_DEPARTMENT_NAME,  -- 결재자 부서
+	        da.apr_seq,
+	        da.apr_status,
+	        CASE 
+	            WHEN da.apr_yn = 'N' THEN '미결'
+	            ELSE '완료'
+	        END AS approval_status,
+	        da.apr_yn
+	    FROM
+	        draft_approver da
+	    JOIN draft_management dm 
+	        ON da.draft_id = dm.draft_id
+	    JOIN employee e_draft 
+	        ON dm.emp_id = e_draft.emp_id
+	    JOIN department d_draft 
+	        ON e_draft.department_id = d_draft.department_id   -- 기안자 부서 조인
+	    JOIN employee e_approver 
+	        ON da.approver_id = e_approver.emp_id
+	    JOIN department d_approver 
+	        ON e_approver.department_id = d_approver.department_id  -- 결재자 부서 조인
+	    WHERE
+	        da.approver_id = #{aprId}
+	        AND da.apr_status = '대기'
+	        AND da.apr_yn = 'N'
+	    ORDER BY
+	        dm.draft_date DESC
+	</select>
+
+
+	<!-- 결재 문서함 상세보기 쿼리  -->
+    <select id="getMyApprovalInfoDetail" resultMap="draftApproverMap" parameterType="map">
+	   SELECT
+	        dm.draft_id                     AS DRAFT_ID,
+	        dm.draft_title                  AS DRAFT_TITLE,
+	        dm.draft_date                   AS DRAFT_DATE,
+	        dm.draft_status                 AS DRAFT_STATUS,
+	        dm.emp_id                       AS DRAFT_EMP_ID,
+	        
+	        e_draft.name                    AS DRAFT_EMP_NAME,
+	        d_draft.department_name         AS DRAFT_DEPARTMENT_NAME,
+	        
+	        rnk_draft.rank_name             AS DRAFTER_RANK_NAME,  -- 기안자의 직급 추가
+	        
+	        da.apr_id                       AS APR_ID,
+	        da.approver_id                  AS APPROVER_ID,
+	        e_approver.name                 AS APPROVER_NAME,
+	        da.apr_seq                      AS APR_SEQ,
+	        da.apr_status                   AS APR_STATUS,
+	        da.apr_yn                       AS APR_YN,
+	        da.apr_date                     AS APR_DATE,
+	        da.apr_reason                   AS APR_REASON,
+	        
+	        dpt.department_name             AS APPROVER_DEPARTMENT_NAME,
+	        rnk.rank_name                   AS APPROVER_RANK_NAME,
+	        
+	        fd.FILE_ID                      AS FILE_ID,
+	        fd.FILE_NAME                    AS FILE_NAME,
+	        fd.FILE_SAVENAME                AS FILE_SAVENAME,
+	        fd.FILE_PATH                    AS FILE_PATH,
+	        fd.FILE_SIZE                    AS FILE_SIZE,
+	        fd.FILE_TYPE                    AS FILE_TYPE,
+	        fd.UPLOAD_DATE                  AS file_upload_date,
+	        
+	        ah.leave_date                   AS LEAVE_DATE,
+	        ah.leave_end_date               AS LEAVE_END_DATE,
+	        ah.reason                       AS REASON,
+	        ah.annual_code                  AS ANNUAL_CODE,
+	        at.annual_name                  AS ANNUAL_NAME
+	   FROM draft_approver da
+	   JOIN draft_management dm 
+	       ON da.draft_id = dm.draft_id
+	   JOIN employee e_draft 
+	       ON dm.emp_id = e_draft.emp_id
+	   LEFT JOIN department d_draft
+	       ON e_draft.department_id = d_draft.department_id
+	   -- 기안자의 직급 정보를 조회하기 위한 조인 추가
+	   LEFT JOIN rank rnk_draft
+	       ON e_draft.rank_id = rnk_draft.rank_id
+	   JOIN employee e_approver 
+	       ON da.approver_id = e_approver.emp_id
+	   LEFT JOIN department dpt 
+	       ON e_approver.department_id = dpt.department_id
+	   LEFT JOIN rank rnk 
+	       ON e_approver.rank_id = rnk.rank_id
+	   LEFT JOIN file_detail fd 
+	       ON dm.draft_file = fd.file_id
+	   LEFT JOIN annual_history ah  
+	       ON ah.draft_id = dm.draft_id 
+	   LEFT JOIN annual_type at  
+	       ON at.annual_code = ah.annual_code
+	   WHERE dm.draft_id = #{draftId}
+	   ORDER BY da.apr_seq ASC
+	</select>
+
+
+    
+    <!-- 결재 진행함 ( 승인(승인이 됐지만 결재라인이 남아있는 경우)) 쿼리 -->
+   <select id="approverProcessList" resultMap="draftApproverMap" parameterType="String">
+	  SELECT 
+	    dm.draft_id                      AS DRAFT_ID,
+	    dm.draft_title                   AS DRAFT_TITLE,
+	    dm.draft_date                    AS DRAFT_DATE,
+	    dm.draft_status                  AS DRAFT_STATUS,
+	    da.approver_id                   AS APPROVER_ID,
+	    da.apr_seq                       AS APR_SEQ,
+	    da.apr_status                    AS APR_STATUS,
+	    da.apr_yn                        AS APR_YN,
+	    e_draft.name                     AS DRAFT_EMP_NAME,
+	    e_approver.name                  AS APPROVER_NAME,
+	    d_approver.department_name       AS APPROVER_DEPARTMENT_NAME,
+	    (
+	      SELECT e_next.name 
+	      FROM (
+	        SELECT da2.approver_id 
+	        FROM draft_approver da2
+	        WHERE da2.draft_id = dm.draft_id
+	          AND da2.apr_seq > da.apr_seq
+	          AND da2.apr_yn = 'N'
+	        ORDER BY da2.apr_seq ASC
+	      ) da_next
+	      JOIN employee e_next ON da_next.approver_id = e_next.emp_id
+	      WHERE ROWNUM = 1
+	    ) AS NEXT_APPROVER_NAME,
+	    (
+	      SELECT r_next.rank_name 
+	      FROM (
+	        SELECT da2.approver_id 
+	        FROM draft_approver da2
+	        WHERE da2.draft_id = dm.draft_id
+	          AND da2.apr_seq > da.apr_seq
+	          AND da2.apr_yn = 'N'
+	        ORDER BY da2.apr_seq ASC
+	      ) da_next
+	      JOIN employee e_next ON da_next.approver_id = e_next.emp_id
+	      JOIN rank r_next ON e_next.rank_id = r_next.rank_id
+	      WHERE ROWNUM = 1
+	    ) AS NEXT_APPROVER_RANK_NAME
+	  FROM draft_approver da
+	  JOIN draft_management dm 
+	    ON dm.draft_id = da.draft_id
+	  JOIN employee e_draft
+	    ON dm.emp_id = e_draft.emp_id
+	  JOIN department d_draft
+	    ON e_draft.department_id = d_draft.department_id
+	  JOIN employee e_approver
+	    ON da.approver_id = e_approver.emp_id
+	  JOIN department d_approver
+	    ON e_approver.department_id = d_approver.department_id
+	  WHERE 
+	    da.approver_id = #{approverId}
+	    AND dm.draft_status != '반려'
+	    AND (
+	         (da.apr_status = '승인' AND da.apr_yn = 'Y'
+	          AND EXISTS (
+	               SELECT 1 
+	               FROM draft_approver da2
+	               WHERE da2.draft_id = dm.draft_id
+	                 AND da2.apr_seq > da.apr_seq
+	                 AND da2.apr_yn = 'N'
+	          ))
+	    )
+	  ORDER BY dm.draft_date DESC
+	</select>
+
+	
+	<!-- 종결함 (최종 승인, 반려된 문서만) -->
+	<select id="approverComplitedList" resultMap="draftApproverMap" parameterType="String">
+		 WITH status_cte AS (
+		    SELECT
+		      da.draft_id,
+		      da.apr_seq,
+		      da.apr_status,
+		      da.apr_yn,
+		      -- 차트와 동일한 상태 계산
+		      CASE
+		        WHEN da.apr_status = '반려' AND da.apr_yn = 'Y' THEN '반려'
+		        WHEN da.apr_status = '승인' AND da.apr_yn = 'Y'
+		             AND EXISTS (
+		               SELECT 1
+		                 FROM draft_approver x
+		                WHERE x.draft_id    = da.draft_id
+		                  AND x.apr_seq    > da.apr_seq
+		                  AND x.apr_status = '대기'
+		             ) THEN '진행중'
+		        WHEN da.apr_status = '승인' AND da.apr_yn = 'Y'
+		             AND NOT EXISTS (
+		               SELECT 1
+		                 FROM draft_approver x
+		                WHERE x.draft_id    = da.draft_id
+		                  AND x.apr_seq    > da.apr_seq
+		                  AND x.apr_status IN ('대기','반려')
+		             ) THEN '승인'
+		        WHEN da.apr_status = '대기' AND da.apr_yn = 'N' THEN '대기'
+		        ELSE NULL
+		      END AS user_status,
+		      -- 상태별 우선순위 (숫자 작을수록 우선)
+		      CASE
+		        WHEN da.apr_status = '반려' AND da.apr_yn = 'Y' THEN 1
+		        WHEN da.apr_status = '승인' AND da.apr_yn = 'Y'
+		             AND EXISTS (
+		               SELECT 1
+		                 FROM draft_approver x
+		                WHERE x.draft_id    = da.draft_id
+		                  AND x.apr_seq    > da.apr_seq
+		                  AND x.apr_status = '대기'
+		             ) THEN 2
+		        WHEN da.apr_status = '승인' AND da.apr_yn = 'Y'
+		             AND NOT EXISTS (
+		               SELECT 1
+		                 FROM draft_approver x
+		                WHERE x.draft_id    = da.draft_id
+		                  AND x.apr_seq    > da.apr_seq
+		                  AND x.apr_status IN ('대기','반려','보류')
+		             ) THEN 3
+		        WHEN da.apr_status = '대기' AND da.apr_yn = 'N' THEN 4
+		        ELSE 5
+		      END AS precedence
+		    FROM draft_approver da
+		    WHERE da.approver_id = #{approverId}
+		  ),
+		  ranked AS (
+		    SELECT
+		      draft_id,
+		      apr_seq,
+		      user_status,
+		      ROW_NUMBER() OVER (
+		        PARTITION BY draft_id
+		        ORDER BY precedence, apr_seq DESC
+		      ) AS rn
+		    FROM status_cte
+		    WHERE user_status IS NOT NULL
+		  )
+		  SELECT
+		      dm.draft_id                      AS DRAFT_ID,
+		      dm.draft_title                   AS DRAFT_TITLE,
+		      dm.draft_date					   AS DRAFT_DATE,
+		      dm.draft_status                  AS DRAFT_STATUS,
+		      da.approver_id                   AS APPROVER_ID,
+		      da.apr_seq                       AS APR_SEQ,
+		      da.apr_status                    AS APR_STATUS,
+		      da.apr_yn                        AS APR_YN,
+		      r.user_status                    AS USER_STATUS,
+		      e_draft.name                     AS DRAFT_EMP_NAME,
+		      e_approver.name                  AS APPROVER_NAME,
+		      d_approver.department_name       AS APPROVER_DEPARTMENT_NAME
+		  FROM ranked r
+		  JOIN draft_approver da
+		    ON da.draft_id = r.draft_id
+		   AND da.apr_seq  = r.apr_seq
+		  JOIN draft_management dm
+		    ON dm.draft_id = r.draft_id
+		  JOIN employee   e_draft
+		    ON dm.emp_id = e_draft.emp_id
+		  JOIN department d_draft
+		    ON e_draft.department_id = d_draft.department_id
+		  JOIN employee   e_approver
+		    ON da.approver_id = e_approver.emp_id
+		  JOIN department d_approver
+		    ON e_approver.department_id = d_approver.department_id
+		  WHERE r.rn = 1
+		  	AND r.user_status IN ('승인','반려')
+		  ORDER BY dm.draft_date DESC
+	</select>
+	
+	
+	<!-- 기안자 -> 상태별(대기 승인·반려)로 그룹핑하여 여러 행으로 반환 -> 차트로 보이게  -->
+    <select id="selectApproverCountsGroup" resultType="java.util.Map" parameterType="String">
+	    SELECT 
+	        CASE 
+	            WHEN dm.draft_status = '완료' THEN '승인'
+	            ELSE dm.draft_status 
+	        END AS APRSTATUS,
+	        COUNT(*) AS CNT
+	    FROM draft_management dm
+	    WHERE dm.emp_id = #{empId}
+	      AND dm.draft_status IN ('대기', '완료', '반려','회수')
+	    GROUP BY 
+	        CASE 
+	            WHEN dm.draft_status = '완료' THEN '승인'
+	            ELSE dm.draft_status 
+	        END
+    </select>
+    <!-- 결재자 -> 상태별(반려, 진행중, 승인, 대기)로 나뉨 -> chart-->
+	<select id="selectApproverChart" 
+        resultType="kr.or.ddit.approval.vo.ApprovalStatusCountVO" 
+        parameterType="String">
+	  <![CDATA[
+	    SELECT user_status,
+	           COUNT(*) AS cnt
+	    FROM (
+	      SELECT da.DRAFT_ID,
+	             MAX(
+	               CASE
+	                 WHEN da.apr_status = '반려' THEN '반려'
+	                 WHEN da.apr_status = '대기' THEN '대기'
+	                 WHEN da.apr_status = '승인'
+	                      AND EXISTS (
+	                        SELECT 1
+	                        FROM draft_approver x
+	                        WHERE x.DRAFT_ID = da.DRAFT_ID
+	                          AND x.apr_seq > da.apr_seq
+	                          AND x.apr_status = '대기'
+	                      ) THEN '진행중'
+	                 WHEN da.apr_status = '승인'
+	                      AND NOT EXISTS (
+	                        SELECT 1
+	                        FROM draft_approver x
+	                        WHERE x.DRAFT_ID = da.DRAFT_ID
+	                          AND x.apr_seq > da.apr_seq
+	                          AND x.apr_status IN ('대기','반려','보류')
+	                      ) THEN '승인'
+	                 ELSE '기타'
+	               END
+	             ) AS user_status
+	      FROM draft_approver da
+	      WHERE da.approver_id = #{approverId}
+	      GROUP BY da.DRAFT_ID, da.apr_seq, da.apr_status
+	    ) sub
+	    WHERE user_status <> '기타'
+	    GROUP BY user_status
+	  ]]>
+	</select>
+
+
+
+	
+    
+    <update id="updateApprovalStatus" parameterType="kr.or.ddit.approval.vo.DraftApproverVO">
+        UPDATE draft_approver
+        SET apr_yn = 'Y',
+            apr_status = #{aprStatus}, 
+            apr_date = SYSDATE, 
+            apr_reason = #{aprReason}
+        WHERE draft_id = #{draftId} 
+        AND approver_id = #{approverId}
+    </update>
+    
+    <select id="countPendingApprovals" parameterType="Long" resultType="int">
+        SELECT COUNT(*) 
+        FROM draft_approver
+        WHERE draft_id = #{draftId} 
+        AND apr_yn = 'N'
+    </select>
+    
+    <update id="updateDraftStatus" parameterType="kr.or.ddit.approval.vo.DraftManageMentVO">
+        UPDATE draft_management
+        SET draft_status = #{draftStatus}
+        WHERE draft_id = #{draftId}
+    </update>
+    
+    <update id="updateDraftBoxStatus" parameterType="kr.or.ddit.approval.vo.DraftBoxVO">
+        UPDATE draft_box
+        SET doc_status = #{docStatus}, last_update = SYSDATE
+        WHERE draft_id = #{draftId}
+    </update>
+
+</mapper>

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.mybatis.mappers.evaluation.EvaluationDashboardMapper">
+	
+	<resultMap type="EvaluationDashboardVO" id="evaluationDashboardResultMap" autoMapping="true">
+		<id property="" column=""/>
+	</resultMap>
+	
+	<select id="getDepartmentTeamEvaluationStatus" resultType="EvaluationDashboardVO">
+		SELECT
+            D.DEPARTMENT_NAME,
+            T.TEAM_NAME,
+            T.TEAM_ID AS teamId,
+            COUNT(*) AS targetCount,
+            COALESCE(SUM(CASE WHEN EC.EVALUATION_STATUS = 'Y' THEN 1 ELSE 0 END), 0) AS completedCount,
+			COALESCE(SUM(CASE WHEN EC.EVALUATION_STATUS IS NULL OR EC.EVALUATION_STATUS != 'Y' THEN 1 ELSE 0 END), 0) AS notCompletedCount,
+            ROUND(
+                SUM(CASE WHEN EC.EVALUATION_STATUS = 'Y' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1
+            ) AS completionRate
+        FROM EVALUATION_CANDIDATE EC
+        JOIN EMPLOYEE E ON EC.EMP_ID = E.EMP_ID
+        JOIN TEAM T ON E.TEAM_ID = T.TEAM_ID
+        JOIN DEPARTMENT D ON T.DEPARTMENT_ID = D.DEPARTMENT_ID
+        WHERE EC.IS_TARGET = 'Y'
+        <if test="evaluationYear != null and evaluationYear != ''">
+            AND EC.EVALUATION_YEAR = #{evaluationYear}
+        </if>
+        <if test="halfYear != null and halfYear != ''">
+            AND EC.HALF_YEAR = #{halfYear}
+        </if>
+        GROUP BY D.DEPARTMENT_NAME, T.TEAM_NAME, T.TEAM_ID
+        ORDER BY D.DEPARTMENT_NAME, T.TEAM_NAME
+        
+	</select>
+	
+	<select id="getEvaluationSummary" resultType="EvaluationDashboardSummaryVO">
+		SELECT
+            COUNT(*) AS totalTarget,
+            COALESCE(SUM(CASE WHEN EC.EVALUATION_STATUS = 'Y' THEN 1 ELSE 0 END), 0) AS completed,
+			COALESCE(SUM(CASE WHEN EC.EVALUATION_STATUS IS NULL OR EC.EVALUATION_STATUS != 'Y' THEN 1 ELSE 0 END), 0) AS notCompleted,
+            ROUND(
+                SUM(CASE WHEN EC.EVALUATION_STATUS = 'Y' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1
+            ) AS completionRate
+        FROM EVALUATION_CANDIDATE EC
+        WHERE EC.IS_TARGET = 'Y'
+        <if test="evaluationYear != null and evaluationYear != ''">
+            AND EC.EVALUATION_YEAR = #{evaluationYear}
+        </if>
+        <if test="halfYear != null and halfYear != ''">
+            AND EC.HALF_YEAR = #{halfYear}
+        </if>		
+	
+	</select>
+	
+	<select id="getDepartmentEvaluationChart" resultType="Map">
+		SELECT
+		    D.DEPARTMENT_NAME,
+		    COALESCE(SUM(CASE WHEN EC.EVALUATION_STATUS = 'Y' THEN 1 ELSE 0 END), 0) AS completedCount,
+       		COALESCE(SUM(CASE WHEN EC.EVALUATION_STATUS IS NULL OR EC.EVALUATION_STATUS != 'Y' THEN 1 ELSE 0 END), 0) AS notCompletedCount
+		FROM EVALUATION_CANDIDATE EC
+		LEFT JOIN EMPLOYEE E ON EC.EMP_ID = E.EMP_ID
+		LEFT JOIN TEAM T ON E.TEAM_ID = T.TEAM_ID
+		LEFT JOIN DEPARTMENT D ON T.DEPARTMENT_ID = D.DEPARTMENT_ID
+		WHERE EC.IS_TARGET = 'Y'
+		<if test="evaluationYear != null and evaluationYear != ''">
+		    AND EC.EVALUATION_YEAR = #{evaluationYear}
+		</if>
+		<if test="halfYear != null and halfYear != ''">
+		    AND EC.HALF_YEAR = #{halfYear}
+		</if>
+		GROUP BY D.DEPARTMENT_NAME
+	
+	</select>
+	
+	<select id="getDepartmentSummary" resultType="EvaluationDepartmentSummaryVO">
+		SELECT
+	        D.DEPARTMENT_NAME AS departmentName,
+	        COUNT(*) AS targetCount,
+	        COALESCE(SUM(CASE WHEN EC.EVALUATION_STATUS = 'Y' THEN 1 ELSE 0 END), 0) AS completedCount,
+	        COALESCE(SUM(CASE WHEN EC.EVALUATION_STATUS IS NULL OR EC.EVALUATION_STATUS != 'Y' THEN 1 ELSE 0 END), 0) AS notCompletedCount,
+	        ROUND(
+	            SUM(CASE WHEN EC.EVALUATION_STATUS = 'Y' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1
+	        ) AS completionRate
+	    FROM EVALUATION_CANDIDATE EC
+	    JOIN EMPLOYEE E ON EC.EMP_ID = E.EMP_ID
+	    JOIN TEAM T ON E.TEAM_ID = T.TEAM_ID
+	    JOIN DEPARTMENT D ON T.DEPARTMENT_ID = D.DEPARTMENT_ID
+	    WHERE EC.IS_TARGET = 'Y'
+	    <if test="evaluationYear != null and evaluationYear != ''">
+	        AND EC.EVALUATION_YEAR = #{evaluationYear}
+	    </if>
+	    <if test="halfYear != null and halfYear != ''">
+	        AND EC.HALF_YEAR = #{halfYear}
+	    </if>
+	    GROUP BY D.DEPARTMENT_NAME
+	    ORDER BY D.DEPARTMENT_NAME
+	
+	</select>
+	
+	<select id="getUnsubmittedList" resultType="UnsubmittedEmployeeVO">
+	    SELECT
+	        E.EMP_ID AS empId,
+	        E.NAME AS name,
+	        T.TEAM_NAME AS teamName,
+	        T.TEAM_ID AS teamId,
+	        D.DEPARTMENT_NAME AS departmentName,
+	        EC.EVALUATION_YEAR AS evaluationYear,
+	        EC.HALF_YEAR AS halfYear,
+	        EC.EVALUATION_STATUS AS evaluationStatus
+	    FROM EVALUATION_CANDIDATE EC
+	    JOIN EMPLOYEE E ON EC.EMP_ID = E.EMP_ID
+	    JOIN TEAM T ON E.TEAM_ID = T.TEAM_ID
+	    JOIN DEPARTMENT D ON T.DEPARTMENT_ID = D.DEPARTMENT_ID
+	    WHERE EC.IS_TARGET = 'Y'
+	    AND (EC.EVALUATION_STATUS IS NULL OR EC.EVALUATION_STATUS != 'Y')
+	    <if test="evaluationYear != null and evaluationYear != ''">
+	        AND EC.EVALUATION_YEAR = #{evaluationYear}
+	    </if>
+	    <if test="halfYear != null and halfYear != ''">
+	        AND EC.HALF_YEAR = #{halfYear}
+	    </if>
+	    <if test="teamId != null and teamId != ''">
+	        AND T.TEAM_ID = #{teamId, jdbcType=NUMERIC}
+	    </if>
+	</select>
+	
+</mapper>

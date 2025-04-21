@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ * == 개정이력(Modification Information) ==
+ *   
+ *   수정일               수정자           수정내용
+ *  ============      ============== =======================
+ *  2025. 3. 12.        young            최초 생성
+ *  2025. 3. 13.        jtw              AccountVO에 EmployeeVO안의 AttendanceList 매핑
+ *  2025. 3. 14.        태우                 team member 매핑
+ *  2025. 3. 16.        young            account, employee 업데이트 
+ *  2025. 3. 21.        영규                passwordReset 추가 
+-->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.account.AccountMapper">
+
+<resultMap type="accountVO" id="accountMap" autoMapping="true">
+	 <result property="delete_5year" column="delete_5year"/>
+      <association property="department" javaType="DepartmentVO" autoMapping="true"/>
+      <association property="role" javaType="RoleVO" autoMapping="true"/>
+      
+      <association property="employee" javaType="EmployeeVO" autoMapping="true">
+            <result property="empPath" column="empPath" />
+          <association property="team" javaType="TeamVO" autoMapping="true" />
+         
+         <collection property="attendanceList" ofType="AttendanceVO">
+            <id property="attendanceId" column="attendance_id" />
+            <result property="workStartTime" column="WORK_STARTTime" />
+            <result property="workEndTime" column="WORK_ENDTime" />
+            <result property="workingHours" column="WORKING_HOURS" />
+            <result property="attendanceStatus" column="ATTENDANCE_STATUS" />
+         </collection>
+      </association>
+      
+      <association property="job" javaType="JobVO" autoMapping="true"/>
+      <association property="rank" javaType="RankVO" autoMapping="true"/>
+      <association property="passwordReset" javaType="PasswordResetVO" autoMapping="true"/>
+</resultMap>
+
+
+<resultMap id="accountRoleCountMap" type="AccountVO" autoMapping="true">
+    <result property="role_type" column="ROLE_TYPE"/>
+    <result property="roleCount" column="ROLECOUNT"/>
+</resultMap>
+
+<select id="accountList" resultMap="accountMap">
+   SELECT A.ACCOUNT_ID,
+       A.EMP_NAME,
+       D.DEPARTMENT_NAME,
+       R.RANK_NAME,
+       J.JOB_NAME,
+       E.HIRE_DATE,
+       E.EMAIL,
+       A.ACCOUNT_DATE,
+       A.ACCOUNT_DEL,
+       A.ACCOUNT_STATUS,
+       RO.ROLE_NAME,
+       T.TEAM_NAME
+FROM EMPLOYEE E
+LEFT JOIN ACCOUNT A ON E.EMP_ID = A.EMP_ID
+LEFT JOIN DEPARTMENT D ON D.DEPARTMENT_ID = A.DEPARTMENT_ID
+LEFT JOIN JOB J ON J.JOB_ID = A.JOB_ID
+LEFT JOIN RANK R ON E.RANK_ID = R.RANK_ID
+LEFT JOIN ROLE RO ON A.ROLE_ID = RO.ROLE_ID
+LEFT JOIN TEAM T ON T.TEAM_ID = E.TEAM_ID
+WHERE ACCOUNT_ID = ACCOUNT_ID
+</select>
+
+<select id="selectAccount" parameterType="string" resultMap="accountMap">
+      SELECT 
+    a.ACCOUNT_ID,
+    a.emp_id,
+    a.password,
+    a.department_id,
+    d.department_name,
+    a.job_id,
+    a.emp_name,
+    a.role_id,
+    ro.role_name,
+    a.account_status,
+    a.account_date,
+    a.account_del,
+    a.account_update,
+    T.team_name,
+    NVL(TO_CHAR(at.WORK_DATE, 'yyyy-MM-dd'), '') AS WORK_DATE, 
+    NVL(TO_CHAR(at.WORK_STARTTime, 'HH24:MI:SS'), '') AS WORK_STARTTime, 
+    NVL(TO_CHAR(at.WORK_ENDTime, 'HH24:MI:SS'), '') AS WORK_ENDTime, 
+    NVL(at.WORKING_HOURS, 0) AS WORKING_HOURS, 
+    NVL(at.ATTENDANCE_STATUS, '미출근') AS ATTENDANCE_STATUS, 
+    NVL(at.STATUS_ID, '-') AS STATUS_ID,
+   r.rank_id,
+   r.rank_name,
+   e.EMAIL,
+   e.JUMIN_FRONT,
+   e.ADDRESS,
+   e.ADDRESS_DETAIL,
+      e.PHONE_NUMBER,
+   fd.FILE_PATH as empPath
+FROM ACCOUNT a
+LEFT JOIN attendance at  ON a.emp_id = at.emp_id 
+ AND TO_CHAR(at.WORK_DATE, 'YYYY-MM-DD') = TO_CHAR(SYSDATE, 'YYYY-MM-DD')  
+LEFT JOIN DEPARTMENT d  ON d.DEPARTMENT_ID = a.DEPARTMENT_ID
+LEFT JOIN TEAM T ON T.TEAM_ID = A.TM_ID
+LEFT JOIN EMPLOYEE E ON E.emp_id = a.emp_id
+LEFT JOIN RANK R ON R.rank_id = E.rank_id
+LEFT JOIN ROLE RO ON A.ROLE_ID=RO.ROLE_ID
+LEFT join file_detail fd on e.EMP_IMG = fd.DETAIL_ID
+WHERE a.ACCOUNT_ID = #{accountId}
+ORDER BY at.WORK_STARTTime DESC
+
+</select>
+
+<!-- 계정에 등록되어 있지 않은 직원리스트 뽑기 -->
+<select id="selectedUnAcount" parameterType="string" resultMap="accountMap">
+  SELECT
+       E.EMP_ID,
+       E.NAME,
+       D.DEPARTMENT_NAME,
+       T.TEAM_NAME,
+       T.TEAM_ID,
+       R.RANK_NAME,
+       J.JOB_NAME,
+       E.HIRE_DATE,
+       E.EMAIL,
+       E.PHONE_NUMBER,
+       E.ADDRESS,
+       E.ADDRESS_DETAIL,
+       J.JOB_ID,
+       D.DEPARTMENT_ID,
+       R.RANK_ID
+FROM EMPLOYEE E
+LEFT JOIN ACCOUNT A ON E.EMP_ID = A.EMP_ID
+LEFT JOIN DEPARTMENT D ON D.DEPARTMENT_ID = E.DEPARTMENT_ID
+LEFT JOIN JOB J ON J.JOB_ID = E.JOB_ID
+LEFT JOIN RANK R ON E.RANK_ID = R.RANK_ID
+LEFT JOIN TEAM T ON T.TEAM_ID = E.TEAM_ID
+WHERE E.EMP_ID = #{empId}
+</select>
+
+<select id="findUnregisteredAccountList" resultMap="accountMap">
+ SELECT 
+       E.EMP_ID,
+       E.NAME,  
+       D.DEPARTMENT_NAME,
+       R.RANK_NAME,
+       J.JOB_NAME,
+       E.HIRE_DATE,
+       E.EMAIL
+FROM EMPLOYEE E
+LEFT JOIN ACCOUNT A ON E.EMP_ID = A.EMP_ID
+LEFT JOIN DEPARTMENT D ON D.DEPARTMENT_ID = COALESCE(TO_NUMBER(A.DEPARTMENT_ID), E.DEPARTMENT_ID) 
+LEFT JOIN JOB J ON J.JOB_ID = COALESCE(TO_NUMBER(A.JOB_ID), E.JOB_ID) 
+LEFT JOIN RANK R ON E.RANK_ID = R.RANK_ID
+WHERE A.EMP_ID IS NULL
+   
+</select>
+
+<insert id="accountInsert">
+INSERT INTO account (
+    account_id
+    , emp_id
+    , password
+    , rank_id
+    , department_id
+    , job_id
+    , emp_name
+    , tm_id
+    , account_email
+    , account_add1
+    , account_add2
+    , account_ph
+) VALUES ( 
+    #{accountId}
+    , #{empId}
+    , #{password}
+    , #{rankId}
+    , <choose>
+        <when test="departmentId != null">#{departmentId}</when>
+        <otherwise>NULL</otherwise>
+      </choose>
+    , <choose>
+        <when test="tmId != null">#{jobId}</when>
+        <otherwise>NULL</otherwise>
+      </choose>
+    , #{empName}
+    , <choose>
+        <when test="tmId != null">#{tmId}</when>
+        <otherwise>NULL</otherwise>
+      </choose>
+    , #{accountEmail}
+    , #{accountAdd1}
+    , #{accountAdd2}
+    , #{accountPh}
+)
+</insert>
+
+<!-- 계정에서 수정할수 있는 정보 -->
+<!-- 개인 : 비밀번호, 이메일, 주소, 프로필사진, 휴대번호 -->
+<!-- 관리자 : 권한, 계정상태(비활성) -->
+<update id="updateAccount">
+  UPDATE ACCOUNT
+  <set>
+  <trim suffixOverrides=",">
+    <if test="empName != null"> EMP_NAME = #{empName}, </if>
+    <if test="accountEmail != null"> ACCOUNT_EMAIL = #{accountEmail}, </if>
+    <if test="accountPh != null"> ACCOUNT_PH = #{accountPh}, </if>
+    <if test="accountAdd1 != null"> ACCOUNT_ADD1 = #{accountAdd1}, </if>
+    <if test="accountAdd2 != null"> ACCOUNT_ADD2 = #{accountAdd2}, </if>
+    ACCOUNT_UPDATE = SYSDATE
+  </trim>
+  </set>
+  WHERE EMP_ID = #{empId}
+</update>
+
+<update id="updateAccountEmp">
+  UPDATE EMPLOYEE
+  <set>
+  <trim suffixOverrides=",">
+    <if test="name != null"> NAME = #{name}, </if>
+    <if test="email != null"> EMAIL = #{email}, </if>
+    <if test="phoneNumber != null"> PHONE_NUMBER = #{phoneNumber}, </if>
+    <if test="address != null"> ADDRESS = #{address}, </if>
+    <if test="addressDetail != null"> ADDRESS_DETAIL = #{addressDetail}, </if>
+    </trim>
+    </set>
+  WHERE EMP_ID = #{empId}
+</update>
+
+   <insert id="insertPasswordReset" parameterType="PasswordResetVO">
+      INSERT INTO PASSWORD_RESET(
+          TOKEN 
+         ,ACCOUNT_ID
+         ,EXPIRATION_DATE
+      )VALUES(
+          #{token}
+         ,#{accountId}
+         ,#{expirationDate}         
+      )   
+   </insert>
+   
+   <select id="selectPasswordReset" parameterType="string" resultType="PasswordResetVO">
+    SELECT TOKEN, ACCOUNT_ID, EXPIRATION_DATE
+    FROM PASSWORD_RESET
+    WHERE TOKEN = #{token}
+   </select>
+
+    <delete id="deletePasswordReset" parameterType="string">
+       DELETE FROM PASSWORD_RESET
+       WHERE TOKEN = #{token}
+   </delete>
+
+   <delete id="deleteExpired" parameterType="java.util.Date">
+       DELETE FROM PASSWORD_RESET
+       WHERE EXPIRATION_DATE &lt; #{now}
+   </delete>
+   
+   <update id="updateAccountPassword">
+    UPDATE ACCOUNT
+    SET PASSWORD = #{password},
+        ACCOUNT_UPDATE = SYSDATE
+    WHERE ACCOUNT_ID = #{accountId}
+   </update>
+   
+   <select id="accountfindEmail" resultType="string">
+   SELECT ACCOUNT_EMAIL
+   FROM ACCOUNT
+   WHERE ACCOUNT_ID =#{accountId}
+   </select>
+   
+   <select id="findAccountId" resultMap="accountMap">
+   	SELECT A.ACCOUNT_ID
+	    FROM ACCOUNT A
+	    JOIN EMPLOYEE E ON E.EMP_ID=A.EMP_ID
+    WHERE A.EMP_NAME =#{empName} AND E.JUMIN_FRONT= #{juminFront}
+   </select>
+   
+   
+       <!-- 채팅 계정 생성 3/28추가 -->
+    <insert id="chatempInsert" parameterType="accountVO">
+        INSERT INTO CHAT_EMP (
+            EMP_ID,
+            DEPARTMENT_ID,
+            EMP_NAME,
+            TM_ID,
+            RANK_ID,
+            STATUS,
+            LAST_LOGIN
+        ) VALUES (
+            #{empId},
+            #{departmentId},
+            #{empName},
+            #{tmId},
+            #{rankId},
+            '오프라인',
+            SYSDATE
+        )
+    </insert>
+    
+<!--     비활성꼐정관리 -->
+<select id="disableAccountCount">
+	SELECT COUNT(*) AS disabledAccountCount 
+		FROM ACCOUNT 
+    WHERE ACCOUNT_STATUS = 'N'
+</select>
+
+<select id="retireAccount" resultMap="accountMap">
+SELECT
+    a.ACCOUNT_ID,
+    d.department_name,
+    a.job_id,
+    a.emp_name,
+    a.account_status,
+    a.account_date,
+    a.account_del,
+    a.account_update,
+    a.ACCOUNT_DEL, ACCOUNT_DEL + INTERVAL '5' YEAR AS delete_5year,
+    T.team_name,
+    NVL(at.STATUS_ID, '-') AS STATUS_ID,
+    r.rank_id,
+    r.rank_name,
+    fd.FILE_PATH as empPath,
+    J.JOB_NAME
+FROM ACCOUNT a
+LEFT JOIN attendance at  ON a.emp_id = at.emp_id
+    AND TO_CHAR(at.WORK_DATE, 'YYYY-MM-DD') = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+LEFT JOIN DEPARTMENT d  ON d.DEPARTMENT_ID = a.DEPARTMENT_ID
+LEFT JOIN TEAM T ON T.TEAM_ID = A.TM_ID
+LEFT JOIN EMPLOYEE E ON E.emp_id = a.emp_id
+LEFT JOIN RANK R ON R.rank_id = E.rank_id
+LEFT JOIN file_detail fd on e.EMP_IMG = fd.DETAIL_ID
+LEFT JOIN JOB J ON J.JOB_ID = A.JOB_ID
+WHERE a.ACCOUNT_STATUS ='N'
+</select>
+
+
+<!-- 권한별 계정보유자 인원 -->
+<select id="accountRoleCount" resultMap="accountRoleCountMap">
+	SELECT 
+    CASE 
+      WHEN ROLE_ID = 93 THEN '마스터계정'
+      WHEN ROLE_ID = 92 THEN '인사관리자'
+      WHEN ROLE_ID = 91 THEN '부서팀장'
+      ELSE '일반사원'
+    END AS role_type,
+    COUNT(*) AS roleCount  
+  FROM ACCOUNT
+  GROUP BY 
+    CASE 
+      WHEN ROLE_ID = 93 THEN '마스터계정'
+      WHEN ROLE_ID = 92 THEN '인사관리자'
+      WHEN ROLE_ID = 91 THEN '부서팀장'
+      ELSE '일반사원'
+    END
+    ORDER BY COUNT(*) ASC
+</select>
+
+<select id="readStatusAccount">
+	SELECT
+    ACCOUNT_ID,
+    ACCOUNT_STATUS
+FROM ACCOUNT 
+WHERE ACCOUNT_STATUS = #{accountStatus} AND
+      ACCOUNT_ID = #{accountId}
+</select>
+
+<update id="toggleAccountStatus">
+UPDATE ACCOUNT
+SET 
+    ACCOUNT_STATUS = 
+        CASE
+            WHEN ACCOUNT_STATUS = 'Y' THEN 'N'
+            WHEN ACCOUNT_STATUS = 'N' THEN 'Y'
+            ELSE ACCOUNT_STATUS 
+        END,
+    ACCOUNT_DEL = 
+        CASE
+            WHEN ACCOUNT_STATUS = 'Y' THEN SYSDATE 
+            ELSE NULL
+        END
+WHERE ACCOUNT_ID = #{accountId}
+
+</update>
+
+<!-- 비활성 처리 -->
+<update id="retireAccountUpdate">
+UPDATE account
+SET 
+  ACCOUNT_STATUS = 
+    CASE 
+      WHEN ACCOUNT_STATUS = 'Y' THEN 'N'
+      ELSE ACCOUNT_STATUS 
+    END,
+  ACCOUNT_DEL = 
+    CASE 
+      WHEN ACCOUNT_STATUS = 'Y' THEN SYSDATE 
+      ELSE ACCOUNT_DEL  
+    END
+WHERE account_id = #{accountId}
+</update>
+
+</mapper>
+

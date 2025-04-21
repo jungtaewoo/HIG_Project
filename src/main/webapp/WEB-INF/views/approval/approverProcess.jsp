@@ -1,0 +1,303 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://www.springframework.org/security/tags"
+    prefix="security"%>
+
+  <!-- DataTables CSS (CDN 예시) -->
+  <link rel="stylesheet" type="text/css"
+        href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+
+  <style>
+    /********************************************************
+     * 전역 스타일 / 테이블 / 차트 컨테이너 등
+     ********************************************************/
+    .dashboard-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2.0rem;
+    }
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .summary-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2.0rem;
+      margin-bottom: 2.0rem;
+    }
+    .stat-card {
+      flex: 1;
+      min-width: 120px;
+      padding: 1rem;
+      text-align: center;
+      background: #f8f9fa;
+      border-radius: .5rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .stat-card .stat-title {
+      font-size: 1.1rem;
+       color: #6c757d;
+       margin-bottom: 0.75rem;
+    }
+    .stat-card .stat-value .badge {
+      font-size: 2.0rem;  /* 배지 폰트 크기 확대 */
+      font-weight: bold;
+      padding: 0.75rem 1rem; /* 배지의 상하좌우 여백 확장 */
+    }
+    .data-visualization {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .chart-container {
+      max-width: 400px;
+      width: 100%;
+      padding: 1rem;
+      background: #fff;
+      border-radius: .5rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .chart-container canvas {
+      width: 100% !important;
+      height: auto !important;
+    }
+    .table-container {
+      background: #fff;
+      padding: 1rem;
+      border-radius: .5rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    /********************************************************
+     * 테이블 필터 바 (상태/건수/검색 등) - 크기, 간격, 폰트 조정
+     ********************************************************/
+    .table-filters {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;   /* 필터들 사이 간격 */
+    }
+
+    /* 필터 컨트롤(Select, Input, Button) 전반적인 크기 키우기 */
+    .table-filters .form-select-sm,
+    .table-filters .form-control-sm,
+    .table-filters .btn {
+      display: inline-block;
+      width: auto;
+      margin: 0;
+      font-size: 1rem;       
+      padding: 0.5rem 0.75rem;
+      line-height: 1.5;
+      height: auto;          
+    }
+
+    /* 검색창의 기본 폭 확보 */
+    #searchInput {
+      min-width: 180px;   
+    }
+
+    /* 건수 선택 박스의 최소 너비 확보 (이 부분이 핵심) */
+    .table-filters #rowsPerPage {
+      min-width: 80px;   /* 필요한 만큼 조절 가능 */
+    }
+
+    /* 버튼은 약간 더 넉넉한 폭 */
+    .table-filters .btn {
+      padding: 0.5rem 1rem;
+    }
+
+    /* 라벨 간격 및 줄바꿈 방지 */
+    .table-filters label {
+      margin: 0 0.5rem 0 0;  /* 라벨 오른쪽 간격 조절 */
+      white-space: nowrap;
+      font-size: 1rem;
+    }
+
+    /********************************************************
+     * 배지 / 승인자명 등 스타일
+     ********************************************************/
+    .badge-status {
+      display: inline-block;
+      min-width: 50px;
+      text-align: center;
+      padding: 0.4em 0.7em;
+      font-size: 0.8rem;
+      color: #fff;
+      border-radius: 0.4rem;
+    }
+    .approver-name {
+      margin-left: 4px;
+      color: #666;
+      font-size: 0.8rem;
+    }
+
+    /********************************************************
+     * 링크 스타일, 표 본문 폰트
+     ********************************************************/
+    a:link, a:visited {
+      color: #435EBE;
+      font-size: 16px;
+    }
+    /* DataTables에서 생성되는 행, 폰트 크기 통일 */
+    #approverTable tbody tr,
+    #approverTable tbody td {
+      font-size: 16px !important;
+      line-height: 1.5 !important;
+    }
+
+    /********************************************************
+     * 헤더, BreadCrumb 등 상단 바
+     ********************************************************/
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      margin-bottom: 20px;
+      background-color: transparent;
+      box-shadow: none;
+      border: none;
+    }
+
+    .next-approver-arrow {
+      margin-left: 6px;
+      color: #444;
+      font-weight: bold;
+    }
+  </style>
+
+  <!-- (옵션) Chart.js + summary 업데이트 스크립트 -->
+  <script src="${pageContext.request.contextPath}/resources/js/approval/approverChart.js"></script>
+<div class="top-bar">
+    <!-- 좌측: 뒤로가기 버튼 -->
+    <div>
+      <button type="button" class="btn btn-outline-secondary" onclick="history.back();">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+    </div>
+
+    <!-- 우측: Breadcrumb -->
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item fw-bold text-primary">
+          <a href="${pageContext.request.contextPath}/account/login/home">📌 Main</a>
+        </li>
+        <li class="breadcrumb-item">
+          <a href="${pageContext.request.contextPath}/approval/templateList">기안작성</a>
+        </li>
+        <li class="breadcrumb-item">
+          <a href="${pageContext.request.contextPath}/approval/mydrafts">제출문서</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">결재현황</li>
+        <security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+          <li class="breadcrumb-item">
+            <a href="${pageContext.request.contextPath}/approval/list">결재양식</a>
+          </li>
+        </security:authorize>
+      </ol>
+    </nav>
+</div>
+
+<section class="section">
+  <div class="card">
+    <!-- 카드 헤더 -->
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 class="mb-0">결재현황</h2>
+      <div>
+        <a class="btn btn-primary btn-sm" href="${pageContext.request.contextPath}/approval/templateList">기안작성</a>
+        <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">새로고침</button>
+      </div>
+    </div>
+
+    <!-- 카드 바디 -->
+    <div class="card-body dashboard-container">
+      <!-- 요약 카드 (옵션) -->
+      <div class="summary-stats">
+        <div class="stat-card">
+          <div class="stat-title">대기</div>
+          <div class="stat-value">
+            <span class="badge bg-secondary" data-status="대기">0</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">진행중</div>
+          <div class="stat-value">
+            <span class="badge bg-info" data-status="진행중">0</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">승인</div>
+          <div class="stat-value">
+            <span class="badge bg-success" data-status="승인">0</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">반려</div>
+          <div class="stat-value">
+            <span class="badge bg-danger" data-status="반려">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- (옵션) 차트 영역 -->
+      <!-- 필터 바 -->
+      <div class="table-header">
+        <div class="table-filters">
+          <label for="statusFilter">상태:</label>
+          <select id="statusFilter" class="form-select form-select-sm">
+            <option value="all">전체</option>
+            <option value="draft">대기</option>
+            <option value="process">진행중</option>
+            <option value="approved">승인</option>
+            <option value="rejected">반려</option>
+          </select>
+
+          <label for="rowsPerPage">건수:</label>
+          <select id="rowsPerPage" class="form-select form-select-sm">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+
+          <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="검색">
+          <button id="searchBtn" class="btn btn-sm btn-primary">검색</button>
+        </div>
+      </div>
+
+      <!-- 테이블 -->
+      <table id="approverTable" class="table table-striped">
+        <thead>
+          <tr>
+            <th>문서ID</th>
+            <th>제목</th>
+            <th>기안일</th>
+            <th>기안자</th>
+            <th>부서</th>
+            <th>결재자</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+        <tbody id="approverTable" style="width: 100%;">
+          <!-- JS에서 <tr>을 생성하여 삽입 -->
+        </tbody>
+      </table>
+    </div> <!-- //card-body -->
+  </div> <!-- //card -->
+</section>
+
+<!-- jQuery, DataTables JS (CDN 예시) -->
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+
+<!-- JSP에서 contextPath를 JS 전역변수로 설정 -->
+<script type="text/javascript">
+  var ctx = '${pageContext.request.contextPath}';
+</script>
+
+<!-- 통합 스크립트 (ctx, jQuery, DataTables 모두 로드된 후) -->
+<script type="module" src="${pageContext.request.contextPath}/resources/js/approval/approverCombined.js"></script>
+

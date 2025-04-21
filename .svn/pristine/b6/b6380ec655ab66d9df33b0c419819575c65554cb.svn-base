@@ -1,0 +1,172 @@
+package kr.or.ddit.salary.controller;
+
+import java.time.chrono.JapaneseEra;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.or.ddit.salary.service.SalaryService;
+import kr.or.ddit.salary.vo.SalaryVO;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Controller
+public class SalaryUpdateController {
+
+	@Autowired
+	private SalaryService service;
+
+//	@Transactional
+//	@PostMapping("/salary/update/total")
+//	public String totalSalaryUpdate(@RequestParam("pyear")int pyear, @RequestParam("pmonth")int pmonth
+//			,@ModelAttribute("salary")SalaryVO salary
+//			){
+//		
+//		return "redirect:/salary/list";
+//	}
+
+	// 확정인원 카운트 년,월
+//	@GetMapping("/salary/finalConfirmCount")
+//	@ResponseBody
+//	public SalaryVO getConfirmCount() {
+//		return service.salaryInfo();
+//	}
+
+//	// 급여상세에서 버튼 활성화
+//	@PostMapping("/edit")
+//	public String slaryUpdate() {
+//		return "salary/salarDetail";
+//	}
+	
+	
+
+	// 급여리스트에서 클릭 기존코드
+	@PostMapping("/salary/final")
+	@ResponseBody
+	public Map<String , String> salaryFinal(@RequestParam("empId") String empId,
+			@RequestParam("salaryId") Long salaryId
+			,@RequestParam(value="date",required = false) String  payYear
+			,@RequestParam(value="date",required = false) String  payMonth
+			) {
+		
+		System.out.println("=============================yj");
+		System.out.println(empId);
+		System.out.println(salaryId);
+		int cnt = service.togglePayStatus(empId, salaryId); // 확정,확정대기 토글
+		
+		SalaryVO salaryInfo= service.salaryInfo(payYear,payMonth); // 확정인원
+		Map<String, String> finalMapDate = service.getPayStatus(empId, salaryId);//확정일
+		String finalDate = finalMapDate.get("CONFIRMDATE");
+		
+		
+		
+//		log.info("finalCount 확인 :{} ",salaryInfo);
+//		log.info("finalDate 확인 :{} ",finalDate);
+//		log.info("finalMapDate 확인 :{} ",finalMapDate);
+		
+		Map<String, String> result = new HashMap<>();
+		result.put("cnt",cnt+"");
+		result.put("finalCount",salaryInfo.getConfirmedCount()+""); //확정인원 섬머리부분
+		result.put("PayStatus",salaryInfo.getPayStatus()); //확정상태값 (확정/확정대기)
+		result.put("finalDate",finalDate);
+		return result;
+	}
+	
+	@PostMapping("/salary/final/all")
+	@ResponseBody
+	public Map<String, Object> finalAll(@RequestBody Map<String, Object> param
+			,@RequestParam(value="payYear",required = false) String  payYear
+			,@RequestParam(value="payMonth",required = false) String  payMonth
+			){
+		
+		log.info("일괄확정 컨털~~:{}{}{}", param,payYear, payMonth);
+	    List<Map<String, String>> salaryList = (List<Map<String, String>>) param.get("salaryList");
+	     payYear = String.valueOf(param.get("payYear"));
+	     payMonth = String.valueOf(param.get("payMonth"));
+
+	    int count = 0;
+	    log.info("일괄확정 컨털2~~:{}{}{}", param,payYear, payMonth);
+
+	    for (Map<String, String> item : salaryList) {
+	        String empId = item.get("empId");
+	        Long salaryId = Long.parseLong(item.get("salaryId"));
+	        int result = service.togglePayStatus(empId, salaryId);
+	        if (result > 0) count++;
+	    }
+
+	    SalaryVO finalCount = service.salaryInfo(payYear, payMonth); //여기로 전달
+	    log.info("확정 인원수: {}", finalCount.getConfirmedCount());
+
+	    Map<String, Object> result = new HashMap<>();
+	    result.put("count", count);
+	    result.put("finalCount", finalCount.getConfirmedCount() + "");
+	    return result;
+	}
+	
+	@PostMapping("/salary/request")
+	@ResponseBody
+	public Map<String, Object>salaryRequestToggle(
+			@RequestParam("empId") String empId,
+			@RequestParam("salaryId") Long salaryId,
+			@RequestParam(value="date",required = false) String  payYear,
+			@RequestParam(value="date",required = false) String  payMonth
+			){
+		int cnt = service.togglePayRequest(empId, salaryId); //토글
+		Map<String, String>reqMapDate = service.getPayStatus(empId, salaryId); //요청일
+		String reqDate = reqMapDate.get("TRANSFER_REQUEST_DATE");
+		
+		SalaryVO reqCount = service.salaryInfo(payYear, payMonth);
+		
+		Map<String, Object> request = new HashMap<>();
+		request.put("cnt", cnt);
+		request.put("reqDate", reqDate);
+		request.put("reqCount", reqCount.getPaymentRequestCount());
+		
+		return request;
+	}
+	
+	@PostMapping("/salary/requestAll")
+	@ResponseBody
+	public Map<String, Object>requestAll(
+			@RequestBody Map<String, Object>param,
+			@RequestParam(value="payYear",required = false)String payYear,
+			@RequestParam(value="payMonth",required = false)String payMonth
+			){
+		payYear = String.valueOf(param.get("payYear"));
+		payMonth = String.valueOf(param.get("payMonth"));
+		
+	    List<Map<String, String>> requestLsit = (List<Map<String, String>>) param.get("salaryList");
+		log.info("요청메서드 날짜확인~~~~~~~~~~~~==={}{}", payYear,payMonth); //잘들어옴 202504 형식
+		
+		int count = 0;
+		 for(Map<String, String>item : requestLsit) {
+			 String empId = item.get("empId");
+			 Long salaryId = Long.parseLong(item.get("salaryId"));
+			 int result = service.togglePayRequest(empId, salaryId);
+			 if(result>0) count++;
+		 }
+		
+		Map<String, Object> resultReq = new HashMap<>();
+		SalaryVO salaryInfo = service.salaryInfo(payYear, payMonth);
+		
+		resultReq.put("reqPayCount", salaryInfo.getPaymentRequestCount()+"");
+		resultReq.put("count", count);
+		
+		return resultReq;
+	}
+
+}
+
+

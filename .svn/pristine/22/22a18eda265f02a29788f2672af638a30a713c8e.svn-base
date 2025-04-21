@@ -1,0 +1,248 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="security"%>
+
+<style>
+/* 퀵메뉴바 스타일 - 기존 유지 */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    margin-bottom: 20px;
+    background-color: transparent; 
+    box-shadow: none;
+    border: none;
+}
+
+/* 페이지 헤더 스타일 */
+.page-header {
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 1rem;
+}
+
+.page-header h2 {
+    font-weight: 600;
+    color: #2C3E50;
+    margin-bottom: 0.5rem;
+}
+
+/* 카드 스타일 개선 */
+.card {
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem 1.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* 버튼 스타일 개선 */
+.button-container {
+    margin-top: 1.5rem;
+}
+
+.button-container .btn {
+    padding: 8px 20px;
+    margin-left: 10px;
+    border-radius: 5px;
+}
+
+/* 사용여부 배지 스타일 */
+.badge {
+    padding: 6px 10px;
+    font-weight: 500;
+}
+
+/* 테이블 링크 스타일 */
+table a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+table a:hover {
+    text-decoration: underline;
+}
+
+/* 테이블 체크박스 스타일 */
+.form-check-input {
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+/* 테이블 행 스타일 */
+#approvalTable tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.03);
+}
+
+/* 기존 테이블 스타일 관련 CSS(텍스트 사이즈를 제외한 다른 속성들은 그대로 유지) */
+/* 예시로 패딩, 폰트 패밀리 등은 그대로 두고, 폰트 크기만 15px로 변경해야 함 */
+.dataTable-wrapper table.dataTable tbody tr,
+.dataTable-wrapper table.dataTable tbody tr.even,
+.dataTable-wrapper table.dataTable tbody tr.odd,
+.dataTable-wrapper table.dataTable tbody tr td,
+.dataTable-wrapper table.dataTable tbody tr td * {
+    font-family: 'Nunito', sans-serif !important;
+    /* font-size 항목은 아래에서 override 할 예정이므로 여기서는 주석처리 */
+    /* font-size: 15px !important; */
+    line-height: 1.4 !important;
+    color: #212529 !important;
+    padding: 0.75rem !important;
+    margin: 0 !important;
+    transform: none !important;
+}
+
+.dataTable-wrapper table.dataTable tbody tr {
+    height: 50px !important;
+    line-height: 1.4 !important;
+}
+ /* 수정 후 (정상 동작) */
+#approvalTable tbody tr td,
+#approvalTable tbody tr td * {
+    font-size: 15px !important;
+}
+</style>
+
+<!-- 퀵메뉴바 영역 - 기존 코드 유지 -->
+<div class="top-bar">
+    <!-- 좌측: 버튼 그룹 -->
+    <div>	 
+        <button type="button" class="btn btn-outline-secondary" onclick="history.back();">
+            <i class="fas fa-arrow-left"></i> 
+        </button>
+    </div>
+    
+    <!-- 우측: Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item fw-bold text-primary"><a href="${pageContext.request.contextPath}/account/login/home">📌 Main</a> </li>
+            <li class="breadcrumb-item"><a href="${pageContext.request.contextPath}/approval/templateList">기안작성</a></li>
+            <li class="breadcrumb-item"><a href="${pageContext.request.contextPath}/approval/mydrafts">제출문서</a></li>
+            <li class="breadcrumb-item"><a href="${pageContext.request.contextPath}/approval/approverDrafts">결재현황</a></li>
+            <security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+                <li class="breadcrumb-item active" aria-current="page">결재양식</li>
+            </security:authorize>
+        </ol>
+    </nav>
+</div>
+
+<!-- 메인 컨텐츠 섹션 -->
+<div class="container-fluid">
+   
+
+    <section class="section">
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-file-alt me-2"></i>결재 양식 관리</h2>
+        		<p class="text-muted">사용 가능한 결재 양식을 관리할 수 있습니다.</p>
+            </div>
+            <div class="card-body">
+                <!-- 데이터 테이블 컨트롤 - 기존 코드 유지 -->
+                <div class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
+                    <div class="dataTable-top">                        
+                    </div>
+                </div>
+
+                <!-- 테이블 - 기존 코드 유지 -->
+                <table id="approvalTable" class="table table-striped datatable">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;"><a href="#" class="dataTable-sorter">양식코드</a></th>
+                            <th style="width: 20%;"><a href="#" class="dataTable-sorter">제목</a></th>
+                            <th style="width: 20%;"><a href="#" class="dataTable-sorter">최종수정자</a></th>
+                            <th style="width: 15%;"><a href="#" class="dataTable-sorter">카테고리</a></th>
+                            <th style="width: 15%;"><a href="#" class="dataTable-sorter">최초등록일시</a></th>
+                            <th style="width: 10%;"><a href="#" class="dataTable-sorter">등록자권한</a></th>
+                            <th style="width: 10%;"><a href="#" class="dataTable-sorter">사용여부</a></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <c:forEach items="${DraftTemplateList}" var="template">
+                            <tr>
+                                <td>
+                                    <input class="form-check-input" type="checkbox" value="${template.templateId}"/>
+                                    ${template.templateId}
+                                </td>
+                                <td> 
+                                    <a href="javascript:void(0);" onclick="TemplateDetail(${template.templateId})" class="text-primary">
+                                        ${template.templateTite}
+                                    </a>
+                                </td>
+                                <td>${template.employee.name}</td>
+                                <td>${template.templateCategory}</td>
+                                <td>
+                                    <fmt:formatDate value="${template.templateCreate}" pattern="yyyy년 MM월 dd일" />
+                                </td>
+                                <td>${template.roleName}</td>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${template.temlpateDeleted eq 'N'}">
+                                            <span class="badge bg-success">사용가능</span>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <span class="badge bg-danger">사용불가</span>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </td>
+                            </tr>
+                        </c:forEach>
+                    </tbody>
+                </table>
+
+                <!-- 버튼 컨테이너 - 기존 코드 유지하되 스타일만 개선 -->
+                <div class="button-container mb-3" style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn btn-danger" onclick="deleteTemplate()">
+                        <i class="fas fa-trash-alt me-1"></i> 양식 삭제
+                    </button>
+                    <a class="btn btn-primary" href="${pageContext.request.contextPath}/approval/processForm">
+                        <i class="fas fa-plus me-1"></i> 양식 추가
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- 비동기 처리 스크립트 - 기존 코드 유지 -->
+<script type="text/javascript" src="${pageContext.request.contextPath}/resources/js/approval/approvalDelete.js"></script>
+<!-- Simple DataTables 스크립트 - 기존 코드 유지 -->
+<script src="${pageContext.request.contextPath}/assets/extensions/simple-datatables/umd/simple-datatables.js"></script>
+<script src="${pageContext.request.contextPath}/resources/template/dist/assets/static/js/pages/simple-datatables.js"></script>
+
+<script>
+    // 기존 함수 유지
+    function TemplateDetail(templateId) {
+        window.location.href = "${pageContext.request.contextPath}/approval/" + templateId;
+    }
+
+    // 데이터 테이블 초기화 - 기존 코드 유지
+    document.addEventListener("DOMContentLoaded", function () {
+        const dataTable = new simpleDatatables.DataTable("#approvalTable", {
+            searchable: true,
+            fixedHeight: false
+        });
+
+        // 페이지 수 조절
+        document.getElementById("entriesPerPage").addEventListener("change", function () {
+            dataTable.pageLength = parseInt(this.value);
+            dataTable.refresh();
+        });
+
+        // 검색 기능
+        document.getElementById("searchBox").addEventListener("input", function () {
+            dataTable.search(this.value);
+        });
+    });
+</script>

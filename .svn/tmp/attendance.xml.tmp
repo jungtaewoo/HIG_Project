@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- * == 개정이력(Modification Information) == * * 수정일 수정자 수정내용 * ============ 
+	============== ======================= * 2025. 3. 12. 정태우 최초 생성 * -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.mybatis.mappers.attendance.attendanceMapper">
+
+	<resultMap type="AttendanceVO" id="attendanceResultMap" autoMapping="true">
+		<id property="attendanceId" column="attendance_id" />
+		<association property="employee" javaType="employeeVO" autoMapping="true">
+			<id property="empId" column="emp_id" />
+			<association property="department" javaType="DepartmentVO" autoMapping="true" />
+			<association property="team" javaType="TeamVO" autoMapping="true" />
+			<association property="rank" javaType="RankVO" autoMapping="true"/>
+		</association>
+	</resultMap>
+	
+	<resultMap type="EmployeeVO" id="employeeResultMap" autoMapping="true">
+		<id property="empId" column="emp_id"/>
+		<association property="department" javaType="DepartmentVO" autoMapping="true"/>
+		<association property="team" javaType="TeamVO" autoMapping="true"/>
+		<association property="rank" javaType="RankVO" autoMapping="true"/>
+	</resultMap>
+	
+	<resultMap id="workEmployeetMap" type="AttendanceVO" autoMapping="true">
+	    <id property="attendanceId" column="ATTENDANCE_ID"/>
+    	<association property="workstauts" javaType="WorkstautsVO" autoMapping="true"/>
+	</resultMap>
+	<!-- 전체 근태 기록 리스트 조회 -->
+	<select id="attendanceList" resultMap="attendanceResultMap">
+		SELECT
+			  a.attendance_Id
+			, to_char(a.work_date, 'yyyy-MM-dd') work_date
+			, to_char(a.work_startTime, 'HH24:mi:ss') work_start_time
+			, to_char(a.work_endTime, 'HH24:mi:ss') work_end_time
+			, FLOOR(a.WORKING_HOURS) AS WORKING_HOURS
+            , ROUND((a.WORKING_HOURS - FLOOR(a.WORKING_HOURS)) * 60) AS WORKING_MINUTES
+            , FLOOR(a.OVERTIME_HOURS) AS OVERTIME_HOURS
+            , ROUND((a.OVERTIME_HOURS - FLOOR(a.OVERTIME_HOURS)) * 60) AS OVERTIME_MINUTES
+            , FLOOR(a.NIGHT_WORK_HOURS) AS NIGHT_WORK_HOURS
+            , ROUND((a.NIGHT_WORK_HOURS - FLOOR(a.NIGHT_WORK_HOURS)) * 60) AS NIGHT_WORK_MINUTES
+			, a.attendance_status
+			, e.emp_id
+			, e.name
+			, e.phone_number
+			, d.department_id
+			, d.department_name
+			, t.team_name
+			, t.team_id
+		FROM 
+			attendance a
+		left JOIN employee e ON a.emp_id = e.emp_id
+		left JOIN department d ON e.department_id = d.department_id
+		left JOIN team t ON t.Team_id = e.team_id
+		WHERE 
+			1=1
+		<choose>
+			<when test="date != null and date != ''">
+				 AND TRUNC(a.work_date) = TO_DATE(#{date}, 'YYYY-MM-DD')
+			</when>
+			<otherwise>
+				AND TRUNC(a.work_date) = TRUNC(SYSDATE)
+			</otherwise>
+		</choose>
+		<if test="departmentId != null and departmentId != ''">
+			AND d.department_id = #{departmentId}
+		</if>
+		<if test="teamId != null and teamId != ''">
+			AND t.team_id = #{teamId}
+		</if>
+		 order by a.work_date ASC
+	</select>
+	<!--  전체 부서 리스트 조회 -->
+	<select id="departmentList" resultType="DepartmentVO">
+		SELECT
+		    d.department_id
+		  , d.department_name
+		  , COUNT(e.emp_id) AS department_employee_count
+		FROM
+		    department d
+	    LEFT JOIN employee   e ON e.department_id = d.department_id
+		WHERE 1 = 1
+        <if test="teamId != null and teamId != ''">
+            AND d.department_id = (
+                SELECT department_id
+                FROM team
+                WHERE team_id = #{teamId}
+            )
+        </if>
+	   GROUP BY
+		    d.department_id
+		  , d.department_name
+	</select>
+	<!-- 전체 팀 리스트 조회 -->
+	<select id="teamList" resultType="TeamVO">
+		SELECT
+		      team_id
+			, team_name
+			, department_id
+<<<<<<< .mine
+		FROM 
+			team
+		where 1=1
+		 <if test="teamId != null and teamId != ''">
+               AND team_id = #{teamId}
+        </if>
+||||||| .r474703
+=======
+		FROM 
+			team
+>>>>>>> .r475351
+	</select>
+	<select id="Employee" resultMap="employeeResultMap">
+		SELECT
+		      e.emp_id
+			, e.name
+			, e.phone_number
+			, d.department_name
+			, t.team_name
+			, r.rank_name
+			, fd.FILE_PATH as empPath
+		FROM 
+			employee e
+		left JOIN department d ON e.department_id = d.department_id
+		JOIN team t ON t.Team_id = e.team_id
+		join rank r on r.rank_id = e.rank_id
+		left join FILE_DETAIL fd on e.emp_img = fd.DETAIL_ID
+		where 
+			e.emp_id = #{empId}
+	</select>
+	<!--  한 직원의 디테일 근태기록 조회 -->
+	<select id="attendanceDetail" resultMap="attendanceResultMap">
+		SELECT
+			  a.attendance_id
+			, a.emp_id
+			, e.name
+			, t.team_name
+			, d.DEPARTMENT_NAME
+			, to_char(a.work_date,'yyyy-MM-dd') work_date
+			, to_char(a.work_startTime, 'HH24:mi:ss') work_start_time
+			, to_char(a.work_endTime, 'HH24:mi:ss') work_end_time
+			, FLOOR(a.WORKING_HOURS) AS WORKING_HOURS
+            , ROUND((a.WORKING_HOURS - FLOOR(a.WORKING_HOURS)) * 60) AS WORKING_MINUTES
+            , FLOOR(a.OVERTIME_HOURS) AS OVERTIME_HOURS
+            , ROUND((a.OVERTIME_HOURS - FLOOR(a.OVERTIME_HOURS)) * 60) AS OVERTIME_MINUTES
+            , FLOOR(a.NIGHT_WORK_HOURS) AS NIGHT_WORK_HOURS
+            , ROUND((a.NIGHT_WORK_HOURS - FLOOR(a.NIGHT_WORK_HOURS)) * 60) AS NIGHT_WORK_MINUTES
+			, a.attendance_status
+		FROM 
+			attendance a
+		left JOIN employee e ON a.emp_id = e.emp_id
+		left JOIN department d ON e.department_id = d.department_id
+		JOIN team t ON t.Team_id = e.team_id
+		WHERE 
+			a.emp_id = #{empId}
+		<choose>
+		    <when test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+		        AND a.work_date BETWEEN TO_DATE(#{startDate}, 'YYYY-MM-DD') AND TO_DATE(#{endDate}, 'YYYY-MM-DD')
+		    </when>
+		    <when test="startDate != null and startDate != ''">
+		        AND a.work_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+		    </when>
+		    <when test="endDate != null and endDate != ''">
+		        AND a.work_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+		    </when>
+		</choose>
+	</select>
+	
+	
+	<select id="myAttendance" resultMap="attendanceResultMap">
+	 SELECT 
+ 			  a.attendance_id
+			, a.emp_id
+			, e.name
+			, d.department_name
+			, t.team_name
+			, r.rank_name
+			, to_char(a.work_date,'yyyy-MM-dd') work_date
+			, to_char(a.work_startTime, 'HH24:mi:ss') work_start_time
+			, to_char(a.work_endTime, 'HH24:mi:ss') work_end_time
+			, FLOOR(a.WORKING_HOURS) AS WORKING_HOURS
+            , ROUND((a.WORKING_HOURS - FLOOR(a.WORKING_HOURS)) * 60) AS WORKING_MINUTES
+            , FLOOR(a.OVERTIME_HOURS) AS OVERTIME_HOURS
+            , ROUND((a.OVERTIME_HOURS - FLOOR(a.OVERTIME_HOURS)) * 60) AS OVERTIME_MINUTES
+            , FLOOR(a.NIGHT_WORK_HOURS) AS NIGHT_WORK_HOURS
+            , ROUND((a.NIGHT_WORK_HOURS - FLOOR(a.NIGHT_WORK_HOURS)) * 60) AS NIGHT_WORK_MINUTES
+			, a.attendance_status
+	FROM 
+		attendance a
+	 join employee e on e.emp_id = a.emp_id 
+	 join department d on e.department_id = d.department_id
+	 join team t on e.team_id = t.team_id
+	 join rank r on r.rank_id = e.rank_id
+	WHERE 
+        a.emp_id = #{empId}
+        <if test="workDate != null and workDate != ''">
+            AND to_char(a.work_date, 'yyyy-MM') = #{workDate}
+        </if>
+        <if test="workDate == null or workDate == ''">
+            AND EXTRACT(YEAR FROM a.work_date) = EXTRACT(YEAR FROM SYSDATE)
+            AND EXTRACT(MONTH FROM a.work_date) = EXTRACT(MONTH FROM SYSDATE)
+        </if>
+	</select>
+	
+<!-- 	오늘 날짜의 전체 직원 출근 기록을 조회 -->
+	<select id="findTodayAttendanceList" resultType="AttendanceVO">
+		SELECT *
+		FROM
+			attendance
+		WHERE
+			TO_CHAR(work_date, 'YYYY-MM-DD') = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+	</select>
+	<!-- 오늘 날짜의 직원 출근 기록을 조회 -->
+	<select id="findTodayAttendance" resultType="AttendanceVO">
+		SELECT 
+			*
+		FROM
+			attendance
+		WHERE
+			emp_id = #{empId}
+		AND
+			TO_CHAR(work_date, 'YYYY-MM-DD') = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+	</select>
+	<!-- 전체 업무 상태 리스트 조회 -->
+	<select id="workStatusList" resultType="WorkstautsVO">
+		select 
+		 		*
+		from 
+			EMP_STATUS
+	</select>
+	
+	<select id="workStatusEmployee" resultMap="workEmployeetMap">
+		select
+			  a.EMP_ID
+			 ,es.STATUS_ID
+			 ,es.STATUS_NAME
+			 ,a.ATTENDANCE_ID
+		from 
+			EMP_STATUS es
+		join attendance a on a.STATUS_ID = es.STATUS_ID
+		where 
+			 a.emp_id = #{empId}
+		AND 
+			 a.work_date = TRUNC(SYSDATE)
+	</select>
+	
+<!-- 	<select id="updateAttendance" resultMap="workEmployeetMap"> -->
+<!-- 		select  -->
+<!-- 			  a.STATUS_ID -->
+<!-- 			, a.work_date -->
+<!-- 			, a.WORK_STARTTIME -->
+<!-- 			, a.WORK_ENDTIME -->
+<!-- 			, a.EMP_ID -->
+<!-- 			, es.STATUS_NAME -->
+<!-- 		from attendance a -->
+<!-- 		join emp_status es on a.STATUS_ID = es.STATUS_ID -->
+<!-- 		where EMP_ID = #{empId} -->
+<!-- 	</select> -->
+	
+	<!-- 	QR코드 찍을 시 인서트 됨 -->
+	<insert id="attendanceInsert">
+	<selectKey order="BEFORE" keyProperty="attendanceId"
+		resultType="long">
+		SELECT 
+			NVL(MAX(attendance_id), 0) + 1 
+		FROM 
+			attendance
+	</selectKey>
+	INSERT
+    INTO attendance (
+          attendance_id
+        , emp_id
+        , work_date
+        , work_starttime
+        , work_endtime
+        , working_hours
+        , attendance_status
+        , work_type
+        , status_id
+        , OVERTIME_HOURS
+        , NIGHT_WORK_HOURS
+    ) VALUES (
+		  #{attendanceId,jdbcType=NUMERIC}
+		, #{empId,jdbcType=VARCHAR}
+		, TO_DATE(#{workDate,jdbcType=DATE}, 'YYYY-MM-DD ')
+		, TO_DATE(#{workStartTime,jdbcType=DATE}, 'HH24:MI:SS')
+		, TO_DATE(#{workEndTime,jdbcType=DATE}, 'HH24:MI:SS')
+		, #{workingHours,jdbcType=NUMERIC}
+		, #{attendanceStatus,jdbcType=VARCHAR}
+		, #{workType,jdbcType=VARCHAR}
+		, #{statusId,jdbcType=VARCHAR}
+		, #{overtimeHours,jdbcType=NUMERIC}
+		, #{nightWorkHours,jdbcType=NUMERIC}
+	)
+	</insert>
+	
+<!-- 	<select id=""> -->
+	
+<!-- 	</select> -->
+<!-- 출근List와 연차List에도 없는 직원들이면서 출근하지 않은 사람들으 무단결근 처리하는 쿼리 -->
+<insert id="insertAbsentStatus" >
+
+    INSERT
+    INTO attendance (
+          attendance_id
+        , emp_id
+        , work_starttime
+        , work_endtime
+        , working_hours
+        , attendance_status
+        , work_type
+        , status_id
+        , work_date
+        , overtime_hours
+        , night_work_hours
+    )
+    VALUES (
+      	  	#{attendanceId} 
+           , #{empId} 
+           , NULL
+           , NULL 
+           , 0    
+           , '무단결근' 
+           , NULL
+           , NULL 
+           , SYSDATE
+           , 0    
+           , 0
+    )
+</insert>
+
+	<!-- 퇴근 QR을 찍으면 일한 시간 자동 계산하여 삽입해줌-->
+    <update id="updateWorkEnd">
+   UPDATE
+   	   attendance
+   SET 
+       work_endTime = TO_DATE(#{workEndTime}, 'HH24:MI:SS'),
+       WORKING_HOURS = 
+           CASE 
+               WHEN TO_DATE(#{workEndTime}, 'HH24:MI:SS') &lt;= TO_DATE('18:00:00', 'HH24:MI:SS') 
+               THEN ROUND((TO_DATE(#{workEndTime}, 'HH24:MI:SS') - work_startTime) * 24, 2)
+               ELSE ROUND((TO_DATE('18:00:00', 'HH24:MI:SS') - work_startTime) * 24, 2)
+           END,
+       OVERTIME_HOURS = 
+           CASE 
+               WHEN TO_DATE(#{workEndTime}, 'HH24:MI:SS') &gt; TO_DATE('18:30:00', 'HH24:MI:SS') 
+               THEN LEAST(ROUND((LEAST(TO_DATE(#{workEndTime}, 'HH24:MI:SS'), TO_DATE('22:00:00', 'HH24:MI:SS')) 
+                               - TO_DATE('18:00:00', 'HH24:MI:SS')) * 24, 2), 4)
+               ELSE 0 
+           END,
+       NIGHT_WORK_HOURS = 
+           CASE 
+               WHEN TO_DATE(#{workEndTime}, 'HH24:MI:SS') &gt; TO_DATE('22:00:00', 'HH24:MI:SS') 
+               THEN ROUND((TO_DATE(#{workEndTime}, 'HH24:MI:SS') - TO_DATE('22:00:00', 'HH24:MI:SS')) * 24, 2)
+               ELSE 0 
+           END
+   WHERE
+       emp_id = #{empId}
+   AND
+       TO_CHAR(work_Date, 'YYYY-MM-DD') = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+   AND
+       work_startTime IS Not NULL
+</update >
+
+
+	<select id="getMax" resultType="AttendanceVO">
+		SELECT 
+			NVL(MAX(attendance_id), 0) + 1 as attendanceId 
+		FROM 
+			attendance
+	</select>
+
+</mapper>

@@ -1,0 +1,450 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+
+
+
+<style>
+  body {
+    background: linear-gradient(to right, #f8f9fa, #e9ecef);
+    font-family: 'Segoe UI', sans-serif;
+  }
+  .chart-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    height: 360px;
+  }
+  .section-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+  .table th, .table td {
+    vertical-align: middle;
+    text-align: center;
+  }
+  .table-hover tbody tr:hover {
+    background-color: #f1f1f1;
+  }
+  .btn-primary {
+    border-radius: 1rem;
+    padding: 0.5rem 1.25rem;
+  }
+  #table1 th, #table1 td {
+    text-align: center;
+    vertical-align: middle;
+  }
+</style>
+
+<div class="page-container container-fluid" style="font-size: 18px;">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <div>
+      <button type="button" class="btn btn-outline-secondary" onclick="history.back();">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+    </div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item fw-bold text-primary">
+          <a href="${pageContext.request.contextPath }/account/login/home">📌Main</a>
+        </li>
+        <li class="breadcrumb-item"><a href="${pageContext.request.contextPath }/employee/empList">직원관리</a></li>
+        <li class="breadcrumb-item"><a href="${pageContext.request.contextPath }/employee/appointList">인사발령</a></li>
+        <li class="breadcrumb-item active" aria-current="page">계정관리</li>
+        <li class="breadcrumb-item"><a href="${pageContext.request.contextPath }/employee/empUpdate/retireList">퇴사자관리</a></li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+
+<div class="container my-5">
+  <!-- 타이틀 -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-primary">계정관리</h2>
+    <hr>
+  </div>
+
+  <div class="row">
+    <!-- 차트 1 -->
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light fw-semibold">📊 계정 등록 현황</div>
+        <div class="card-body d-flex justify-content-center align-items-center" style="height: 280px;">
+          <canvas id="myChart1" width="100%" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- 차트 2 -->
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light fw-semibold">🔐 권한별 계정 수</div>
+        <div class="card-body d-flex justify-content-center align-items-center" style="height: 280px;">
+          <canvas id="myChart3" width="100%" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- 차트 3 -->
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light fw-semibold">🚫 비활성 계정 현황</div>
+        <div class="card-body d-flex justify-content-center align-items-center" style="height: 280px;">
+          <canvas id="myChart2" width="100%" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0"></h5>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id=showRetiredtoggle checked>
+            <label class="form-check-label" for="showRetiredtoggle">퇴사자포함</label>
+        </div>
+    </div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <div class="alert alert-primary shadow-sm">
+        <strong>📂업무 프로세스</strong>  
+        - 직원 등록 → 시스템 계정 자동 발급 → 권한 기본할당 → 최초 로그인 본인인증
+    </div>
+    
+        <ul class="nav nav-tabs mb-3" id="accountTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#allAccounts"
+                    type="button" role="tab">전체 계정
+            </button>
+        </li>
+        
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="retired-tab" data-bs-toggle="tab" data-bs-target="#retiredAccounts"
+                    type="button" role="tab">퇴사자 계정 (보관기간5년)
+            </button>
+        </li>
+    </ul>
+    
+    
+<div class="card">
+	<div class="card-body">
+		 <table id="allAccountsTable" class="table1 table-bordered table-striped display nowrap w-100">
+		    <thead>
+			      <tr>
+			        <th>ID</th>
+			        <th>사원명</th>
+			        <th>부서</th>
+			        <th>팀</th>
+			        <th>직급</th>
+			        <th>직책</th>
+			        <th>입사일</th>
+			        <th>E-MAIL</th>
+			        <th>계정등록일</th>
+			        <th>권한</th>
+			        <th>상태</th>
+			        <th>잠금일</th>
+			      </tr>
+		    </thead>
+			<tbody>
+			   <c:if test="${not empty accountList }">
+			 <c:forEach items="${accountList}" var="account">
+			    <tr data-retired="${account.accountStatus == '미사용' ? 'true' : 'false'}">
+			        <td>
+			            <a href="#"
+			               data-bs-toggle="modal"
+			               data-bs-target="#exampleModal"
+			               data-mode="detail"
+			               data-account-id="${account.accountId}">
+			               ${account.accountId}
+			            </a>
+			        </td>
+			        <td>${account.empName }</td>
+			        <td>${account.department.departmentName }</td>
+			        <td>${account.employee.team.teamName}</td>
+			        <td>${account.rank.rankName }</td>
+			        <td>${account.job.jobName }</td>
+			        <td>${fn:substring(account.employee.hireDate,0,10)  }</td>
+			        <td>${account.employee.email }</td>
+			        <td>${fn:substring(account.accountDate,0,10)  }</td>
+			        <td>일반사원</td>
+<%-- 			        <td>${account.accountStatus ? "사용" : "미사용" }</td> --%>
+					<td onclick="accountStatus(this)" id="accountyn">
+			        	<c:choose>
+			        		<c:when test="${account.accountStatus eq 'N' }">
+			        			<button type="button" class="btn btn-sm btn-danger">미사용</button>
+			        		</c:when>
+			        		<c:otherwise>
+			        			<button type="button" class="btn btn-sm btn-success">사용</button>
+			        		</c:otherwise>
+			        	</c:choose>
+			        </td>
+			        
+			        <td>${fn:substring(account.accountDel,0,10)  }</td>
+			    </tr>
+		</c:forEach>
+			   </c:if>
+			</tbody>
+		</table>
+	</div>
+</div> <!-- 재직자 or 전체 계정 -->
+
+
+<!-- 퇴사자계정 관리 -->
+<div class="card">
+	<div class="card-body">
+		 <table id="retiredAccountDiv" class="table table-striped datatable">
+		    <thead>
+			      <tr>
+			        <th>ID</th>
+			        <th>사원명</th>
+			        <th>부서</th>
+			        <th>팀</th>
+			        <th>직급</th>
+			        <th>직책</th>
+			        <th>계정유지기간</th>
+			        <th>삭제예정일</th>
+			        <th>상태</th>
+			      </tr>
+		    </thead>
+			<tbody>
+			   <c:if test="${not empty retireAccount }">
+			 <c:forEach items="${retireAccount}" var="retireAccount">
+			    <tr>
+			        <td >${retireAccount.accountId }</td>
+			        <td>${retireAccount.empName }</td>
+			        <td>${retireAccount.department.departmentName }</td>
+			        <td>${retireAccount.employee.team.teamName}</td>
+			        <td>${retireAccount.rank.rankName }</td>
+			        <td>${retireAccount.job.jobName }</td>
+			        <td>${fn:substring(retireAccount.accountDate,0,10)  } ~ 
+			        ${fn:substring(retireAccount.accountDel,0,10)  }
+			        <td>${fn:substring(retireAccount.delete_5year,0,10)  }</td>
+			        <td>${retireAccount.accountStatus ? "사용" : "미사용" }</td> <!-- 계정상태 -->
+			    </tr>
+		</c:forEach>
+		
+			   </c:if>
+			</tbody>
+		</table>
+	</div>
+</div> <!-- 재직자 or 전체 계정 -->
+
+
+
+<div class="d-flex justify-content-end mt-3">
+  <form action="/account/insert/formUI" method="get">
+    <button type="submit" class="btn btn-primary">+ 신규 등록</button>
+  </form>
+</div>
+
+
+<!-- <!-- DataLabels는 나중에 로드 -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script type="text/javascript">
+  // EL 데이터 바인딩
+  const roleLabels = [];
+  const roleCounts = [];
+
+	 <c:forEach var="role" items="${accountRoleCount}">
+		  roleLabels.push("${fn:trim(role.role_type)}");
+		  roleCounts.push(${role.roleCount}); // 숫자 그대로
+	</c:forEach>
+
+</script>
+
+<script type="text/javascript">
+Chart.register(ChartDataLabels); //  전역 등록
+const ctx1 = document.getElementById('myChart1');
+const ctx2 = document.getElementById('myChart2');
+const ctx3 = document.getElementById('myChart3');
+
+
+const data = {
+  labels: ['전체직원','등록계정', '미등록계정'],
+  datasets: [{
+    label: '계정 등록 현황',
+    data: [
+    	'${totalCount.totalemp}',
+    	'${totalCount.totalAccount}',
+    	'${totalCount.unRegisterAccount}'
+    	],
+    backgroundColor: [
+      'rgba(54, 162, 235, 0.7)',
+      'rgba(75, 192, 192, 0.7)',
+      'rgba(255, 159, 64, 0.7)'
+    ],
+    borderColor: [
+      'rgba(54, 162, 235, 1)',
+      'rgba(75, 192, 192, 1)',
+      'rgba(255, 159, 64, 1)'
+    ],
+    borderWidth: 1
+  }]
+};
+
+new Chart(ctx1, {
+  type: 'bar',
+  data: data,
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      },
+      datalabels: {
+        anchor: 'end',
+        align: 'top',
+        color: '#000',
+        font: {
+          weight: 'bold',
+          size: 14
+        },
+        formatter: (value) => `\${value}명`
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          precision: 0
+        }
+      }
+    }
+  },
+  plugins: [ChartDataLabels]
+});
+
+const disAccountCnt = `${cnt}`;
+const deleteAccount = `${deleteAccountCnt}`;
+//계정비활성, 비활성예정 차트
+const data2 = {
+  labels: ['비활성', '계상삭제예정(30일이내)'],
+  datasets: [{
+    label: '비활성계정 현황',
+    data: [disAccountCnt,2]
+    ,
+    backgroundColor: [
+      'rgba(75, 192, 192, 0.7)',
+      'rgba(255, 159, 64, 0.7)'
+    ],
+    borderColor: [
+      'rgba(75, 192, 192, 1)',
+      'rgba(255, 159, 64, 1)'
+    ],
+    borderWidth: 1
+  }]
+};
+
+// 두 번째 차트 생성 
+new Chart(ctx2, {
+  type: 'bar',
+  data: data2, 
+  options: {
+    responsive: true,
+    maintainAspectRatio: false, 
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        anchor: 'end',
+        align: 'top',
+        color: '#000',
+        font: { weight: 'bold', size: 14 },
+        formatter: (value) => `\${value}명`
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { precision: 0 },
+        max: 50
+      }
+    }
+  },
+  plugins: [ChartDataLabels]
+});
+
+
+
+//차트 3: 계정 권한별 현황 (가로형)
+const data3 = {
+  labels: roleLabels,
+  datasets: [{
+    label: '계정 권한보유',
+    data: roleCounts,
+    backgroundColor: [
+      'rgba(54, 162, 235, 0.7)',
+      'rgba(255, 99, 132, 0.7)',
+      'rgba(255, 206, 86, 0.7)',
+      'rgba(75, 192, 192, 0.7)'
+    ],
+    borderColor: [
+      'rgba(54, 162, 235, 1)',
+      'rgba(255, 99, 132, 1)',
+      'rgba(255, 206, 86, 1)',
+      'rgba(75, 192, 192, 1)'
+    ],
+    borderWidth: 1
+  }]
+};
+
+new Chart(ctx3, {
+	  type: 'bar',
+	  data: data3,
+	  options: {
+	    indexAxis: 'y',
+	    responsive: true,
+	    maintainAspectRatio: false,
+	    plugins: {
+	      legend: { display: false },
+	      datalabels: {
+	        display: true,
+	        clip: false,
+	        anchor: 'end',
+	        align: 'right',
+	        color: '#000',
+	        font: { weight: 'bold', size: 10 },
+	        formatter: (value) => `\${value}명`
+	      }
+	    },
+	    scales: {
+	      x: {
+	        beginAtZero: true,
+	        ticks: { precision: 0 }
+	      }
+	    }
+	  },
+	  plugins: [ChartDataLabels]
+	});
+
+</script>
+
+<!--  모달 -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">상세보기</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-warning" id="editButton" data-mode="edit">수정</button>
+        <button type="button" class="btn btn-success" id="saveButton" style="display: none;">저장</button>
+        <button type="button" class="btn btn-secondary" id="closeButton" data-bs-dismiss="modal">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--  별도 JavaScript 파일 -->
+<script src="${pageContext.request.contextPath}/resources/js/account/accountList.js"></script>
+<script src="${pageContext.request.contextPath}/resources/js/account/accountEdit.js"></script>
+<script src="${pageContext.request.contextPath}/resources/js/account/disabledAccount.js"></script>
+

@@ -1,0 +1,97 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<script>console.log("✅ postScript.jsp 로딩됨!");</script>
+
+<!-- Todo List JS Loading -->
+<script
+	src="${pageContext.request.contextPath}/resources/template/dist/assets/extensions/dragula/dragula.min.js"></script>
+<script
+	src="${pageContext.request.contextPath}/resources/template/dist/assets/static/js/pages/ui-todolist.js"></script>
+
+
+<!-- SweetAlert2 CSS & JS Loading-->
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Toastfy JS Loading -->
+<script
+	src="${pageContext.request.contextPath}/resources/template/dist/assets/extensions/toastify-js/src/toastify.js"></script>
+<script
+	src="${pageContext.request.contextPath}/resources/template/dist/assets/static/js/pages/toastify.js"></script>
+
+<!-- Toastfy JS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+
+
+
+<script
+	src="${pageContext.request.contextPath}/resources/template/dist/assets/static/js/components/dark.js"></script>
+<script
+	src="${pageContext.request.contextPath}/resources/template/dist/assets/compiled/js/app.js"></script>
+<script
+	src="${pageContext.request.contextPath}/resources/template/dist/assets/extensions/apexcharts/apexcharts.min.js"></script>
+<script
+	src="${pageContext.request.contextPath}/resources/template/dist/assets/static/js/pages/dashboard.js"></script>
+<script
+	src="${pageContext.request.contextPath}/resources/template/dist/assets/static/js/pages/simple-datatables.js"></script>
+<script
+	src="${pageContext.request.contextPath}/resources/template/dist/assets/extensions/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+<script
+	src="${pageContext.request.contextPath}/resources/template/dist/assets/extensions/simple-datatables/umd/simple-datatables.js"></script>
+<script
+	src="${pageContext.request.contextPath}/resources/fullcalendar-6.1.15/dist/index.global.min.js"></script>
+
+<%-- <script src="${pageContext.request.contextPath}/resources/js/test.js" defer></script> --%>
+
+<script
+	src="${pageContext.request.contextPath}/resources/js/content/themaChage.js"></script>
+<script
+	src="${pageContext.request.contextPath}/resources/ckeditor/ckeditor.js"></script>
+<script
+	src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+	<script
+	src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script defer> 
+document.addEventListener("DOMContentLoaded", function () {
+	const sockJs = new SockJS("/noti");
+
+	sockJs.onopen = function () {
+		console.log("웹소켓 연결 성공!");
+	};
+
+	sockJs.onmessage = function (event) {
+		const message = event.data;
+
+		if (message.includes("출근") || message.includes("퇴근")) {
+			Swal.fire({
+				text: message,
+				confirmButtonText: '확인',
+				position: 'top',
+			}).then(() => {
+				location.reload(); // 확인 누르면 새로고침
+			});
+			return;
+		}
+
+		const alarmEnabled = localStorage.getItem("alarmEnabled") === "true";
+		if (alarmEnabled) {
+			if (Notification.permission === "granted") {
+				new Notification(message);
+			} else if (Notification.permission !== "denied") {
+				Notification.requestPermission().then(permission => {
+					if (permission === "granted") {
+						new Notification(message);
+					}
+				});
+			}
+		}
+	};
+
+
+	sockJs.onclose = function () {
+		console.log("웹소켓 연결 종료");
+	};
+});
+	</script>

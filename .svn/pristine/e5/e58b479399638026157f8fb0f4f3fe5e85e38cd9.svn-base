@@ -1,0 +1,204 @@
+package kr.or.ddit.mybatis.mappers.salary;
+
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import kr.or.ddit.salary.vo.AllowanceCodeVO;
+import kr.or.ddit.salary.vo.AllowanceVO;
+import kr.or.ddit.salary.vo.DeductionCodeVO;
+import kr.or.ddit.salary.vo.DeductionVO;
+import kr.or.ddit.salary.vo.SalaryVO;
+
+/**
+ * 
+ * @author youngjun
+ * @since 2025. 3. 18.
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *   
+ *   수정일               수정자           수정내용
+ *  -----------      -------------    ---------------------------
+ *  2025. 3. 18.        youngjun             최초 생성
+ *  2025. 3. 20.        youngjun             수당,공제 분리생성
+ *  2025. 3. 21.        youngjun             전직원 급여,공제,수당 등록
+ *  2025. 3. 22.        youngjun             급여대상자, 급여확정자, 미등록자, 금액 조회
+ *  2025. 3. 23.        youngjun             직원 수당등록 동시진행 추가 (인사기록카드 컬럼추가)
+ *  2025. 3. 23.        youngjun             수당 공제 등록시 급여에 총액반영 후 실지급액 총지급액 업데이트
+ *  2025. 3. 23.        youngjun             년/월별 총 사원수, 지급, 공제, 수당, 실지급액 조회, 급여등록 미리보기 (보류)
+ *  2025. 3. 24.        youngjun             직급별, 부서별 연봉 평균
+ *  2025. 3. 24.     	youngjun	          직급별, 부서별 연봉 평균
+ *  2025. 3. 26.     	youngjun	          특정기간별 데이터 조회, 그래프반영
+ *  2025. 3. 28.     	youngjun	          확정요청 리스트 추가
+ *  2025. 3. 29.     	youngjun	          이체요청 토글
+ *
+ * </pre>
+ */
+@Mapper
+public interface SalaryMapper {
+	
+	/**
+	 * 직원의 급여리스트 조회
+	 * @return
+	 */
+	public List<SalaryVO>salaryList(@Param("payYear")String payYear, @Param("payMonth")String payMonth);
+	
+	
+	/**
+	 * 선택한 직원의 급여 상세조회
+	 * @param salary
+	 * @return
+	 */
+	public SalaryVO salarySelected(@Param("empId")String empId, @Param("payYear")String payYear,@Param("payMonth") String payMonth);
+	/**
+	 * 수당항목 리스트 조회
+	 * @return
+	 */
+	public List<AllowanceCodeVO>AllowanceList();
+	
+	/**
+	 * 공제항목 리스트 조회
+	 * @return
+	 */
+	public List<DeductionCodeVO>DeductionList();
+	
+	
+	/**
+	 * 전직원의 급여등록
+	 * @param salary
+	 * @return
+	 */
+	public int InsertSalary(@Param("payYear") int payYear, @Param("payMonth") int payMonth);
+	
+	
+	/**
+	 * 전직원 공제등록 (급여등록시 수당과 동시 진행)
+	 * @param deducation
+	 * @return
+	 */
+	public int InsertDeducation(@Param("payYear")int payYear, @Param("payMonth")int payMonth);
+	
+	/**
+	 * 전직원 수당등록 (급여등록시 공제와 동시진행)
+	 * @param allowance
+	 * @return
+	 */
+	public int InsertAllowance(@Param("payYear")int payYear, @Param("payMonth")int payMonth);
+	
+	
+	/**
+	 * 공제액 급여로 총액반영
+	 * @return
+	 */
+	public int deducationTotalUpdate(@Param("payYear")int payYear, @Param("payMonth")int payMonth);
+	
+	/**
+	 * 수당액 급여로 총액반영
+	 * @return
+	 */
+	public int allowanceTotalUpdate(@Param("payYear")int payYear, @Param("payMonth")int payMonth);
+	
+	
+	/**
+	 * 수당 공제총액 반영후 총지급액, 실지급액 수정
+	 * @return
+	 */
+	public int salaryTotalAmountUpdate(@Param("payYear")int payYear, @Param("payMonth")int payMonth);
+	
+	/**
+	 * 급여대상자, 확정자, 총 급여금액 조회
+	 * @param salary
+	 * @return
+	 */
+	public SalaryVO salaryInfo(@Param("payYear")String payYear, @Param("payMonth")String payMonth, @Param("dateSelect")String dateSelect);
+	
+	/**
+	 * 년월별 전임직원 급여처리된 리스트조회
+	 * @return
+	 */
+	public List<SalaryVO>SalarySummaryByMonth();
+	
+	/**
+	 * 특정년도 임직원 급여 확정인원, 확정급여 조회
+	 * @param payYear
+	 * @param payMonth
+	 * @return
+	 */
+	public SalaryVO salarySelectedSummaryMonth(@Param("payYear")String payYear, @Param("payMonth")String payMonth);
+	
+	/**
+	 * 급여등록 미리보기
+	 * @return
+	 */
+	public SalaryVO salaryInsertEx(@Param("payYear")int payYear, @Param("payMonth")int payMonth);
+	
+	
+	/**
+	 * 부서별 평균급여
+	 * @return
+	 */
+	public List<SalaryVO> departMentAvgSalry(@Param("payYear")String payYear, @Param("payMonth")String payMonth);
+	
+	/**
+	 * 직급별 평균급여
+	 * @return
+	 */
+	public List<SalaryVO> rankAvgSalary(@Param("payYear")String payYear, @Param("payMonth")String payMonth);
+	
+	
+	/**
+	 * 상태값 조회
+	 * @return
+	 */
+	public Map<String, String> getPayStatus(@Param("empId") String empId, @Param("salaryId") Long salaryId);
+	
+	/**
+	 * 확정값 토글 (확정<->확정대기)
+	 * @param empId
+	 * @param salaryId
+	 * @return
+	 */
+	public int togglePayStatus(@Param("empId") String empId, @Param("salaryId") Long salaryId);
+	
+	/**
+	 * 이체요청 토글 (요청완료<->요청대기)
+	 * @param empId
+	 * @param salaryId
+	 * @return
+	 */
+	public int togglePayRequest(@Param("empId") String empId, @Param("salaryId") Long salaryId);
+	
+	
+//	/**
+//	 * 기간별 리스트조회
+//	 * @param payYear
+//	 * @param payMonth
+//	 * @return
+//	 */
+//	public List<SalaryVO> getSalaryList(@Param("payYear")int payYear, @Param("payMonth")int payMonth);
+	
+	/**
+	 * 급여확정된 사원의 리스트 조회
+	 * @param payStatus
+	 * @return
+	 */
+	public List<SalaryVO> salarySendEmailConfirm(@Param("payYear")String payYear, @Param("payMonth")String payMonth);
+	
+	/**
+	 * 부서별 최소급여와 최대급여 조회
+	 * @return
+	 */
+	public List<Map<String, Object>> MinMaxSalaryByDept();
+	
+	/**
+	 * 지급승인된 사원의 급여지급
+	 * @return
+	 */
+	public int salaryPaid(@Param("empId") String empId, @Param("salaryId") Long salaryId);
+	
+
+}

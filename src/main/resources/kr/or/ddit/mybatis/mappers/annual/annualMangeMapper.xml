@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.annual.AnnualMangeMapper">
+
+ 	<!-- 연차 목록 가져오기 -->
+    <select id="annualManageList" >
+ 	SELECT
+   		annual_code   
+	  , annual_name   
+	  , annual_info   
+	  , annual_status 
+	FROM
+  	 	 annual_type
+    </select>
+
+    <!-- 연차 항목 추가 -->
+    <insert id="insertAnnualItem" >
+		<selectKey order="BEFORE" keyProperty="annualCode" resultType="string">
+		  SELECT 
+		        'AC_' || LPAD(TO_NUMBER(SUBSTR(MAX(ANNUAL_CODE), 4)) + 1, 2, '0')
+		    FROM ANNUAL_TYPE
+		</selectKey>
+        INSERT INTO 
+        	ANNUAL_TYPE (
+        	  annual_code
+        	, annual_name
+        	, annual_info
+        	, annual_status
+        )
+        VALUES (
+	       	  #{annualCode}
+	        , #{annualName}
+	        , #{annualInfo}
+	        , #{annualStatus}
+	      )
+    </insert>
+
+    <!-- 연차 항목 수정 -->
+    <update id="updateAnnualItemStatus" >
+        UPDATE
+         	ANNUAL_TYPE
+        SET 
+       		  annual_name = #{annualName}
+       		, annual_info = #{annualInfo}
+       		, annual_status = #{annualStatus}
+        WHERE 
+        	annual_code = #{annualCode}
+    </update>
+	<delete id="deleteAnnualItem">
+	   DELETE FROM 
+			 ANNUAL_TYPE
+ 	   WHERE
+ 	   		 annual_code = #{annualCode}
+	</delete>
+
+</mapper>

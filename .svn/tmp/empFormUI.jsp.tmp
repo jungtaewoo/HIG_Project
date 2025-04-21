@@ -1,0 +1,224 @@
+<!-- 
+ * == 개정이력(Modification Information) ==
+ *   
+ *   수정일      			수정자           수정내용
+ *  ============   	============== =======================
+ *  2025. 3. 12.     	LJW            최초 생성
+ *
+-->
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="http://www.springframework.org/tags/form" prefix="form"%>
+<style>
+	input{
+		border-color: black;
+	}
+</style>
+
+<div class="page-container container-fluid">
+	<div class="d-flex justify-content-between align-items-center mb-2">
+
+		<!-- 좌측: 버튼 그룹 -->
+		<div>
+			<button type="button" class="btn btn-outline-secondary"
+				onclick="history.back();">
+				<i class="fas fa-arrow-left"></i>
+			</button>
+		</div>
+
+		<!-- 우측: Breadcrumb -->
+		<nav aria-label="breadcrumb">
+			<ol class="breadcrumb mb-0">
+				<li class="breadcrumb-item fw-bold text-primary"><a
+					href="${pageContext.request.contextPath }/account/login/home">📌Main</a></li>
+				<li class="breadcrumb-item"><a href="${pageContext.request.contextPath }/employee/empList">직원관리</a></li>
+				<li class="breadcrumb-item active" aria-current="page">신규직원 등록</li>
+			</ol>
+		</nav>
+
+	</div>
+</div>
+<br/>
+
+<<<<<<< .mine
+<br />
+
+<form:form method="post" modelAttribute="employee" enctype="multipart/form-data">
+	<div class="row">
+		<!-- 왼쪽 카드 -->
+		<div class="col-md-6">
+			<div class="card mb-4">
+				<div class="card-header">
+					<h3>신규직원등록</h3>
+				</div>
+				<div class="card-body">
+
+					<!-- 직원 정보 필드들 -->
+					<c:forEach var="field" items="${['name','address','addressDetail','phoneNumber','juminFront','juminBack','email']}">
+						<div class="row mb-3">
+							<label class="col-sm-3 col-form-label"><h6>${field eq 'empId' ? '직원ID' :
+								field eq 'name' ? '이름' :
+								field eq 'address' ? '기본주소' :
+								field eq 'addressDetail' ? '상세주소' :
+								field eq 'phoneNumber' ? '휴대폰번호' :
+								field eq 'juminFront' ? '주민등록번호' :
+								field eq 'juminBack' ? '주민번호 뒷자리' :
+								field eq 'email' ? '이메일주소' : field }</h6></label>
+							<div class="col-sm-9">
+								<input type="text" class="form-control" name="${field}" id="${field}" value="${employee[field]}" ${field eq 'address' ? 'readonly' : ''}>
+								<form:errors path="${field}" class="text-danger" element="span" />
+							</div>
+||||||| .r474942
+=======
+<div class="row">
+	<div class="col-md-6">
+		<div class="card">
+			<div class="card-header">
+				<h3>신규직원등록</h3>
+			</div>
+			<div class="card-body">
+			
+				<form:form method="post" modelAttribute="employee"  enctype="multipart/form-data">
+					<div class="row mb-3">
+						<label for="empId" class="col-sm-2 col-form-label"><h6>직원ID</h6></label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" name="empId" id="empId"
+								value="${employee.empId}">
+							<form:errors path="empId" class="text-danger" element="span" />
+>>>>>>> .r474979
+						</div>
+					</div>
+					<div class="row mb-3">
+						<label for="name" class="col-sm-2 col-form-label"><h6>이름</h6></label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" name="name" id="name"
+								value="${employee.name}">
+							<form:errors path="name" class="text-danger" element="span" />
+						</div>
+					</div>
+					<div class="row mb-3">
+						<label for="address" class="col-sm-2 col-form-label"><h6>기본주소</h6></label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" name="address" id="address"
+								value="${employee.address}" readonly>
+							<form:errors path="address" class="text-danger" element="span" />
+						</div>
+					</div>
+					<div class="row mb-3">
+						<label for="addressDetail" class="col-sm-2 col-form-label"><h6>상세주소</h6></label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" name="addressDetail"
+								id="addressDetail" value="${employee.addressDetail}">
+							<form:errors path="addressDetail" class="text-danger" element="span" />
+						</div>
+					</div>
+					<div class="row mb-3">
+						<label for="phoneNumber" class="col-sm-2 col-form-label"><h6>휴대폰번호</h6></label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" name="phoneNumber"
+								id="phoneNumber" value="${employee.phoneNumber}">
+							<form:errors path="phoneNumber" class="text-danger" element="span" />
+						</div>
+					</div>
+					<div class="row mb-3">
+						<label for="juminFront" class="col-sm-2 col-form-label"><h6>주민등록번호</h6></label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" name="juminFront"
+								id="juminFront" value="${employee.juminFront}">
+							<form:errors path="juminFront" class="text-danger" element="span" />
+						</div>
+					</div>
+					<div class="row mb-3">
+						<label for="juminBack" class="col-sm-2 col-form-label"><h6>주민번호 뒷자리</h6></label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" name="juminBack"
+								id="juminBack" value="${employee.juminBack}">
+							<form:errors path="juminBack" class="text-danger" element="span" />
+						</div>
+					</div>
+					<div class="row mb-3">
+						<label for="email" class="col-sm-2 col-form-label"><h6>이메일주소</h6></label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" name="email" id="email"
+								value="${employee.email}">
+							<form:errors path="email" class="text-danger" element="span" />
+						</div>
+					</div>
+					<div class="row mb-3">
+						<label for="finalLevel" class="col-sm-2 col-form-label"><h6>최종학력</h6></label>
+						<div class="col-sm-10">
+							<select name="finalLevel" id="finalLevel" class="form-control">
+								<option>박사</option>
+								<option>석사</option>
+								<option>대졸</option>
+								<option>고졸</option>
+							</select>
+							<form:errors path="finalLevel" class="text-danger" element="span" />
+						</div>
+					</div>
+					<div class="row mb-3">
+						<label for="hireDate" class="col-sm-2 col-form-label"><h6>입사일자</h6></label>
+						<div class="col-sm-10">
+							<input type="date" class="form-control" name="hireDate"
+								id="hireDate" value="${employee.hireDate}">
+							<form:errors path="hireDate" class="text-danger" element="span" />
+						</div>
+					</div>
+					<div class="row">
+						<div class="col text-center">
+							<button type="submit" class="btn btn-primary">등록</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	<!-- 오른쪽 카드 -->
+	<div class="col-md-6">
+		<div class="card">
+			<div class="card-header">
+				<h3>프로필</h3>
+			</div>
+			<div class="card-body text-center">
+				<img id="previewImage" src="default-profile.png" class="img-fluid" alt="직원 사진" style="max-height: 200px;">
+				<div class="mt-3">
+					 <input type="file" name="file" multiple class="form-control" onchange="previewFile(this)">
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+	</form:form>
+<script
+	src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script>
+	window.onload = function() {
+		var today = new Date().toISOString().split('T')[0]; // 오늘 날짜를 yyyy-mm-dd 형식으로 가져옴
+		document.getElementById('hireDate').value = today; // hireDate 필드에 값 설정
+	};
+	document.querySelector("#address").addEventListener("click", function() {
+		new daum.Postcode({
+			oncomplete : function(data) {
+				document.querySelector("#address").value = data.address
+			}
+		}).open();
+	});
+	
+	function previewFile(input) {
+		console.log(input.files)
+		const file = input.files[0];
+		const preview = document.getElementById('previewImage');
+
+		if (file && file.type.startsWith('image/')) {
+			const reader = new FileReader();
+			reader.onload = function(e) {
+				preview.src = e.target.result;
+			};
+			reader.readAsDataURL(file);
+		} else {
+			preview.src = 'default-profile.png'; // 이미지 아니면 기본 이미지로
+		}
+	}
+</script>

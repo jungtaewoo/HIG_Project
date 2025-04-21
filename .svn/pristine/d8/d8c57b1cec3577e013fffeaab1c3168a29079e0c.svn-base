@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/util https://www.springframework.org/schema/util/spring-util.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+	"
+>
+	<!-- 컨트롤러 레이어 하나만 읽어들임  -->
+	<context:component-scan base-package="kr.or.ddit" use-default-filters="false">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:include-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+	</context:component-scan>
+	
+	<!-- 가장 핵심적인 HandlerMapping, HandlerAdapter, ViewResolver 와 같은 MVC 핵심 전략 객체가 빈으로 등록됨.  -->
+	<mvc:annotation-driven />
+	
+	<!-- 정적 자원 처리  /resources/** 안에 요청이 다 된다.-->
+	<mvc:resources location="/resources/" mapping="/resources/**"></mvc:resources>
+	<!-- 업로드된 파일이 저장되는 fileImages 경로 추가 -->
+	<mvc:resources location="file:/WEB-INF/uploads/" mapping="/uploads/**" />
+	<mvc:resources location="file:/resources/fileImages/" mapping="/fileImages/**" />
+	
+	
+	
+	<!--날짜 데이터를 직렬화를 제외시켜 쪼개지기 않게 하는법-->
+	<bean class="org.springframework.http.converter.json.Jackson2ObjectMapperFactoryBean" id="objectMapper">
+		<property name="featuresToDisable">
+			<array>
+				<util:constant static-field="com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS" />
+			</array>
+		</property>
+	</bean>
+	
+	<bean class="kr.or.ddit.spring.config.WebSocketConfig" id="webSocketConfig">
+	</bean>
+	<bean class="kr.or.ddit.qr.controller.QrWebSocketConfig" id="QrWebSocketConfig"></bean>
+	<!-- 일괄적으로 jsp 파일 관리 -->
+	<mvc:tiles-configurer>
+		<mvc:definitions location="/WEB-INF/tiles/*.xml"/>
+	</mvc:tiles-configurer>
+	
+	
+<!-- 	    여러개의 view resolver 를 사용하는 경우,  -->
+<!-- 		순서(order) 가 결정되어야 함. -->
+<!-- 		InternalResourceViewResolver(mvc:jsp) 는 가장 마지막 순서가 되어야함. -->
+	<mvc:view-resolvers>
+		<!--json 마샬링 작업 (협상negotiation) -->
+		<mvc:content-negotiation>
+			<mvc:default-views>
+<!-- 				Model 을 마샬링함. -->
+				<bean class="org.springframework.web.servlet.view.json.MappingJackson2JsonView" id="jsonView">	
+					<!--json 마샬링-->
+					<property name="objectMapper" ref="objectMapper" />
+				</bean>
+			</mvc:default-views>
+		</mvc:content-negotiation>
+
+	<!--디테일한 설정이 먼저 들어감, mvc:jsp설정은 맨 마지막에 -->
+		<mvc:tiles/>
+		<mvc:jsp prefix="/WEB-INF/views/" suffix=".jsp"/>
+	</mvc:view-resolvers>
+	
+
+		
+</beans>

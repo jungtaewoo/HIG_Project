@@ -1,0 +1,97 @@
+package kr.or.ddit.salary.vo;
+
+import java.io.Serializable;
+import java.util.List;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
+import kr.or.ddit.employee.vo.EmployeeVO;
+import lombok.Data;
+import lombok.ToString;
+
+@ToString
+@Data
+public class SalaryVO implements Serializable {
+
+	@NotNull
+	private Long salaryId; // 급여지급 ID 고유식별자
+	@NotBlank
+	private String empId; // 직원 정보를 저장하는 테이블
+	@NotBlank
+	private String payYear; // 급여지급의 귀속연도
+	@NotBlank
+	private String payMonth; // 급여 적용 월
+	@NotNull
+	private Long baseSalary; // 기본급
+	private Long totalAllowance; // 수당총액(EX: 직책/교통비/식대)
+	@NotNull
+	private Long totalPay; // 지급총액
+	@NotNull
+	private Long totalDeduction; // 총 공제액(자동계산)
+	@NotNull
+	private Long netSalary; // 실 지급액(자동계산)
+	
+	private String payStatus; // (확정상태)
+	private String confirmDate; // 급여확정일
+	
+	private String paymentRequest; // 지급요청여부
+	private String transferRequestDate; // 급여지급요청일
+	private String payDate; // 급여 지급일
+	
+	private String payStday; // 급여 지급대상 시작일
+	private String payEndday; // 급여 지급대상 종료일
+	private String paid; // 지급여부
+	private String createAt; // 급여등록일
+	
+	//4/8명세서로 컬럼추가 테스트
+	private String email;
+	private String base64Image;
+	
+	
+	//급여삽입 년,월 기준 (급여 수당 공제용)
+//	private int pyear;
+//	private int pmonth;
+	
+	//직원전체인원, 확정자인원, 월별 총 금여액
+	private int totalemp;
+	private int totalempNow;
+	private int confirmedCount;
+	private int paymentRequestCount;
+	private long totalNetSalary;
+	private int totalSalaryCount;
+	private int notSalaryInsert;
+	private int totalAllowanceSum;//전 수당액합산
+	private int totalDeductionSum;//전 공제액합산
+	private int totalPaySum; //전 지급액합산
+	private int totalTargetCount; //기간별 급여등록대상자
+	private int paidCount; //기간별 지급완료대상자
+	
+	
+	private List<EmployeeVO>employeeList; //전사원 급여조회
+	private EmployeeVO employee; //급여상세
+	
+	private List<DeductionVO>deductionList; //공제
+	private List<AllowanceVO>allowanceList; //수당
+	
+	private SalaryTransferVO salaryTransfer; //이체
+	
+	//평균급여
+	private int avgSalary;
+	
+	//계정에서 쓰임 재활용
+	private int totalAccount;
+	private int unRegisterAccount;
+	
+	//메인차트 
+	String min_net_salary;
+	String max_net_salary;
+	
+	
+	
+	//기간별 조회 차트용
+    private String name; // 부서명 또는 직급명
+	
+	
+	
+}

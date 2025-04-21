@@ -1,0 +1,20 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<h2>서명 등록</h2>
+<div class="card">
+	<div class="card-header"></div>
+	<div class="card-body">
+	<form action="${pageContext.request.contextPath}/signature/register"
+		method="post" enctype="multipart/form-data">
+		<table>
+			<tr>
+				<th>서명 이미지 업로드:</th>
+				<td><input type="file" name="signImage" accept="image/*"
+					required></td>
+			</tr>
+		</table>
+		<br> <input type="submit" value="등록"> <a
+			href="${pageContext.request.contextPath}/">취소</a>
+	</form>
+	</div>
+</div>

@@ -1,0 +1,124 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <div class="container" style="max-width: 960px; margin: 40px auto; font-family: 'Segoe UI', sans-serif;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="mb-0">👤 직원 계정 등록</h2>
+      <a href="/unAccount/list" data-bs-toggle="modal" data-bs-target="#exampleModal">
+        <button type="button" class="btn btn-danger">+ 미등록 계정 조회</button>
+      </a>
+    </div>
+    
+		<c:if test="${not empty message}">
+			<p class="message">${message}</p>
+		</c:if>
+
+    
+  <form action="/account/insert/save" method="post">
+      <!-- 기본정보 카드 -->
+      <div class="bg-white rounded shadow-sm p-4 mb-4">
+        <h4 class="mb-3">📌 기본정보</h4>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label>이름</label>
+            <input type="text" name="empName" value="${unAccount.employee.name}" class="form-control" />
+          </div>
+          <div class="col-md-6">
+                 <label>사원번호</label>
+       		     <input type="text" name="empId" value="${unAccount.empId}" class="form-control">
+          </div>
+          <div class="col-md-6">
+            <label>연락처</label>
+            <input type="text" name="accountPh" value="${unAccount.employee.phoneNumber}" class="form-control" />
+          </div>
+          <div class="col-md-6">
+            <label>이메일</label>
+            <input type="email" name="accountEmail" value="${unAccount.employee.email}" class="form-control" />
+          </div>
+          <div class="col-12">
+            <label>주소</label>
+            <input type="text" name="accountAdd1" value="${unAccount.employee.address}" class="form-control" />
+          </div>
+          <div class="col-12">
+            <label>상세주소</label>
+            <input type="text" name="accountAdd2" value="${unAccount.employee.addressDetail}" class="form-control" />
+          </div>
+        </div>
+      </div>
+      <!-- 근무정보 카드 -->
+      <div class="bg-white rounded shadow-sm p-4 mb-4">
+        <h4 class="mb-3">🏢 근무정보</h4>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label>부서</label>
+            <input type="text" name="departmentName" value="${unAccount.department.departmentName}" class="form-control">
+            <input type="hidden" name="departmentId" value="${unAccount.department.departmentId}">
+          </div>
+          <div class="col-md-6">
+            <label>팀</label>
+            <input type="text" name="teamName" value="${unAccount.employee.team.teamName}" class="form-control">
+            <input type="hidden" name="tmId" value="${unAccount.employee.team.teamId}">
+          </div>
+          <div class="col-md-6">
+            <label>직무</label>
+            <input type="text" name="jobName" value="${unAccount.job.jobName}" class="form-control">
+            <input type="hidden" name="jobId" value="${unAccount.job.jobId}">
+          </div>
+          <div class="col-md-6">
+            <label>직급</label>
+            <input type="text" name="rankName" value="${unAccount.rank.rankName}" class="form-control">
+            <input type="hidden" name="rankId" value="${unAccount.rankId}" />
+          </div>
+          <div class="col-md-6">
+            <label>입사일</label>
+            <input type="text" name="hireDate" value="${fn:substring(unAccount.employee.hireDate, 0, 10)}" class="form-control" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- 계정정보 카드 -->
+      <div class="bg-white rounded shadow-sm p-4 mb-4">
+        <h4 class="mb-3">🔐 계정정보</h4>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label>아이디</label>
+            <input type="text" name="accountId" value="${unAccount.empId}" class="form-control">
+          </div>
+			<div class="col-md-6">
+			  <label>비밀번호</label>
+			  <input type="text" class="form-control" value="최초 비밀번호 자동생성" readonly disabled>
+			</div>
+          <div class="col-md-6">
+            <label>권한</label>
+            <input type="text" name="roleId" value="일반사원" class="form-control">
+          </div>
+        </div>
+      </div>
+
+      <!-- 하단 버튼 -->
+      <div class="d-flex justify-content-end gap-2">
+        <button type="reset" class="btn btn-secondary">초기화</button>
+        <button type="submit" class="btn btn-primary">직원 등록</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">등록할 직원의 사원번호를 클릭하세요.</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">...</div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="${pageContext.request.contextPath}/resources/js/account/unRegisterAccount.js"></script>

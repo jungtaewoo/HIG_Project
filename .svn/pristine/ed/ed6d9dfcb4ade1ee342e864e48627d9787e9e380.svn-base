@@ -1,0 +1,187 @@
+package kr.or.ddit.approval.service;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.ibatis.annotations.Param;
+import org.springframework.stereotype.Service;
+
+import kr.or.ddit.approval.vo.ApprovalStatusCountVO;
+import kr.or.ddit.approval.vo.DraftApproverVO;
+import kr.or.ddit.approval.vo.DraftManageMentVO;
+import kr.or.ddit.employee.vo.EmployeeVO;
+import kr.or.ddit.mybatis.mappers.approval.ApprovalMapper;
+import kr.or.ddit.mybatis.mappers.approval.ApprovalProcessMapper;
+import kr.or.ddit.mybatis.mappers.approval.ApproverMapper;
+
+/**
+ * 
+ * @author CHOI
+ * @since 2025. 3. 18.
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *   
+ *   수정일      			수정자           수정내용
+ *  -----------   	-------------    ---------------------------
+ *  2025. 3. 18.     	CHOI	          결재자 관리 
+ *
+ * </pre>
+ */
+@Service
+public class ApproverServiceImpl implements ApproverService {
+	
+	@Inject
+	private ApproverMapper mapper;
+	
+	@Inject
+	private ApprovalProcessMapper aprMapper;
+	
+	@Inject
+	private ApprovalMapper apprMapper;
+	/**
+	 * 결재자가 본인의 결재 상태 정보 (결재 대기 문서)를 볼 때 
+	 * @param aprId 결재자
+	 * @return
+	 */
+	@Override
+	public List<DraftApproverVO> getMyApprovalInfo(String aprId) {
+		return mapper.getMyApprovalInfo(aprId);
+	}
+	
+	
+	/**
+	 * 본인보다 직급이 높은 직원 결재라인 리스트 
+	 * @param empId
+	 * @return
+	 */
+	public List<EmployeeVO> getLineApprovers(String empId){
+		return mapper.getLineApprovers(empId);
+	}
+	
+	
+	/**
+	 * 시연용 결재라인 즐겨찾기 리스트 
+	 * @param empId
+	 * @return
+	 */
+	public List<EmployeeVO> getFavoriteApprovers(String empId){
+		return mapper.getFavoriteApprovers(empId);
+	}
+	
+	/**
+     * 여러 결재라인을 등록합니다.
+     */
+	@Override
+	public List<DraftApproverVO> insertApprovalLine(List<DraftApproverVO> approverList) {
+	    for (DraftApproverVO approver : approverList) {
+	        // (A) 결재자 이름으로 DB에서 emp_id 조회 (리스트로 조회)
+	        if (approver.getApproverName() != null && !approver.getApproverName().isEmpty()) {
+	            // selectEmpIdsByName() 메서드로 이름에 해당하는 모든 emp_id를 가져온다고 가정합니다.
+	            List<String> foundIds = mapper.selectEmpIdsByName(approver.getApproverName()); 
+	            if (foundIds == null || foundIds.isEmpty()) {
+	                throw new RuntimeException("해당 이름의 직원이 존재하지 않습니다: " + approver.getApproverName());
+	            } else if (foundIds.size() > 1) {
+	                // 여러 건이 조회된 경우 비즈니스 로직에 따라 선택합니다.
+	                // 예: 첫 번째 값 선택 또는 예외 발생
+	                // 여기서는 첫 번째 값을 선택하는 예시로 작성했습니다.
+	                approver.setApproverId(foundIds.get(0));
+	                // 또는 ambiguous한 상황이므로 예외를 던질 수도 있습니다.
+	                // throw new RuntimeException("중복된 직원 이름이 존재합니다: " + approver.getApproverName());
+	            } else {
+	                approver.setApproverId(foundIds.get(0));
+	            }
+	        }
+
+	        // (B) 기본값 세팅
+	        if (approver.getAprYn() == null || approver.getAprYn().trim().isEmpty()) {
+	            approver.setAprYn("N");
+	        }
+	        if (approver.getAprReason() == null || approver.getAprReason().trim().isEmpty()) {
+	            approver.setAprReason("기본 사유");
+	        }
+	        if (approver.getAprStatus() == null || approver.getAprStatus().trim().isEmpty()) {
+	            approver.setAprStatus("대기");
+	        }
+
+	        // 첫번째 결재자의 draftId를 사용 (모든 결재자에 동일한 draftId가 적용된다고 가정)
+	        Long draftId = approverList.get(0).getDraftId();
+	        mapper.selectApproversByDraftId(draftId);
+
+	        // (D) DB에 insert 실행
+	        aprMapper.insertDraftApprover(approver);
+	    }
+	    return approverList;
+	}
+
+
+    
+	
+	/**
+	 * 결재 대기 문서 상세 조회 
+	 */
+	@Override
+	public List<DraftApproverVO>  getMyApprovalInfoDetail(Long draftId) {
+		return mapper.getMyApprovalInfoDetail(draftId);
+	}
+
+
+	/**
+	 * 결재 진행 문서 리스트 
+	 */
+	@Override
+	public List<DraftApproverVO> approverProcessList(String approverId) {
+		
+		return mapper.approverProcessList(approverId);
+	}
+	
+	/**
+     * 종결함 -> 최종 승인, 반려된 문서 조회(남은 결재라인 x) 
+     * @param approverId
+     * @return
+     */
+    public List<DraftApproverVO> approverComplitedList(String approverId){
+    	return mapper.approverComplitedList(approverId);
+    }
+
+
+	/**
+	 * 결재 상태가 대기/승인/반려 일 때 카운터수 차트화 -> 비교용 Map으로 받을때 
+	 */
+	@Override
+	public List<Map<String, Object>> selectApproverCountsGroup(String empId) {
+		
+		return mapper.selectApproverCountsGroup(empId);
+	}
+
+
+	
+	/**
+	 * 결재자 입장에서 -> 대기/승인/반려/결재중 문서 확인 차트용  -> vo 만들어서 받을때 
+	 * @param approverId
+	 * @return
+	 */
+	@Override
+	public List<ApprovalStatusCountVO> selectApproverChart(String approverId) {
+		return mapper.selectApproverChart(approverId);
+	}
+
+
+	/**
+	 * 본인 부서 노드 열 때 사용 
+	 */
+	@Override
+	public EmployeeVO getEmployeeById(String empId) {
+		return mapper.getEmployeeById(empId);
+	}
+	
+	
+	
+	
+	
+	
+}

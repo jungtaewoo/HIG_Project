@@ -1,0 +1,156 @@
+<!--
+ * == 개정이력(Modification Information) ==
+ *
+ *   수정일      			수정자           수정내용
+ *  ============   	============== =======================
+ *  2025. 4. 8.     	KHS            최초 생성
+ *  2025. 4. 11.		KHT			   상단 타이틀 추가
+-->
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+
+<!-- 
+<div class="page-title dark-background" data-aos="fade" style="background-color:#000; padding: 45px;">
+  <div class="container position-relative">
+    헤더 내용이 들어갑니다
+  </div>
+</div>
+ -->
+ 
+<!-- 페이지 상단 타이틀 추가 -->
+<div class="page-title dark-background" data-aos="fade" 
+style="background-image: url('${pageContext.request.contextPath}/resources/BizPage/assets/img/page-title-bg.jpg');">
+  <div class="container position-relative">
+    <h1>제품</h1>
+    <nav class="breadcrumbs">
+      <ol>
+        <li><a href="${pageContext.request.contextPath }/home">Home</a></li>
+        <li class="current">Product</li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+    <!-- Portfolio Section -->
+    <section id="portfolio" class="portfolio section">
+
+      <!-- Section Title -->
+      <div class="container section-title" data-aos="fade-up">
+        <h2>Product</h2>
+        <p>우리 제품 라인업은 최첨단 기술과 뛰어난 디자인이 만나 탄생한 프리미엄 전자제품입니다. <br/>
+           모든 제품은 사용자의 일상을 혁신적으로 변화시키도록 정교하게 설계되었습니다.</p>
+      </div><!-- End Section Title -->
+
+      <div class="container">
+
+        <div class="isotope-layout" data-default-filter="*" data-layout="masonry" data-sort="original-order">
+
+          <ul class="portfolio-filters isotope-filters" data-aos="fade-up" data-aos-delay="100">
+            <li data-filter="*" class="filter-active">All</li>
+            <li data-filter=".filter-phone">Phone</li>
+            <li data-filter=".filter-watch">Watch</li>
+            <li data-filter=".filter-headphone">Headphone</li>
+            <li data-filter=".filter-display">Display</li>
+          </ul><!-- End Portfolio Filters -->
+
+          <div class="row gy-4 isotope-container" data-aos="fade-up" data-aos-delay="200">
+
+            <div class="col-lg-4 col-md-6 portfolio-item isotope-item filter-phone">
+              <img src="${pageContext.request.contextPath}/resources/BizPage/assets/img/product/aip16pm_black.png" class="img-fluid" alt="">
+              <div class="portfolio-info">
+                <h4>DePhone</h4>
+                <p>Lorem ipsum, dolor sit amet consectetur</p>
+                <a href="${pageContext.request.contextPath}/resources/BizPage/assets/img/product/apple-watch-series-10.png" title="App 1" data-gallery="portfolio-gallery-app" class="glightbox preview-link"><i class="bi bi-zoom-in"></i></a>
+                <a href="portfolio-details.html" title="More Details" class="details-link"><i class="bi bi-link-45deg"></i></a>
+              </div>
+            </div><!-- End Portfolio Item -->
+
+            <div class="col-lg-4 col-md-6 portfolio-item isotope-item filter-watch">
+              <img src="${pageContext.request.contextPath}/resources/BizPage/assets/img/product/apple-watch.jpg" class="img-fluid" alt="">
+              <div class="portfolio-info">
+                <h4>DeWatch</h4>
+                <p>Lorem ipsum, dolor sit amet consectetur</p>
+                <a href="${pageContext.request.contextPath}/resources/BizPage/assets/img/portfolio/product-1.jpg" title="Product 1" data-gallery="portfolio-gallery-product" class="glightbox preview-link"><i class="bi bi-zoom-in"></i></a>
+                <a href="portfolio-details.html" title="More Details" class="details-link"><i class="bi bi-link-45deg"></i></a>
+              </div>
+            </div><!-- End Portfolio Item -->
+
+            <div class="col-lg-4 col-md-6 portfolio-item isotope-item filter-display">
+              <img src="${pageContext.request.contextPath}/resources/BizPage/assets/img/product/airpod-pro.webp" class="img-fluid" alt="">
+              <div class="portfolio-info">
+                <h4>DePods pro</h4>
+                <p>Lorem ipsum, dolor sit amet consectetur</p>
+                <a href="${pageContext.request.contextPath}/resources/BizPage/assets/img/portfolio/branding-1.jpg" title="Branding 1" data-gallery="portfolio-gallery-branding" class="glightbox preview-link"><i class="bi bi-zoom-in"></i></a>
+                <a href="portfolio-details.html" title="More Details" class="details-link"><i class="bi bi-link-45deg"></i></a>
+              </div>
+            </div><!-- End Portfolio Item -->
+
+            <div class="col-lg-4 col-md-6 portfolio-item isotope-item filter-display">
+              <img src="${pageContext.request.contextPath}/resources/BizPage/assets/img/product/macbook.jpg" class="img-fluid" alt="">
+              <div class="portfolio-info">
+                <h4>Debook</h4>
+                <p>Lorem ipsum, dolor sit amet consectetur</p>
+                <a href="${pageContext.request.contextPath}/resources/BizPage/assets/img/portfolio/books-1.jpg" title="Branding 1" data-gallery="portfolio-gallery-book" class="glightbox preview-link"><i class="bi bi-zoom-in"></i></a>
+                <a href="portfolio-details.html" title="More Details" class="details-link"><i class="bi bi-link-45deg"></i></a>
+              </div>
+            </div><!-- End Portfolio Item -->
+
+            <div class="col-lg-4 col-md-6 portfolio-item isotope-item filter-phone">
+              <img src="${pageContext.request.contextPath}/resources/BizPage/assets/img/product/mac-mini.jpg" class="img-fluid" alt="">
+              <div class="portfolio-info">
+                <h4>Dec mini</h4>
+                <p>Lorem ipsum, dolor sit amet consectetur</p>
+                <a href="${pageContext.request.contextPath}/resources/BizPage/assets/img/portfolio/app-2.jpg" title="App 2" data-gallery="portfolio-gallery-app" class="glightbox preview-link"><i class="bi bi-zoom-in"></i></a>
+                <a href="portfolio-details.html" title="More Details" class="details-link"><i class="bi bi-link-45deg"></i></a>
+              </div>
+            </div><!-- End Portfolio Item -->
+
+            <div class="col-lg-4 col-md-6 portfolio-item isotope-item filter-display">
+              <img src="${pageContext.request.contextPath}/resources/BizPage/assets/img/product/studio-display.jpg" class="img-fluid" alt="">
+              <div class="portfolio-info">
+                <h4>De display</h4>
+                <p>Lorem ipsum, dolor sit amet consectetur</p>
+                <a href="${pageContext.request.contextPath}/resources/BizPage/assets/img/portfolio/product-2.jpg" title="Product 2" data-gallery="portfolio-gallery-product" class="glightbox preview-link"><i class="bi bi-zoom-in"></i></a>
+                <a href="portfolio-details.html" title="More Details" class="details-link"><i class="bi bi-link-45deg"></i></a>
+              </div>
+            </div><!-- End Portfolio Item -->
+
+            <div class="col-lg-4 col-md-6 portfolio-item isotope-item filter-display">
+              <img src="${pageContext.request.contextPath}/resources/BizPage/assets/img/product/lg-oled.avif" class="img-fluid" alt="">
+              <div class="portfolio-info">
+                <h4>De oled tv</h4>
+                <p>Lorem ipsum, dolor sit amet consectetur</p>
+                <a href="${pageContext.request.contextPath}/resources/BizPage/assets/img/portfolio/branding-2.jpg" title="Branding 2" data-gallery="portfolio-gallery-branding" class="glightbox preview-link"><i class="bi bi-zoom-in"></i></a>
+                <a href="portfolio-details.html" title="More Details" class="details-link"><i class="bi bi-link-45deg"></i></a>
+              </div>
+            </div><!-- End Portfolio Item -->
+
+            <div class="col-lg-4 col-md-6 portfolio-item isotope-item filter-display">
+              <img src="${pageContext.request.contextPath}/resources/BizPage/assets/img/product/iPadPro.jpg" class="img-fluid" alt="">
+              <div class="portfolio-info">
+                <h4>DePad Pro</h4>
+                <p>Lorem ipsum, dolor sit amet consectetur</p>
+                <a href="${pageContext.request.contextPath}/resources/BizPage/assets/img/product/apple-tv-4k.jpg" title="Branding 2" data-gallery="portfolio-gallery-book" class="glightbox preview-link"><i class="bi bi-zoom-in"></i></a>
+                <a href="portfolio-details.html" title="More Details" class="details-link"><i class="bi bi-link-45deg"></i></a>
+              </div>
+            </div><!-- End Portfolio Item -->
+
+            <div class="col-lg-4 col-md-6 portfolio-item isotope-item filter-display">
+              <img src="${pageContext.request.contextPath}/resources/BizPage/assets/img/product/apple-tv-4k.jpg" class="img-fluid" alt="">
+              <div class="portfolio-info">
+                <h4>DeTV+</h4>
+                <p>Lorem ipsum, dolor sit amet consectetur</p>
+                <a href="${pageContext.request.contextPath}/resources/BizPage/assets/img/portfolio/app-3.jpg" title="App 3" data-gallery="portfolio-gallery-app" class="glightbox preview-link"><i class="bi bi-zoom-in"></i></a>
+                <a href="portfolio-details.html" title="More Details" class="details-link"><i class="bi bi-link-45deg"></i></a>
+              </div>
+            </div><!-- End Portfolio Item -->
+
+
+          </div><!-- End Portfolio Container -->
+
+        </div>
+
+      </div>
+
+    </section><!-- /Portfolio Section -->

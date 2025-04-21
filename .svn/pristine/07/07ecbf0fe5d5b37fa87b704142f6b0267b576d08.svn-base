@@ -1,0 +1,100 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+
+
+<c:set var="fullPath" value="${accountSelect.employee.empPath}" />
+<c:set var="startIndex" value="${fn:indexOf(fullPath, 'fileImages')}" />
+<c:set var="cutStart" value="${startIndex + 10}" />
+<c:set var="cutEnd" value="${fn:length(fullPath)}" />
+<c:set var="fileName" value="${fn:substring(fullPath, cutStart, cutEnd)}" />
+<c:set var="webPath" value="/resources/fileImages/${fileName}" />
+
+  <title>직원 계정 상세</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container" style="max-width: 960px; margin: 40px auto; font-family: 'Segoe UI', sans-serif;">
+  <h2 class="mb-4">직원 계정 상세 보기</h2>
+
+  <!-- 기본정보 카드 -->
+  <div class="bg-white rounded shadow-sm p-4 mb-4">
+    <h4 class="mb-3">기본정보</h4>
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label>프로필 사진</label>
+        <div id="imagePreviewContainer" class="border rounded d-flex align-items-center justify-content-center" style="width: 100%; height: 150px; overflow: hidden; position: relative;">
+          <img src="${pageContext.request.contextPath}${webPath}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 4px;"
+          	 onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/resources/template/dist/assets/static/images/faces/1.jpg';" alt="프로필" />
+        </div>
+      </div>
+      <div class="col-md-9">
+        <div class="row g-3">
+          <div class="col-md-12">
+            <label>사원번호</label>
+            <input type="text" class="form-control" value="${accountSelect.accountId}" readonly>
+          </div>
+          <div class="col-md-12">
+            <label>사원명</label>
+            <input type="text" class="form-control" value="${accountSelect.empName}" readonly>
+          </div>
+          <div class="col-md-12">
+            <label>입사일</label>
+            <input type="text" class="form-control" value="${fn:substring(accountSelect.accountDate, 0, 10)}" readonly>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 근무정보 카드 -->
+  <div class="bg-white rounded shadow-sm p-4 mb-4">
+    <h4 class="mb-3">근무정보</h4>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label>부서</label>
+        <input type="text" class="form-control" value="${accountSelect.department.departmentName}" readonly>
+      </div>
+      <div class="col-md-4">
+        <label>팀</label>
+        <input type="text" class="form-control" value="${accountSelect.employee.team.teamName}" readonly>
+      </div>
+      <div class="col-md-4">
+        <label>직급</label>
+        <input type="text" class="form-control" value="${accountSelect.rank.rankName}" readonly>
+      </div>
+    </div>
+  </div>
+
+  <!-- 기타정보 카드 -->
+  <div class="bg-white rounded shadow-sm p-4 mb-4">
+    <h4 class="mb-3">기타정보</h4>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label>이메일</label>
+        <input type="email" class="form-control" value="${accountSelect.employee.email}" readonly>
+      </div>
+      <div class="col-md-4">
+        <label>생년월일</label>
+        <input type="text" class="form-control" value="${accountSelect.employee.juminFront}" readonly>
+      </div>
+      <div class="col-md-4">
+        <label>휴대전화</label>
+        <input type="text" class="form-control" value="${accountSelect.employee.phoneNumber}" readonly>
+      </div>
+      <div class="col-md-6">
+        <label>주소</label>
+        <input type="text" class="form-control" value="${accountSelect.employee.address}" readonly>
+      </div>
+      <div class="col-md-6">
+        <label>상세주소</label>
+        <input type="text" class="form-control" value="${accountSelect.employee.addressDetail}" readonly>
+      </div>
+      <div class="col-md-4">
+        <label>계정생성일</label>
+        <input type="text" class="form-control" value="${fn:substring(accountSelect.accountDate, 0, 10)}" readonly>
+      </div>
+    </div>
+  </div>
+</div>

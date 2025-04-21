@@ -1,0 +1,354 @@
+<%@ page contentType="text/html; charset=UTF-8" language="java" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+
+<!-- Bootstrap & Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+<head>
+<meta charset="UTF-8">
+<style>
+
+body {
+  	background: linear-gradient(to right, #f8f9fa, #e9ecef);
+	font-family: 'Segoe UI', sans-serif;
+    margin: 0; /* body 기본 여백 제거 */
+    display: flex;
+    justify-content: center; /* 컨텐츠를 화면 가운데 정렬 */
+    align-items: center;
+    min-height: 100vh; /* 화면 높이를 가득 채우도록 설정 */
+}
+
+.container {
+    display: grid;
+    grid-template-columns: 0.30fr 0.70fr; /* 왼쪽 폼 35%, 오른쪽 리스트 65% 비율로 설정 */
+    gap: 20px; /* 컬럼 간격 조정 */
+    width: 90vw; /* 뷰포트 너비의 90% 사용 */
+    max-width: 1600px; /* 최대 너비 제한 */
+    background: white;
+    padding: 20px;
+    border-radius: 8px; /* 모서리 둥글게 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 그림자 효과 추가 */
+}
+
+.form-section, .list-section {
+    padding: 20px;
+    border: 1px solid #ddd; /* 테두리 설정 */
+    border-radius: 8px;
+    background-color: #ffffff; /* 배경 흰색 */
+}
+
+.form-section h2, .list-section h2 {
+    text-align: center; /* 제목 가운데 정렬 */
+}
+
+.form-group {
+    margin-bottom: 15px; /* 각 입력 그룹 간 간격 설정 */
+}
+
+.form-group label {
+    display: block; /* 블록 요소로 변경하여 줄바꿈 적용 */
+    font-weight: bold; /* 글씨 굵게 */
+}
+
+.form-group input, .form-group textarea, .form-group select {
+    width: 100%; /* 입력 요소 너비 100% 설정 */
+    padding: 8px; /* 내부 여백 추가 */
+    margin-top: 5px; /* 라벨과 입력 요소 간격 */
+    border: 1px solid #ccc; /* 테두리 색상 지정 */
+    border-radius: 5px; /* 모서리 둥글게 설정 */
+}
+
+.form-group input[type="number"] {
+    width: 80px; /* 숫자 입력 필드 너비 제한 */
+}
+
+.button-group {
+    text-align: center; /* 버튼 가운데 정렬 */
+    margin-top: 20px; /* 위쪽 여백 설정 */
+}
+
+.button-group button {
+    padding: 8px 15px; /* 버튼 내부 여백 설정 */
+    margin: 5px; /* 버튼 간 간격 조정 */
+    border: none; /* 테두리 제거 */
+    border-radius: 5px; /* 모서리 둥글게 */
+    cursor: pointer; /* 마우스 오버 시 커서 변경 */
+}
+
+.save-btn { background-color: #007bff; color: white; } /* 저장 버튼 스타일 */
+.reset-btn { background-color: #dc3545; color: white; } /* 초기화 버튼 스타일 */
+
+table {
+    width: 100%; /* 테이블 너비 100% 설정 */
+    border-collapse: collapse; /* 테두리 겹침 제거 */
+    margin-top: 15px; /* 위쪽 여백 설정 */
+}
+
+th, td {
+    border: 1px solid #ddd; /* 테두리 설정 */
+    padding: 8px; /* 내부 여백 설정 */
+    text-align: center; /* 텍스트 가운데 정렬 */
+}
+
+ th {
+    background-color: #a0a0a0; /* 헤더 배경색 설정 */
+    color: white; /* 헤더 글자색 설정 */
+  }
+
+.delete-btn {
+    background-color: #dc3545; /* 삭제 버튼 배경색 설정 */
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+h2{
+    margin-bottom : 40px; /* h2 아래 여백 설정 */
+}
+h5{
+	text-align: center;
+}
+
+</style>
+
+
+</head>
+
+<div class="page-container container-fluid" style="font-size: 18px;">
+	<div class="d-flex justify-content-between align-items-center mb-2">
+		<!-- 좌측: 버튼 그룹 -->
+		<div>
+			<button type="button" class="btn btn-outline-secondary"
+				onclick="history.back();">
+				<i class="fas fa-arrow-left"></i>
+			</button>
+		</div>
+
+		<!-- 우측: Breadcrumb -->
+		<nav aria-label="breadcrumb">
+			<ol class="breadcrumb mb-0">
+				<li class="breadcrumb-item fw-bold text-primary"><a
+					href="${pageContext.request.contextPath }/account/login/home">📌Main</a></li>
+				<li class="breadcrumb-item"><a href="${pageContext.request.contextPath }/evaluation/evaluationDashboard">평가 현황판</a></li>
+				<li class="breadcrumb-item"><a href="${pageContext.request.contextPath }/evaluation/evaluationCandidateList">평가 대상자 등록</a></li>
+<%-- 				<li class="breadcrumb-item"><a href="${pageContext.request.contextPath }/evaluation/evaluationTypeList">평가 기준 설정</a></li> --%>
+				<li class="breadcrumb-item active" aria-current="page">평가 기준 설정</li>
+			</ol>
+		</nav>
+	</div>
+</div>
+<br />
+
+
+<body>
+<h2>평가 기준 설정</h2>
+<p> 직급별로 적용시킬 평가 정보 및 가중치를 아래에 입력해주세요.</p>
+
+<div class="container">
+    <!-- 평가 기준 입력 폼 -->
+    <div class="form-section">
+    
+    <form id="evaluation-form" 
+    	  action="${pageContext.request.contextPath}/evaluation/evaluationTypeInsert" 
+    	  method="post"
+    	  onsubmit="return checkTotalWeight();">
+
+	    <div class="form-group">
+		    <label for="evaluationYear">평가 연도</label>
+		    <input type="text" id="evaluationYear" name="evaluationYear" value="2025" required>
+		</div>
+		
+		<div class="form-group">
+		    <label for="halfYear">반기</label>
+		    <select id="halfYear" name="halfYear" required>
+		        <option value="">선택</option>
+		        <option value="1" selected>상반기</option>
+		        <option value="2">하반기</option>
+		    </select>
+		</div>
+	    
+<!-- 		    <div class="form-group"> -->
+<!-- 		        <label for="evaluaTypeId">순번</label> -->
+<!-- 		        <input type="number" id="evaluaTypeId" name="evaluaTypeId" required> -->
+<!-- 		    </div> -->
+		    <div class="form-group">
+		        <label for="rankId">평가대상</label>
+		        <select id="rankId" name="rankId" required>
+			        <option value="" disabled selected>선택하세요</option>
+			        <option value="3000">사원</option>
+			        <option value="3010">대리</option>
+			        <option value="3020">과장</option>
+			        <option value="3030">차장</option>
+			        <option value="3040">부장</option>
+			    </select>
+		    </div>
+		    <div class="form-group">
+		        <label for="evaluaName">평가명</label>
+		        <input type="text" id="evaluaName" name="evaluaName" required>
+		    </div>
+
+		    <div class="form-group">
+		        <label for="evaluaType">평가 유형</label>
+		        <input type="text" id="evaluaType" name="evaluaType" required>
+		    </div>
+
+		    <div class="form-group">
+		        <label for="evaluaCriteria">평가 항목</label>
+		        <input type="text" id="evaluaCriteria" name="evaluaCriteria" required>
+		    </div>
+
+		    <div class="form-group">
+		        <label for="evaluaWeight">가중치 (%)</label>
+		        <input type="number" id="evaluaWeight" name="evaluaWeight" min="0" max="100" required>
+		    </div>
+
+		    <div class="form-group">
+		        <label for="evaluaComment">세부</label>
+		        <textarea id="evaluaComment" name="evaluaComment" rows="3"></textarea>
+		    </div>
+
+		    <div class="button-group">
+		        <button type="submit" class="btn btn-primary">추가</button>
+		        <button type="reset" class="btn btn-danger">초기화</button>
+		    </div>
+		</form>
+    </div>
+
+    <!-- 기존 평가 리스트 -->
+    <div class="list-section">
+        <h5>
+		    <button onclick="navigateHalf(-1)"><<</button>
+		    적용중인 KPI 목록 (${evaluationYear}년 ${halfYear} 
+		        <c:choose>
+		            <c:when test="${halfYear eq '1'}">상반기</c:when>
+		            <c:when test="${halfYear eq '2'}">하반기</c:when>
+		            <c:otherwise>미지정</c:otherwise>
+		        </c:choose>
+		    )
+		    <button onclick="navigateHalf(1)">>></button>
+		</h5>
+        <table>
+            <thead>
+                <tr>
+                    <th>평가대상</th>
+                    <th>연도</th>
+        			<th>반기</th>
+                    <th>평가명</th>
+                    <th>유형</th>
+                    <th>항목</th>
+                    <th>가중치</th>
+                    <th>설명</th>
+                    <th>삭제</th>
+                </tr>
+            </thead>
+            <tbody id="evaluationTableBody">
+                <c:forEach var="x" items="${evaluTypeList}" varStatus="status">
+                    <tr>
+            			<td style="display: none"><input type="hidden" name="evaluationList[${status.index}].evaluaTypeId" value="${x.evaluaTypeId}" /></td>
+                        <td>${x.rank.rankName }</td>
+                        <td><span class="strong-text">${x.evaluationYear }</span></td>
+            		    <td>
+	            		    <c:choose>
+	                    	    <c:when test="${x.halfYear eq '1'}">상반기</c:when>
+			                    <c:when test="${x.halfYear eq '2'}">하반기</c:when>
+			                    <c:otherwise>-</c:otherwise>
+	                        </c:choose>
+                        </td>
+                        <td>${x.evaluaName}</td>
+                        <td>${x.evaluaType}</td>
+                        <td>${x.evaluaCriteria}</td>
+                        <td>${x.evaluaWeight}%</td>
+                        <td style="text-align : left; ">${x.evaluaComment}</td>
+                        <c:set var="isEditable" value="${x.evaluationYear == evaluationYear and x.halfYear == halfYear}" />
+                        <td>
+                        	<c:if test="${isEditable}">
+                        		<button class="btn btn-danger" onclick="deleteRow(this)">삭제</button>
+							</c:if>		                        
+                        </td>
+                    </tr>
+                </c:forEach>
+            </tbody>
+        </table>
+        
+        <!-- ✅ 여기 아래에 추가 -->
+		<c:if test="${empty evaluTypeList}">
+		    <p style="text-align:center; color:gray; margin-top:10px;">해당 연도/반기에 등록된 KPI 항목이 없습니다.</p>
+		</c:if>
+        
+    </div>
+</div>
+
+</body>
+
+<script>
+	function navigateHalf(direction) {
+	    let currentYear = parseInt('${evaluationYear}');
+	    let currentHalf = parseInt('${halfYear}');
+	    let newYear = currentYear;
+	    let newHalf = currentHalf;
+	
+	    if (direction === -1) {
+	        if (currentHalf === 1) {
+	            newYear--;
+	            newHalf = 2;
+	        } else {
+	            newHalf = 1;
+	        }
+	    } else if (direction === 1) {
+	        if (currentHalf === 2) {
+	            newYear++;
+	            newHalf = 1;
+	        } else {
+	            newHalf = 2;
+	        }
+	    }
+	
+	    location.href = '/evaluation/evaluationTypeList?evaluationYear=' + newYear + '&halfYear=' + newHalf;
+	}
+
+	// 행 삭제 & DB삭제
+    function deleteRow(button) {
+	    const row = button.closest("tr");
+	    const evaluaTypeId = row.querySelector('input[name$=".evaluaTypeId"]').value;
+	
+	    if (!confirm("정말 삭제하시겠습니까?")) return;
+	
+	    fetch('/evaluation/evaluationTypeDelete', {
+	        method: 'POST',
+	        headers: { 'Content-Type': 'application/json' },
+	        body: JSON.stringify({ evaluTypeId: evaluaTypeId })
+	    })
+	    .then(response => response.json())
+	    .then(data => {
+	        if (data.success) {
+	            location.reload(); // 삭제 후 현재 조건 유지
+	        } else {
+	            alert("삭제에 실패했습니다.");
+	        }
+	    })
+	    .catch(error => {
+	        console.error("삭제 오류:", error);
+	        alert("서버 오류로 인해 삭제할 수 없습니다.");
+	    });
+	}
+	
+    function checkTotalWeight() {
+        let total = 0;
+        document.querySelectorAll('#evaluationTableBody tr').forEach(row => {
+            const weightCell = row.cells[7]?.innerText.replace('%', '').trim(); // 7번째 열: 가중치
+            if (!isNaN(weightCell)) total += Number(weightCell);
+        });
+
+        const newWeight = parseInt(document.getElementById("evaluaWeight").value) || 0;
+        const finalWeight = total + newWeight;
+
+//         if (finalWeight > 100) {
+//             alert("총 가중치가 100%를 초과했습니다! 현재: " + finalWeight + "%");
+//             return false;
+//         }
+        return true;
+    }
+
+</script>

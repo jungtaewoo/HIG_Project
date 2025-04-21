@@ -1,0 +1,151 @@
+package kr.or.ddit.spring.config;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
+
+import kr.or.ddit.account.service.AccountService;
+import kr.or.ddit.account.vo.AccountVO;
+import kr.or.ddit.messenger.service.ChatEmpService;
+import kr.or.ddit.security.CustomUserDetailService;
+import kr.or.ddit.security.RealUserWrapper;
+import kr.or.ddit.spring.config.EmailUtil;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 
+ * @author youngjun
+ * @since 2025. 3. 17.
+ * @see
+ *
+ *      <pre>
+ * << 개정이력(Modification Information) >>
+ *   
+ *   수정일               수정자           수정내용
+ *  -----------      -------------    ---------------------------
+ *  2025. 3. 11.        youngjun             최초 생성
+ *  2025. 3. 17.        youngjun             security 재설정
+ *
+ *      </pre>
+ */
+@Configuration
+@EnableWebSecurity
+@Slf4j
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+   private final ChatEmpService chatEmpService;
+   private final CustomUserDetailService userDetailsService;
+   private final AccountService accountService;
+   private final EmailUtil emailUtil;
+
+   @Bean
+   public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
+      return http.getSharedObject(AuthenticationManagerBuilder.class)
+            .userDetailsService(userDetailsService)
+            .passwordEncoder(passwordEncoder())
+            .and()
+            .build();
+            
+   }
+
+   @Bean
+   public PasswordEncoder passwordEncoder() {
+      return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+   }
+
+   @Bean
+   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+      http.csrf(csrf -> csrf.disable())
+         .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/login", "/resources/**", "/", "/account/login/**").permitAll() // 누구나 접근가능
+            .requestMatchers("/WEB-INF/views/**").denyAll() //jsp직접접근 차단
+            .requestMatchers("/account/**").hasAnyRole("HR_ADMIN", "HR_MANAGER") //인사팀장,인사관리자 접근 (계정관리)
+            .requestMatchers("/salary/**").hasAnyRole("HR_ADMIN", "HR_MANAGER")
+         ).headers(headers -> headers
+            .frameOptions().sameOrigin() // 4/3미리보기 iframe 허용 설정 추가
+         )
+         .formLogin(login -> login
+            .loginPage("/") // 로그인 폼 URL
+            .loginProcessingUrl("/login/loginProcess") // 로그인 처리 URL
+            .usernameParameter("accountId")
+            .passwordParameter("password")
+            .defaultSuccessUrl("/account/login/home", true) // 로그인 성공 시 이동할 페이지
+            .successHandler((request, response, authentication) -> {
+               HttpSession session = request.getSession();
+               RealUserWrapper realUser = (RealUserWrapper) authentication.getPrincipal();
+               AccountVO account = realUser.getRealUser();
+
+               // 초기 비밀번호(1234)로 로그인한 경우 강제 재설정 유도
+               if (accountService.isInitialPassword(account.getAccountId())) {
+                  String email = accountService.accountfindEmail(account.getAccountId());
+
+                  if (email != null && !email.isBlank()) {
+                     String token = accountService.insertPasswordReset(account.getAccountId());
+                     String resetLink = "http://localhost:80/password/reset?token=" + token;
+
+                     String subject = "초기 비밀번호 재설정 안내";
+                     String htmlContent = "<h3>비밀번호 재설정 안내</h3>"
+                           + "<p>초기 비밀번호로 인해 비밀번호를 재설정해야 합니다.</p>"
+                           + "<a href='" + resetLink + "'>비밀번호 재설정하기</a>";
+
+                     // 이메일 전송 (Gmail 또는 Naver 중 선택 가능)
+                     emailUtil.sendEmail(
+                        "smtp.gmail.com", 587,
+                        "honeynut7789@gmail.com", "icqi jmax ovzf pibx", // 앱 비밀번호 주의!
+                        "인사관리 시스템",
+                        email,
+                        subject,
+                        htmlContent
+                     );
+                  }
+                  // 세션 종료 후 로그인 페이지로 리다이렉트
+                  session.invalidate();
+                  response.sendRedirect("/?initPw=true");
+                  return;
+               }
+               // 정상 비밀번호로 로그인 시
+               session.setAttribute("sessionAccount", account);
+               response.sendRedirect("/account/login/home");
+            })
+            .failureUrl("/?error=true") // 로그인 실패 시 에러 파라미터 추가
+            .permitAll()
+         )
+         .logout(logout -> logout
+            .logoutUrl("/account/login/logout")
+            .logoutSuccessHandler((request, response, authentication) -> {
+               if (authentication != null && authentication.getPrincipal() instanceof RealUserWrapper) {
+                  AccountVO account = ((RealUserWrapper) authentication.getPrincipal()).getRealUser();
+                  chatEmpService.updateEmpStatus(account.getEmpId(), "오프라인");
+               }
+               response.sendRedirect("/");
+            })
+            .invalidateHttpSession(true)
+            .deleteCookies("JSESSIONID", "remember-me")
+            .permitAll()
+         )
+         .sessionManagement(session -> session
+            .maximumSessions(1)
+            .expiredUrl("/account/login?expired")
+         );
+      return http.build();
+   }
+
+   @Bean
+   public HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
+      return new HandlerMappingIntrospector();
+   }
+}

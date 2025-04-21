@@ -1,0 +1,71 @@
+package kr.or.ddit.salary.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import kr.or.ddit.salary.service.SalaryService;
+import kr.or.ddit.salary.vo.DeductionVO;
+import kr.or.ddit.salary.vo.SalaryVO;
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
+@Controller
+public class SalaryRegisterController {
+
+	@Autowired
+	private SalaryService service;
+	
+	@GetMapping("/salary/insert/form")
+	public String RegisterForm(Model model) {
+		List<SalaryVO>salarySummary = service.SalarySummaryByMonth();
+		model.addAttribute("salarySummary", salarySummary);
+		return"tiles:salary/salaryList";
+	}
+	
+//	급여미리보기
+	@GetMapping("/salary/insert/ex/{payYear}/{payMonth}")
+	public String exRegister(
+			 Model model
+			,@PathVariable("payYear")int payYear
+			,@PathVariable("payMonth")int payMonth
+			){
+		SalaryVO salaryEx =  service.salaryInsertEx(payYear, payMonth);
+		model.addAttribute("salaryEx", salaryEx);
+		return"salary/salaryEx";
+	}
+	
+	//최종급여등록
+	@Transactional
+	@PostMapping("/salary/insert/register")
+	public String Register(Model model, SalaryVO salary, DeductionVO deducation
+			,@RequestParam("payYear")int payYear, @RequestParam("payMonth")int payMonth
+			){
+		
+		System.out.println("ewrewkrjewkjrkewjrklewjrklewjkrjewkrjewkrj~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+		    log.info("급여 등록 시작");
+		    service.InsertSalary(payYear,payMonth);  // 급여등록
+		    log.info("공제 등록 시작");
+		    service.InsertDeducation(payYear, payMonth);
+		    log.info("수당 등록 시작");
+		    service.InsertAllowance(payYear, payMonth);
+
+		    log.info("수당 총액 반영 시작");
+		    service.allowanceTotalUpdate(payYear, payMonth);
+		    log.info("공제 총액 반영 시작");
+		    service.deducationTotalUpdate(payYear, payMonth);
+		    log.info("실지급액/총지급액 반영 시작");
+		    service.salaryTotalAmountUpdate(payYear, payMonth);
+
+		    log.info("전체 급여 등록 완료");
+			return "redirect:/salary/list";
+
+	}
+}

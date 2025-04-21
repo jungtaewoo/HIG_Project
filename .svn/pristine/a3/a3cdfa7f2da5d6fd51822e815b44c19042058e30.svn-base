@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>연차 신청서</title>
+  <!-- 의존성 라이브러리 로드 -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.13.1/underscore-min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.4.0/backbone-min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.ckeditor.com/4.20.0/standard/ckeditor.js"></script>
+  <style type="text/css">
+    /* 숨김 처리용 스타일 */
+    #draftContent {
+      display: none !important;
+    }
+    /* 안내 영역 스타일 */
+    .guide-table {
+      width: 800px;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-bottom: 20px; /* 메인 테이블과의 간격 */
+    }
+    .guide-table td {
+      padding: 10px;
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+
+<form id="approvalForm">
+  <!-- 안내(가이드라인) 영역: 정적으로 문구 표시 -->
+  <table class="guide-table">
+    <tbody>
+      <tr>
+        <td>
+          <strong>[연차 신청서 작성 전 안내사항]</strong><br><br>
+          1. <b>휴가 종류</b>는 “출산휴가, 연차휴가, 배우자출산휴가, 오전반차, 오후반차” 중에서 선택 가능합니다.<br>
+          2. <b>결재라인</b>은 기안자보다 높은 직급의 상사에게 결재 요청을 해야 합니다.<br>
+          3. <b>작성 완료 후</b>, “제출” 버튼(또는 전자결재 상신 버튼)을 클릭하면 결재 프로세스가 시작됩니다.<br>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 메인 내용 영역 -->
+  <div id="editor">
+    <table style="width: 800px; border-collapse: collapse; font-size: 12px;">
+      <tbody>
+        <tr>
+          <td colspan="2" style="padding: 20px; height: 90px; font-size: 22px; font-weight: bold; text-align: center;">
+            연차신청서
+          </td>
+        </tr>
+        <!-- 기안 정보 -->
+        <tr>
+          <td style="width:400px; padding: 20px;">
+            <table style="margin: 20px 0; border: 1px solid black; border-collapse: collapse;">
+              <tbody>
+                <!-- 공통 Hidden 필드 -->
+                <input type="hidden" id="draftId" name="draftId" value="302" />
+                <input type="hidden" id="templateId" name="templateId" value="302"/>
+                <input type="hidden" id="empId" name="empId" value="2023050704"/>
+                <input type="hidden" id="departmentId" name="departmentId" value="302" />
+                <input type="hidden" id="draftTitle" name="draftTitle" value="연차신청서"/>
+
+                <tr>
+                  <td style="padding: 8px; text-align: center;">기안자</td>
+                  <td style="padding: 8px;">
+                    <input type="text" name="draftUser" class="form-control" readonly value="홍길동" />
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; text-align: center;">기안부서</td>
+                  <td style="padding: 8px;">
+                    <input type="text" name="draftDept" class="form-control" readonly value="인사부" />
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; text-align: center;">기안일</td>
+                  <td style="padding: 8px;">
+                    <input type="date" name="draftDate" class="form-control" value="2025-04-10" />
+                  </td>
+                </tr>
+                <tr class="docNoRow" style="display: none;">
+                  <td style="padding: 8px; text-align: center;">문서번호</td>
+                  <td style="padding: 8px;">
+                    <input type="hidden" name="docNo" class="form-control" readonly />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+
+          <!-- 승인자 정보 영역 -->
+          <td style="width:500px; padding: 20px; vertical-align: top;">
+            <table id="approverTable" style="width: 100%; border: 1px solid #ccc; border-collapse: collapse; font-size: 12px;">
+              <thead>
+                <tr>
+                  <th style="padding: 5px; text-align: center;">승인자명</th>
+                  <th style="padding: 5px; text-align: center;">부서</th>
+                  <th style="padding: 5px; text-align: center;">직급</th>
+                  <th style="padding: 5px; text-align: center;">승인순번</th>
+                  <th style="padding: 5px; text-align: center;">상태</th>
+                </tr>
+              </thead>
+              <tbody id="approverTableBody">
+                <!-- 예시 데이터: 기안자보다 높은 직급의 상사 -->
+                <tr>
+                  <td style="padding: 5px; text-align: center;">김부장</td>
+                  <td style="padding: 5px; text-align: center;">연구개발본부</td>
+                  <td style="padding: 5px; text-align: center;">부장</td>
+                  <td style="padding: 5px; text-align: center;">1</td>
+                  <td style="padding: 5px; text-align: center;">대기</td>
+                </tr>
+              </tbody>
+            </table>
+            <!-- 추후 JS에서 승인자 추가/삭제 기능 구현 -->
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <br><br>
+
+    <!-- 연차 신청서 전용 항목 (휴가 정보) -->
+    <table style="width: 800px; border: 1px solid black; border-collapse: collapse; font-size: 12px;">
+      <tbody>
+        <tr>
+          <td style="padding: 5px; text-align: center;">휴가 종류</td>
+          <td style="padding: 5px;">
+            <!-- 안내된 휴가 종류 옵션들 -->
+            <select id="annualCode" name="annualCode" class="form-control">
+              <option value="출산휴가">출산휴가</option>
+              <option value="연차휴가" selected="selected">연차휴가</option>
+              <option value="배우자출산휴가">배우자출산휴가</option>
+              <option value="오전반차">오전반차</option>
+              <option value="오후반차">오후반차</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 5px; text-align: center;">기간 및 일시</td>
+          <td style="padding: 5px;">
+            <input type="date" id="leaveDate" name="leaveDate" class="form-control" 
+                   style="display:inline-block; width:48%;" value="2025-05-01" />
+            ~
+            <input type="date" id="leaveEndDate" name="leaveEndDate" class="form-control" 
+                   style="display:inline-block; width:49%;" value="2025-05-05" />
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 5px; text-align: center;">
+            <b style="color:red;"></b> 휴가 사유
+          </td>
+          <td style="padding: 5px;">
+            <!-- 휴가 사유는 CKEditor 적용 -->
+            <textarea name="reason" id="reason" class="form-control" style="width: 100%; height: 80px;">가족 여행을 위한 연차 신청입니다.</textarea>
+            <!-- 기안 사유는 hidden 처리 -->
+            <input type="hidden" id="draftContent" name="draftContent" class="no-ckeditor" value="기안상신합니다." />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+</form>
+
+<script>
+  // CKEditor 4 적용: 편집 대상인 textarea만 처리
+  window.onload = function() {
+    document.querySelectorAll("textarea:not(.no-ckeditor)").forEach((textarea) => {
+      // 여기서는 "reason" 필드만 CKEditor 적용됨
+      CKEDITOR.replace(textarea.id, { versionCheck: false });
+    });
+  }
+</script>
+</body>
+</html>

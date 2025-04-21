@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- * == 개정이력(Modification Information) == * * 수정일 수정자 수정내용 * ============ 
+	============== ======================= * 2025. 3. 18. 정태우 최초 생성 * -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.qr.qrMapper">
+
+	<!-- QR 코드 정보 조회 (token로 찾기) -->
+	<select id="getQRInfo" resultType="QrVO">
+		SELECT
+			 token 
+			,emp_id
+			,created_at
+			,TO_CHAR(expires_at, 'YYYY-MM-DD HH24:MI:SS') AS expires_at 
+		FROM qr_table
+		WHERE token = #{token}
+			AND expires_at > SYSDATE 
+	</select>
+
+	<!-- QR 코드 정보 삽입 -->
+	<insert id="saveQR" >
+	    INSERT INTO qr_table (
+	         token
+	        ,emp_id
+	        ,created_at
+	        ,expires_at
+	    )
+	    VALUES (
+	         #{token}
+	        , #{empId}
+	        , SYSDATE
+	        , TO_DATE(#{expiresAt}, 'YYYY-MM-DD HH24:MI:SS')
+	    )
+	</insert>
+
+	<!-- QR 코드 정보 삭제 -->
+	<delete id="deleteQR" parameterType="string">
+		DELETE FROM 
+			qr_table
+		WHERE
+			token = #{token}
+	</delete>
+
+</mapper>

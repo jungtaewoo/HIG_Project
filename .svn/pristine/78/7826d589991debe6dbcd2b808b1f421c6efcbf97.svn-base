@@ -1,0 +1,17 @@
+package kr.or.ddit.evaluation.vo;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import lombok.Data;
+
+@Data
+public class EvaluationChartVO {
+	
+	@JsonProperty("departmentName")
+	private String departmentName;
+	@JsonProperty("completedCount")
+	private int completedCount;
+	@JsonProperty("notCompletedCount")
+	private int notCompletedCount;
+    
+}

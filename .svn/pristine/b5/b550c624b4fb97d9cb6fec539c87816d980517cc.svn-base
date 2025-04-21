@@ -1,0 +1,176 @@
+package kr.or.ddit.tasks;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import kr.or.ddit.annual.service.AnnualHistoryService;
+import kr.or.ddit.annual.vo.AnnualHistoryVO;
+import kr.or.ddit.attendance.service.AttendanceService;
+import kr.or.ddit.attendance.vo.AttendanceVO;
+import kr.or.ddit.employee.service.EmployeeService;
+import kr.or.ddit.employee.vo.EmployeeVO;
+import kr.or.ddit.qr.controller.QrWebSocket;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Component
+public class PrintCurrentTimeTask {
+
+	@Autowired
+	private QrWebSocket qrWebSocket;
+
+	@Autowired
+	private AttendanceService Aservice;
+
+	@Autowired
+	private AnnualHistoryService AHservice;
+
+	@Autowired
+	private EmployeeService Eservice;
+
+
+	/**
+	 * 평일 13시까지 출근하지 않고 연차 기록도 없는 직원들의 무단 결근 체크
+	 */
+	@Scheduled(cron = "00 01 18 * * MON-FRI") // 평일 실행
+	public void chcekAttendance() {
+		AttendanceVO maxVo = Aservice.getMax();								// Max attendanceId 추출
+		List<AttendanceVO> TodayADList = Aservice.findTodayAttendanceList(); // 오늘 출근한 직원 목록 
+		List<AnnualHistoryVO> AHList = AHservice.TodayAnnualHistory(); 		 // 오늘 연차인 직원 목록
+		List<EmployeeVO> empList = Eservice.readEmpList();
+
+		long max = maxVo.getAttendanceId();
+		
+		// 둘 다 비어 있으면 무단결근 체크하지 않음 (임시 공휴일 같은날 아무도 출근하지 않고 아무도 연차를 사용하지 않으므로)
+	    if (TodayADList.isEmpty() && AHList.isEmpty()) {
+	        return;
+	    }
+
+		// 오늘 출근한 직원 목록
+		Set<String> todayAttendanceSet = new HashSet<>();
+		for (AttendanceVO att : TodayADList) {
+		    todayAttendanceSet.add(att.getEmpId()); // empId만 저장
+		}
+
+		//  연차 사용 직원 목록
+		Set<String> annualEmpSet = new HashSet<>();
+		for (AnnualHistoryVO ah : AHList) {
+		    annualEmpSet.add(ah.getEmpId());
+		}
+
+		// 무단결근 대상 직원 리스트 생성
+		List<String> absentEmployees = new ArrayList<>();
+		for (EmployeeVO emp : empList) {
+		    String empId = emp.getEmpId();
+
+		    // 출근한 직원이거나 연차 사용 직원이면 제외
+		    if (!todayAttendanceSet.contains(empId) && !annualEmpSet.contains(empId)) {
+		        absentEmployees.add(empId);
+		    }
+		}
+
+		if (!absentEmployees.isEmpty()) {
+			for(int i =0; i<absentEmployees.size(); i++) {
+				long mymax = max + i;
+				AttendanceVO vo = new AttendanceVO();
+				vo.setEmpId(absentEmployees.get(i));
+				vo.setAttendanceId(mymax);
+				Aservice.insertAbsentStatus(vo);
+				qrWebSocket.broadcastMessage("무단 결근자 근태 인서트 완뇨");
+			}
+		}
+	}
+	
+	/**
+	 * 평일에 한번 아침에 오늘 연차인 직원들의 근태를 인서트
+	 */
+//	@Scheduled(initialDelay = 3000, fixedDelay = 2000)
+	@Scheduled(cron = "00 09 10 * * MON-FRI") // 평일 실행 (현재 테스트중)
+	public void chcekAnnual() {
+	    AttendanceVO maxVo = Aservice.getMax();	
+	    long max = maxVo.getAttendanceId();
+	    List<AnnualHistoryVO> AHList = AHservice.TodayAnnualHistory(); // 오늘 연차인 직원 목록
+	    Date today = new Date();
+	    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd"); 
+	    String formattedToday = sdf.format(today);
+
+	    for(AnnualHistoryVO AH : AHList) {
+	        if ("승인".equals(AH.getStatus())) {
+	            
+	            // ✅ 중복 여부 체크
+	            if (AHservice.existsAttendance(AH.getEmpId(), formattedToday)) {
+	                continue; // 이미 기록 있음 → 스킵
+	            }
+
+	            AttendanceVO vo = new AttendanceVO();
+	            long mymax = ++max;
+	            vo.setAttendanceId(mymax);
+	            vo.setEmpId(AH.getEmpId());
+	            vo.setWorkDate(formattedToday);
+	            vo.setAttendanceStatus(AH.getAnnualType().getAnnualName());
+
+	            Aservice.attendanceInsert(vo);
+	            qrWebSocket.broadcastMessage("연차인 근태 인서트 완뇨 ");
+	        }
+	    }
+	}
+	
+	/**
+	 * 테스트용
+	 */
+//	@Scheduled(cron = "0 05 10 * * ?")
+//	public void checkAlarm() {
+//		 qrWebSocket.broadcastMessage("check 알람알람");
+//	}
+//	@Scheduled(initialDelay = 5000, fixedDelay = 5000)
+	
+	
+	
+	
+//	@Scheduled(cron = "0 50 12 * * MON-SAT ")
+	
+//	@Scheduled(initialDelay = 5000, fixedDelay = 5000)
+	// 10시 10분부터 2분당 한번씩
+	@Scheduled(cron = "0 10-59/2 10 18 * ?") 
+	public void sendSalay() {
+		 qrWebSocket.broadcastMessage("오늘은 급여 지급일입니다");
+	}
+	
+	
+	
+	
+	
+	@Scheduled(cron = "0 50 12 * * MON-SAT ")
+	public void sendDailyAlarm() {
+		 qrWebSocket.broadcastMessage("수업 끝났으면 식사 할 사람들 식사 하고와~~ ^♡^ ");
+	}
+	@Scheduled(cron = "00 39 17 * * MON-SAT")
+	public void leaveWork() {
+		 qrWebSocket.broadcastMessage("퇴실지문이용~~ 잊지 않기용~~ 퇴실지문댄스 ~~ ^♡^ ");
+	}
+	@Scheduled(cron = "00 51 13 * * MON-SAT")
+//	@Scheduled( fixedDelay = 5000)
+	public void lunch() {
+		qrWebSocket.broadcastMessage("힘들지만 조금만 더 힘내보아요~~ 화이팅!~~ ^♡^ ");
+	}
+
+//	하나의 작업이 끝나면 2초뒤에 시작
+//	@Scheduled(initialDelay = 3000, fixedDelay = 2000)
+//	Delete 처리할 때 -> 회원 탈퇴 할 떄 유용
+//	@Scheduled(cron = "0 0 3 ? * MON")
+//	@Scheduled(cron = "0/5 * * * * *")
+//	public void printCurrentTime() {
+//		LocalDateTime current = LocalDateTime.now();
+//		log.info("------------------> {} ", current);
+//		service.updateYear(empId);
+//	}
+//}
+}

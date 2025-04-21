@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.mybatis.mappers.messenger.chatempMapper">
+
+	<!-- 직원 정보 ResultMap -->
+	<resultMap type="ChatempVO" id="ChatEmpResultMap"
+		autoMapping="true">
+		<association property="department" javaType="DepartmentVO"
+			autoMapping="true" />
+	</resultMap>
+	
+
+	<!-- 채팅방 직원 목록 -->
+	<select id="chatempList" resultMap="ChatEmpResultMap">
+		SELECT
+		D.DEPARTMENT_NAME,
+		T.TEAM_NAME,
+		R.RANK_NAME,
+		C.EMP_NAME,
+		C.EMP_ID,
+		C.STATUS,
+		C.LAST_LOGIN
+		FROM CHAT_EMP C
+		JOIN DEPARTMENT D ON C.DEPARTMENT_ID = D.DEPARTMENT_ID
+		LEFT JOIN TEAM T ON C.TM_ID = T.TEAM_ID
+		LEFT JOIN RANK R ON C.RANK_ID = R.RANK_ID
+		ORDER BY D.DEPARTMENT_NAME ASC, T.TEAM_NAME ASC, C.EMP_NAME ASC
+	</select>
+
+	<!-- 상태 업데이트 -->
+	<update id="updateEmpStatus">
+		UPDATE CHAT_EMP
+		SET STATUS = #{status}
+		WHERE EMP_ID = #{empId}
+	</update>
+
+	<!-- 채팅 계정 생성 -->
+	<insert id="insertChatEmp" parameterType="accountVO">
+		INSERT INTO CHAT_EMP (
+		EMP_ID,
+		DEPARTMENT_ID,
+		EMP_NAME,
+		TM_ID,
+		RANK_ID,
+		STATUS,
+		LAST_LOGIN
+		) VALUES (
+		#{empId},
+		#{departmentId},
+		#{empName},
+		#{tmId},
+		#{rankId},
+		'오프라인',
+		SYSDATE
+		)
+	</insert>
+	
+	<!-- RoomId로 상대방 정보조회 (1:1채팅기준) -->
+	<select id="selectChatempInfo" resultType="map">
+		SELECT CE.EMP_NAME, R.RANK_NAME
+				FROM CHAT_MEMBER CM
+				JOIN CHAT_EMP CE ON CM.EMP_ID = CE.EMP_ID
+				LEFT JOIN RANK R ON CE.RANK_ID = R.RANK_ID
+				WHERE CM.ROOM_ID = #{roomId}
+		AND CE.EMP_ID != #{currentUserId}
+	</select>
+	<!-- 채팅멤버의 이름,직책 조회 -->
+	<select id="selectChatMembersInfo" resultType="map">
+		SELECT 
+			CE.EMP_NAME,
+			R.RANK_NAME,
+			CE.STATUS
+		FROM CHAT_MEMBER CM
+		JOIN CHAT_EMP CE ON CM.EMP_ID = CE.EMP_ID
+		LEFT JOIN RANK R ON CE.RANK_ID = R.RANK_ID
+		WHERE CM.ROOM_ID = #{roomId}
+	</select>
+
+	<!-- ============================= -->
+	<!-- 채팅방 관련 SQL -->
+	<!-- ============================= -->
+
+	<!-- 1:1 채팅방 존재 여부 확인 -->
+	<select id="selectOneToOneChatRoom" resultType="int">
+		SELECT R.ROOM_ID
+		FROM CHAT_ROOM R
+		JOIN CHAT_MEMBER M1 ON R.ROOM_ID = M1.ROOM_ID
+		JOIN CHAT_MEMBER M2 ON R.ROOM_ID = M2.ROOM_ID
+		WHERE R.ROOM_TYPE = '1:1'
+		AND (
+		(M1.EMP_ID = #{empId1} AND M2.EMP_ID = #{empId2})
+		OR
+		(M1.EMP_ID = #{empId2} AND M2.EMP_ID = #{empId1})
+		)
+		GROUP BY R.ROOM_ID
+		HAVING COUNT(DISTINCT M1.EMP_ID || M2.EMP_ID) = 2
+	</select>
+	<!-- 채팅방 생성 -->
+	<insert id="insertChatRoom" parameterType="chatRoomVO">
+		<selectKey resultType="long" keyProperty="roomId"
+			order="BEFORE">
+			SELECT CHAT_ROOM_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO CHAT_ROOM (
+		ROOM_ID,
+		ROOM_TYPE,
+		ROOM_NAME,
+		CREATE_AT
+		) VALUES (
+		#{roomId},
+		#{roomType},
+		#{roomName},
+		SYSDATE
+		)
+	</insert>
+		<!-- 전체 채팅방 목록 조회(로그인한 사원 기준) -->
+	<select id="selectChatRoomByEmpId" resultType="chatRoomVO">
+		SELECT
+		R.ROOM_ID,
+		R.ROOM_TYPE,
+		R.ROOM_NAME,
+		R.CREATE_AT
+		FROM CHAT_ROOM R
+		JOIN CHAT_MEMBER M ON R.ROOM_ID = M.ROOM_ID
+		WHERE M.EMP_ID = #{empId}
+		ORDER BY R.CREATE_AT DESC
+	</select>
+	
+	<select id="selectEmpNameAndRank" parameterType="string" resultType="map">
+		SELECT 
+			EMP_NAME AS emp_name,
+			RANK_NAME AS rank_name
+		FROM CHAT_EMP CE
+		LEFT JOIN RANK R ON CE.RANK_ID = R.RANK_ID
+		WHERE EMP_ID = #{empId}
+	</select>
+	<!-- 방금 생성한 채팅방 ID 조회 -->
+	<select id="selectLastChatRoomId" resultType="int">
+		SELECT MAX(ROOM_ID) FROM CHAT_ROOM
+	</select>
+
+	<!-- CHAT_MEMBER에 참여자 추가 -->
+	<insert id="insertChatMembers">
+		INSERT INTO CHAT_MEMBER (
+		EMP_ID,
+		ROOM_ID,
+		JOINED_AT,
+		ROLE
+		) VALUES (
+		#{empId},
+		#{roomId},
+		SYSDATE,
+		'member'
+		)
+	</insert>
+
+	<delete id="deleteChatMember">
+		DELETE FROM CHAT_MEMBER
+		WHERE EMP_ID = #{empId}
+		AND ROOM_ID = #{roomId}
+	</delete>
+
+	<!-- ============================= -->
+	<!-- 메시지 관련 SQL -->
+	<!-- ============================= -->
+	<insert id="insertMessage" parameterType="chatMessageVO">
+		<selectKey resultType="long" keyProperty="messageId"
+			order="BEFORE">
+			SELECT CHAT_MESSAGE_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO CHAT_MESSAGE(
+		MESSAGE_ID,
+		ROOM_ID,
+		SENDER_ID,
+		MESSAGE_TEXT,
+		SENT_AT,
+		CHAT_FILE
+		) VALUES(
+		#{messageId},
+		#{roomId},
+		#{senderId},
+		#{messageText},
+		SYSDATE,
+		#{chatFile}
+		)
+	</insert>
+    <!-- 이전 메시지 조회 -->
+	<select id="selectMessagesByRoomId" parameterType="long" resultType="chatMessageVO">
+		SELECT
+		    M.MESSAGE_ID,
+		    M.ROOM_ID,
+		    M.SENDER_ID,
+		    M.MESSAGE_TEXT,
+		    M.SENT_AT,
+		    M.CHAT_FILE,
+		    (CE.EMP_NAME || ' (' || R.RANK_NAME || ')') AS SENDER_NAME,
+		    M.READ_BY,
+		    (SELECT COUNT(*) FROM CHAT_MEMBER CM WHERE CM.ROOM_ID = M.ROOM_ID) AS TOTAL_MEMBER_COUNT
+		FROM CHAT_MESSAGE M
+		JOIN CHAT_EMP CE ON M.SENDER_ID = CE.EMP_ID
+		LEFT JOIN RANK R ON CE.RANK_ID = R.RANK_ID
+		WHERE M.ROOM_ID = #{roomId}
+		ORDER BY M.SENT_AT ASC			
+	</select>
+	
+	<!-- 읽음 여부 표시 -->
+	<update id="readMessage">
+		UPDATE CHAT_MESSAGE
+		SET READ_BY =
+			CASE
+			 WHEN READ_BY IS NULL OR READ_BY = ' ' THEN #{empId}
+			 WHEN INSTR(READ_BY, #{empId}) = 0 THEN READ_BY || ',' || #{empId}
+			 ELSE READ_BY
+		END
+	WHERE MESSAGE_ID = #{messageId}	 
+	</update>
+	
+	<select id="selectRoomInfo" parameterType="long" resultType="map">
+	SELECT ROOM_TYPE, ROOM_NAME
+	FROM CHAT_ROOM
+	WHERE ROOM_ID =#{roomId}
+	
+	</select>
+	
+	<!-- 파일 업로드 SQL -->
+	
+	<!-- 파일 업로드 -->
+	<!-- <insert id="insertChatFile" parameterType="chatFileVO">
+		<selectKey resultType="long" keyProperty="fileId" order="BEFORE">
+			SELECT CHAT_FILE_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO CHAT_FILE(
+			FILE_ID,
+			MESSAGE_ID,
+			UPLOADER_ID,
+			FILE_NAME,
+			FILE_TYPE,
+			FILE_SIZE,
+			FILE_PATH,
+			UPLOAD_DATE
+		) VALUES (
+			#{fileId},
+			#{messageId},
+			#{uploaderId},
+			#{fileName},
+			#{fileType},
+			#{fileSize},
+			#{filePath},
+			SYSDATE
+		)
+	</insert>
+
+특정 메시지에 첨부된 파일 목록
+	<select id="selectFileByMessageId" parameterType="long" resultType="chatFileVO">
+		SELECT 
+			FILE_ID,
+			MESSAGE_ID,
+			UPLOADER_ID,
+			FILE_NAME,
+			FILE_TYPE,
+			FILE_SIZE,
+			FILE_PATH,
+			UPLOAD_DATE
+		FROM CHAT_FILE
+		WHERE MESSAGE_ID = #{messageId}
+	</select>
+	
+	파일 단건 조회
+	<select id="selectFileById" parameterType="long" resultType="chatFileVO">
+		SELECT 
+			FILE_ID,
+			MESSAGE_ID,
+			UPLOADER_ID,s
+			FILE_NAME,
+			FILE_TYPE,
+			FILE_SIZE,
+			FILE_PATH,
+			UPLOAD_DATE
+		FROM CHAT_FILE
+		WHERE FILE_ID = #{fileId}
+	</select> -->
+	
+	<update id="updateMessageFile">
+		UPDATE CHAT_MESSAGE
+		SET CHAT_FILE =#{fileDetailId}
+		WHERE MESSAGE_ID = #{messageId}
+	
+	</update>
+	
+</mapper>

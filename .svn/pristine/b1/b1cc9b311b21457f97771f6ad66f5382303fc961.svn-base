@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>연차 신청서</title>
+  <!-- 의존성 라이브러리 로드 -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.13.1/underscore-min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.4.0/backbone-min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.ckeditor.com/4.20.0/standard/ckeditor.js"></script>
+  <style type="text/css">
+    /* CKEditor 제어 */
+    #draftContent {
+      display: none !important;
+    }
+
+    /* 간단한 스타일링 (선택) */
+    .form-control {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 12px;
+      padding: 5px;
+    }
+
+    /* 테이블에 기본 스타일 추가 */
+    table {
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    td {
+      padding: 8px;
+      vertical-align: middle;
+    }
+    th {
+      background-color: #f9f9f9;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<form id="approvalForm">
+  <div id="editor">
+    <table style="width: 800px; margin-bottom: 10px;">
+      <tr>
+        <td colspan="2" style="height: 90px; font-size: 22px; font-weight: bold; text-align: center;">
+          연차신청서
+        </td>
+      </tr>
+    </table>
+
+    <!-- 기안자/기안부서/기안일/문서번호 테이블 (2행 * 4셀 형태) -->
+    <table style="width: 800px;">
+      <!-- Hidden 필드들 -->
+      <input type="hidden" id="draftId" name="draftId" value="" />
+      <input type="hidden" id="templateId" name="templateId" value=""/>
+      <input type="hidden" id="empId" name="empId" value="empId"/>
+      <input type="hidden" id="departmentId" name="departmentId" value="" />
+      <input type="hidden" id="draftTitle" name="draftTitle" value="draftTitle"/>
+
+      <tr>
+        <td style="width: 100px; text-align: center;">기안자</td>
+        <td style="width: 300px;">
+          <input type="text" name="draftUser" class="form-control" readonly />
+        </td>
+        <td style="width: 100px; text-align: center;">기안부서</td>
+        <td style="width: 300px;">
+          <input type="text" name="draftDept" class="form-control" readonly />
+        </td>
+      </tr>
+      <tr>
+        <td style="text-align: center;">기안일</td>
+        <td>
+          <input type="date" name="draftDate" class="form-control" />
+        </td>
+        <td style="text-align: center;">문서번호</td>
+        <td>
+          <input type="text" name="docNo" class="form-control" readonly />
+        </td>
+      </tr>
+    </table>
+
+    <br>
+
+    <!-- 승인자 정보 테이블 -->
+    <table style="width: 800px;">
+      <thead>
+        <tr>
+          <th style="text-align: center;">승인자명</th>
+          <th style="text-align: center;">부서</th>
+          <th style="text-align: center;">직급</th>
+          <th style="text-align: center;">승인 순번</th>
+          <th style="text-align: center;">상태</th>
+        </tr>
+      </thead>
+      <tbody id="approverTableBody">
+        <!-- 동적으로 생성될 승인자 tr -->
+      </tbody>
+    </table>
+
+    <br>
+
+    <!-- 연차 신청서 전용 항목 -->
+    <table style="width: 800px;">
+      <tr>
+        <td style="width: 100px; text-align: center;">휴가 종류</td>
+        <td>
+          <select id="annualCode" name="annualCode" class="form-control">
+            <option value="">연차종류선택</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td style="text-align: center;">기간 및 일시</td>
+        <td>
+          <input type="date" id="leaveDate" name="leaveDate" class="form-control" style="width:45%; display:inline-block;" />
+          ~
+          <input type="date" id="leaveEndDate" name="leaveEndDate" class="form-control" style="width:45%; display:inline-block;" />
+        </td>
+      </tr>
+      <tr>
+        <td style="text-align: center;">휴가 사유</td>
+        <td>
+          <!-- CKEditor 적용 대상 -->
+          <textarea name="reason" id="reason" class="form-control" style="height: 80px;"></textarea>
+          <!-- 숨긴 기안 사유 -->
+          <input type="hidden" id="draftContent" name="draftContent" class="no-ckeditor"
+                 value="기안상신합니다." />
+        </td>
+      </tr>
+    </table>
+
+  </div>
+</form>
+
+<!-- 아래 JS 파일들은 필요에 따라 조정 -->
+<script src="/resources/js/approval/approvalTemplate.js"></script>
+<script src="/resources/js/approval4.js"></script>
+<script src="/resources/js/approval/approvalDraft.js"></script>
+
+<script>
+  // CKEditor 4 적용
+  window.onload = function() {
+    // textarea 중 .no-ckeditor 클래스가 없는 것만 CKEditor 적용
+    document.querySelectorAll("textarea:not(.no-ckeditor)").forEach((textarea) => {
+      CKEDITOR.replace(textarea.id, { versionCheck: false });
+    });
+  }
+</script>
+
+</body>
+</html>

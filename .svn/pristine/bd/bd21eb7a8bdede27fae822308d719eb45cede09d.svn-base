@@ -1,0 +1,6 @@
+
+<script src="../fullcalendar-6.1.15/dist/index.global.min.js"></script>
+
+    <div id="calendar"></div>
+    <script src=" /resources/js/test.js"></script>
+   

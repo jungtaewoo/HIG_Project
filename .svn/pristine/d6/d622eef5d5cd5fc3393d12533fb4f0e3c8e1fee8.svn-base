@@ -1,0 +1,110 @@
+/** 
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *   
+ *   수정일      			수정자           수정내용
+ *  -----------   	-------------    ---------------------------
+ * 2025. 4. 9.     	CHOI            공통 알러트창 모듈
+ *
+ * </pre>
+ */
+
+
+/**
+ * 정보(alert) 팝업을 표시합니다.
+ * @param {Object} options
+ * @param {string} [options.title='정보'] - 팝업 제목
+ * @param {string} [options.text=''] - 팝업 내용
+ * @returns {Promise} SweetAlert2 Promise
+ */
+export function showInfo({ title = '정보', text = '' } = {}) {
+  return Swal.fire({
+    icon: 'info',
+    title,
+    text,
+    confirmButtonText: '확인'
+  });
+}
+
+/**
+ * 성공(success) 팝업을 표시합니다.
+ * @param {Object} options
+ * @param {string} [options.title='성공'] - 팝업 제목
+ * @param {string} [options.text=''] - 팝업 내용
+ * @returns {Promise} SweetAlert2 Promise
+ */
+export function showSuccess({ title = '성공', text = '' } = {}) {
+  return Swal.fire({
+    icon: 'success',
+    title,
+    text,
+    confirmButtonText: '확인'
+  });
+}
+
+/**
+ * 오류(error) 팝업을 표시합니다.
+ * @param {Object} options
+ * @param {string} [options.title='오류'] - 팝업 제목
+ * @param {string} [options.text=''] - 팝업 내용
+ * @returns {Promise} SweetAlert2 Promise
+ */
+export function showError({ title = '오류', text = '' } = {}) {
+  return Swal.fire({
+    icon: 'error',
+    title,
+    text,
+    confirmButtonText: '확인'
+  });
+}
+
+/**
+ * 사용자 확인(confirm) 모달을 표시합니다.
+ * @param {Object} options
+ * @param {string} [options.title='확인'] - 모달 제목
+ * @param {string} [options.text='정말 진행하시겠습니까?'] - 모달 내용
+ * @param {string} [options.confirmButtonText='예'] - 확인 버튼 텍스트
+ * @param {string} [options.cancelButtonText='아니오'] - 취소 버튼 텍스트
+ * @returns {Promise} SweetAlert2 Promise (사용자가 선택하면 Promise resolve)
+ */
+export function showConfirm({
+  title = '확인',
+  text = '정말 진행하시겠습니까?',
+  confirmButtonText = '예',
+  cancelButtonText = '아니오'
+} = {}) {
+  return Swal.fire({
+    title,
+    text,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText,
+    cancelButtonText
+  });
+}
+
+/**
+ * 입력(prompt) 모달을 표시합니다.
+ * @param {Object} options
+ * @param {string} [options.title='입력'] - 모달 제목
+ * @param {string} [options.text=''] - 모달 내용
+ * @param {string} [options.input='text'] - 입력 필드 타입 (예: text, email 등)
+ * @param {string} [options.inputPlaceholder='입력하세요'] - 입력 필드의 플레이스홀더
+ * @returns {Promise} SweetAlert2 Promise (입력 결과를 포함한 객체)
+ */
+export function showInput({
+  title = '입력',
+  text = '',
+  input = 'text',
+  inputPlaceholder = '입력하세요'
+} = {}) {
+  return Swal.fire({
+    title,
+    text,
+    input,
+    inputPlaceholder,
+    showCancelButton: true,
+    confirmButtonText: '확인',
+    cancelButtonText: '취소'
+  });
+}

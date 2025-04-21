@@ -1,0 +1,110 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="security" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
+<style>
+/* 브라우저 기준 우측 상단에 완전 고정 */
+.messengerSTbtn {
+	position: absolute;
+	top: -10px;
+	right: 12px;
+	z-index: 9999;
+	display: flex;            /* 버튼들 가로 정렬 */
+	align-items: center;
+	gap: 8px;                 /* 버튼 사이 간격 */
+}
+
+#messengerBtn, #alarmToggle {
+	width: 48px;
+	height: 48px;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	box-shadow: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+}
+
+#messengerBtn:hover, #alarmToggle:hover {
+	background: none;
+	transform: none;
+}
+
+#messengerBtn i {
+	font-size: 36px;
+	color: #4e73df;
+	transform: translateY(0px);
+	transition: color 0.2s;
+}
+
+#messengerBtn i:hover {
+	color: #3952c4;
+}
+
+#alarmToggle i {
+	font-size: 36px;
+	color: #f0ad4e;
+	transition: color 0.2s;
+}
+
+#alarmToggle i:hover {
+	color: #d48806;
+}
+</style>
+
+<div class="page-heading" style="position: relative;"> <!-- 부모에 relative 추가 -->
+	<h3>
+		<a type="button" id="themaChange"></a>
+	</h3>
+
+	<!-- 알림 + 메신저 버튼 -->
+	<div class="messengerSTbtn">
+		<!-- 알람 버튼 -->
+		<a href="#" id="alarmToggle" title="알림">
+			<i id="alarmIcon" class="bi bi-bell"></i>
+		</a>
+
+		<!-- 메신저 버튼 -->
+		<a href="#" id="messengerBtn" title="메신저 열기">
+			<i class="bi bi-chat-dots-fill"></i>
+		</a>
+	</div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const toggle = document.getElementById("alarmToggle");
+    const icon = document.getElementById("alarmIcon");
+
+    // 상태에 따라 아이콘 클래스 설정
+    function updateIcon() {
+        if (toggle.checked) {
+
+            icon.className = "bi bi-bell";
+        } else {
+//         	alert("알림 OFF");
+            icon.className = "bi bi-bell-slash";
+        }
+    }
+
+    // 초기 설정
+    toggle.checked = localStorage.getItem("alarmEnabled") === "true";
+    updateIcon();
+
+    // 아이콘 클릭 시 상태 전환 + 저장
+    toggle.addEventListener("click", function () {
+        toggle.checked = !toggle.checked;
+        if(toggle.checked == true ){
+         	alert("알림 ON");        	
+        }else{
+        	alert("알림 OFF");
+        }
+        localStorage.setItem("alarmEnabled", toggle.checked);
+        updateIcon();
+    });
+});
+</script>

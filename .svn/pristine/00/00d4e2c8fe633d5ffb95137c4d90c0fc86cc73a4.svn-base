@@ -1,0 +1,751 @@
+
+
+/**
+ * << 개정이력(Modification Information) >>
+ *  수정일            수정자         수정내용
+ * -----------    -------------    ---------------------------
+ * 2025. 3. 21.      CHOI            최초 생성
+ * 2025. 3. 23.      CHOI            시퀀스 기반 동적 id 처리 추가
+ * 2025. 3. 29.      CHOI            FancyTree 기반 조직도 결재라인 추가 기능 통합
+ * 2025. 4. 01.      CHOI            renderNode 방어코드, 부트스트랩 select, 조직도 검색 기능 추가
+ * 2025. 4. 06.      CHOI            이름 클릭 시 체크박스 토글 기능 추가
+ * 2025. 4. 08.      CHOI            상신 및 임시저장 버튼 confirm 창 적용 (SweetAlert2 적용)
+ * 2025. 4. 08.      CHOI            “본인 부서 열기” 시 자식 노드까지 전부 펼치고 자동 선택하도록 수정
+ * 2025. 4. 09.      CHOI            폴더(부서/팀) 체크 시 하위 직원 노드 모두 선택되도록 수정
+ */
+import { showConfirm, showError, showInfo, showSuccess } from '../common/alertModule.js';
+
+
+// 전역 플래그 변수 (중복 선언 방지)
+let orgModalClosedBySave = false;
+let modalCloseInProgress = false;
+
+$(document).ready(function() {
+  // 재요청 버튼 숨김 처리
+  $("#resubmitBtn").hide();
+
+  // 결재 진행 관련 초기화
+  fn_approverProcess();
+
+  // 조직도 모달 열기 버튼 (중복 이벤트 바인딩 제거)
+  document.getElementById("openOrgModalBtn").addEventListener("click", function() {
+    if (typeof openOrgModal === 'function') {
+      openOrgModal();
+    } else {
+      console.error("openOrgModal 함수를 찾을 수 없습니다.");
+      showError({ title: "오류", text: "조직도 모달을 여는 중 오류가 발생했습니다. 콘솔을 확인해주세요." });
+    }
+  });
+  
+  // 결재라인 지정(저장) 버튼: async 이벤트 핸들러로 변경 (SweetAlert2 사용)
+  document.getElementById("saveApprovalLineBtn").addEventListener("click", async function(e) {
+    e.preventDefault();
+    const result = await showConfirm({ title: "확인", text: "결재라인 지정하시겠습니까?" });
+    if (!result.isConfirmed) return;
+    orgModalClosedBySave = true;
+    saveApprovalLineFromOrg();
+
+    const orgModalEl = document.getElementById("orgModal");
+    const orgModalInstance = bootstrap.Modal.getInstance(orgModalEl);
+    if (orgModalInstance) { orgModalInstance.hide(); }
+    // 모달 닫힌 후 기안 모달 재오픈 (0.3초 후)
+    setTimeout(function(){
+      const approvalModalEl = document.getElementById("approvalFormModal");
+      const approvalModalInstance = bootstrap.Modal.getOrCreateInstance(approvalModalEl);
+      approvalModalInstance.show();
+    }, 300);
+  });
+  
+  // 결재 상신 버튼: async 이벤트 핸들러 (SweetAlert2 사용)
+  document.querySelector("#submitApprovalBtn").addEventListener("click", submitApprovalForm);
+});
+
+// 모달 닫힘 이벤트 처리
+$('#orgModal').on('hidden.bs.modal', function() { 
+  orgModalClosedBySave = false; 
+});
+$('.modal').on('hidden.bs.modal', function () {
+  if ($('.modal.show').length === 0) {
+    $('body').removeClass('modal-open');
+    $('.modal-backdrop').remove();
+  }
+});
+
+/* ================================
+   결재 진행 관련 함수
+================================ */
+
+window.approverId = null;
+window.approverData = [];
+
+function fn_approverProcess() {
+  getLoggedInApproverId(function(approverId) {
+    if (!approverId) {
+      console.warn("로그인한 결재자 ID를 가져오지 못했습니다.");
+      return;
+    }
+    $.ajax({
+      url: '/approvalProcess/approverDrafts',
+      type: 'GET',
+      data: { aprId: approverId },
+      dataType: 'json',
+      success: function(data) {
+        window.approverData = data;
+        renderDraftDocuments(data);
+      },
+      error: function() {
+        $("#draftDocumentsContainer").html("<tr><td colspan='10'>⚠️ 문서 조회 중 오류가 발생했습니다.</td></tr>");
+      }
+    });
+  });
+}
+
+function getLoggedInApproverId(callback) {
+  $.ajax({
+    url: '/approvalProcess/getApproverId',
+    type: 'GET',
+    success: function(empId) { callback(empId); },
+    error: function(xhr, status, error) { callback(null); }
+  });
+}
+
+function renderDraftDocuments(data) {
+  let html = "";
+  if (!data || data.length === 0) {
+    html = "<tr><td colspan='10'>등록된 기안 문서가 없습니다.</td></tr>";
+  } else {
+    data.forEach(function(doc) {
+      let processStatus = doc.aprStatus;
+      if (processStatus === "승인") {
+        processStatus = "승인중 (" + (doc.approverName || '-') + ")";
+      } else if (!processStatus) {
+        processStatus = "미정";
+      }
+      html += `<tr>
+                  <td><input type="hidden" value="${doc.draftId}" />${doc.draftId || '-'}</td>
+                  <td>
+                    <a href="/approval/draft/detailView?draftId=${doc.draftId}" class="draftDetailLink">
+                      ${doc.draftTitle || '-'}
+                    </a>
+                  </td>
+                  <td>${formatDate(doc.draftDate) || '-'}</td>
+                  <td>${doc.draftStatus || '-'}</td>
+                  <td>${doc.draftEmpName || '미등록'}</td>
+                  <td>${doc.approverDepartmentName || '미정'}</td>
+                  <td>${doc.approverName || '미정'}</td>
+                  <td>${doc.aprYn === 'Y' ? '승인' : doc.aprYn === 'N' ? '미승인' : '미정'}</td>
+                  <td>${processStatus}</td>
+               </tr>`;
+    });
+  }
+  $("#draftDocumentsContainer").html(html);
+  initializeDataTable();
+}
+
+function formatDate(dateString) {
+  if (!dateString) return "-";
+  let date = new Date(dateString);
+  if (isNaN(date.getTime())) { return "-"; }
+  let year = date.getFullYear();
+  let month = ('0' + (date.getMonth() + 1)).slice(-2);
+  let day = ('0' + date.getDate()).slice(-2);
+  let hours = ('0' + date.getHours()).slice(-2);
+  let minutes = ('0' + date.getMinutes()).slice(-2);
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+function initializeDataTable() {
+  if ($.fn.DataTable && $.fn.DataTable.isDataTable('#approvalTable')) {
+    $('#approvalTable').DataTable().destroy();
+  }
+  const dataTable = new simpleDatatables.DataTable("#approvalTable", {
+    searchable: true,
+    fixedHeight: false,
+  });
+  document.getElementById("entriesPerPage")?.addEventListener("change", function() {
+    dataTable.pageLength = parseInt(this.value);
+    dataTable.refresh();
+  });
+  document.getElementById("searchBox")?.addEventListener("input", function() {
+    dataTable.search(this.value);
+  });
+}
+
+function filterApproverProcessList(data) {
+  let filterVal = $('#statusFilter').val();
+  let filteredData = (filterVal === 'all') ? data : data.filter(doc => doc.aprStatus === filterVal);
+  let tableHeader = `
+      <table id="approvalTable" class="table table-striped datatable">
+          <thead>
+              <tr>
+                  <th><a href="#" class="dataTable-sorter">문서 ID</a></th>
+                  <th><a href="#" class="dataTable-sorter">제목</a></th>
+                  <th><a href="#" class="dataTable-sorter">기안일</a></th>
+                  <th><a href="#" class="dataTable-sorter">상태</a></th>
+                  <th><a href="#" class="dataTable-sorter">기안자</a></th>
+                  <th><a href="#" class="dataTable-sorter">부서</a></th>
+                  <th><a href="#" class="dataTable-sorter">결재자</a></th>
+                  <th><a href="#" class="dataTable-sorter">결재 진행 상태</a></th>
+              </tr>
+          </thead>
+          <tbody>
+  `;
+  let tableBody = "";
+  if (!filteredData || filteredData.length === 0) {
+    tableBody = `<tr><td colspan="9">등록된 문서가 없습니다.</td></tr>`;
+  } else {
+    filteredData.forEach(function(doc) {
+      let processStatus = doc.aprStatus;
+      if (processStatus === "승인") {
+        processStatus = "승인중 (" + (doc.approverName || '-') + ")";
+      } else if (!processStatus) {
+        processStatus = "미정";
+      }
+      tableBody += `
+          <tr>
+              <td>${doc.draftId || '-'}</td>
+              <td>
+                  <a href="/approval/draft/detailView?draftId=${doc.draftId}" class="draftDetailLink">
+                      ${doc.draftTitle || '-'}
+                  </a>
+              </td>
+              <td>${formatDate(doc.draftDate) || '-'}</td>
+              <td>${doc.draftStatus || '-'}</td>
+              <td>${doc.draftEmpName || '미등록'}</td>
+              <td>${doc.approverDepartmentName || '미정'}</td>
+              <td>${doc.approverName || '미정'}</td>
+              <td>${processStatus}</td>
+          </tr>
+      `;
+    });
+  }
+  let tableFooter = `
+          </tbody>
+      </table>
+  `;
+  let finalHtml = `
+      <div style="margin-bottom: 15px;">
+          <label for="statusFilter" style="margin-right: 8px;">결재 상태 선택:</label>
+          <select id="statusFilter" class="form-select" style="width:200px;">
+              <option value="all" ${filterVal === 'all' ? 'selected' : ''}>전체</option>
+              <option value="보류" ${filterVal === '보류' ? 'selected' : ''}>보류</option>
+              <option value="승인" ${filterVal === '승인' ? 'selected' : ''}>승인</option>
+          </select>
+      </div>
+      ${tableHeader}
+      ${tableBody}
+      ${tableFooter}
+  `;
+  $("#draftDocumentsContainer").html(finalHtml);
+  initializeDataTable();
+  $('#statusFilter').on("change", function(){
+    filterApproverProcessList(window.approverData);
+  });
+}
+
+/* ================================
+   조직도(결재라인) 모달 및 검색 기능
+================================ */
+document.addEventListener("DOMContentLoaded", function() {
+  // 조직도 모달 열기 이벤트 (중복 제거)
+  document.getElementById("openOrgModalBtn").addEventListener("click", function() { openOrgModal(); });
+});
+
+function expandCurrentDepartment() {
+  let currentDepartmentId = document.getElementById("departmentId").value;
+  if (!currentDepartmentId) {
+    console.warn("현재 기안자의 departmentId가 비어있습니다.");
+    return;
+  }
+  const tree = $.ui.fancytree.getTree("#orgTree");
+  if (!tree) return;
+  tree.visit(function (node) {
+    if (node.key.startsWith("dept_") && node.data && (node.data.departmentId == currentDepartmentId)) {
+      node.setExpanded(true);
+      node.visitParents(function (parent) { parent.setExpanded(true); });
+      node.visit(function(descendant) {
+        descendant.setExpanded(true);
+        if (!descendant.folder && descendant.data && descendant.data.empId) {
+          descendant.setSelected(false);
+        }
+      });
+      node.makeVisible();
+    }
+  });
+}
+
+function openOrgModal() {
+  // 기존 트리 제거 후 새로 생성
+  let existingTree = $.ui.fancytree.getTree("#orgTree");
+  if (existingTree) { existingTree.destroy(); }
+  let currentEmpId = document.getElementById("empId").value;
+  axios.get('/approval/employee/getLineApprovers', { params: { empId: currentEmpId } })
+    .then(function(response) {
+      let treeData = response.data;
+      $("#orgTree").fancytree({
+        icon: false,
+        checkbox: true,
+        selectMode: 3,
+        glyph: {
+          map: {
+            expanderClosed: "fas fa-plus-square",
+            expanderOpen: "fas fa-minus-square",
+            folder: "fas fa-folder",
+            folderOpen: "fas fa-folder-open"
+          }
+        },
+        source: treeData,
+        renderNode: function(event, data) {
+          let node = data.node;
+          let $span = $(node.span);
+          let $title = $span.find(".fancytree-title");
+          let iconHtml = "";
+          if (node.folder) {
+            if (node.key.startsWith("dept_")) {
+              iconHtml = "<i class='fas fa-building'></i> ";
+            } else if (node.key.startsWith("team_")) {
+              iconHtml = "<i class='fas fa-users'></i> ";
+            }
+            $title.html(iconHtml + node.title);
+          } else {
+            iconHtml = "<i class='fas fa-user'></i> ";
+            let rankName = node.data.rankName ? node.data.rankName : "";
+            $title.html(iconHtml + node.title + (rankName ? " (" + rankName + ")" : ""));
+            $(node.span)
+              .addClass("employee-item")
+              .attr("data-name", node.title)
+              .attr("data-dept", node.data.departmentName || "")
+              .attr("data-team", node.data.teamName || "");
+            // 클릭 시 체크박스 토글
+            $(node.span).off("click.toggleSelect").on("click.toggleSelect", function(e) {
+              if ($(e.target).hasClass("fancytree-checkbox")) return;
+              node.setSelected(!node.isSelected());
+            });
+          }
+        },
+        select: function(event, data) {
+          let node = data.node;
+          if (node.folder) {
+            node.visit(function(child) { child.setSelected(node.isSelected()); });
+          }
+        }
+      });
+      
+      $("#empSearchBtn").off("click").on("click", function () {
+        const keyword = $("#empSearchInput").val().trim();
+        if (keyword) searchAndExpandTree(keyword);
+      });
+      $("#empSearchInput").off("keypress").on("keypress", function (e) {
+        if (e.which === 13) { $("#empSearchBtn").click(); }
+      });
+      
+      $("#collapseAllBtn").off("click").on("click", function() {
+        $("#orgTree").fancytree("getTree").visit(function(node) { node.setExpanded(false); });
+      });
+      $("#expandAllBtn").off("click").on("click", function() {
+        $("#orgTree").fancytree("getTree").visit(function(node) { node.setExpanded(true); });
+      });
+      $("#expandSameDeptBtn").off("click").on("click", function() { 
+        expandCurrentDepartment();
+      });
+      
+      // 모달 창 열릴 때 전체 노드 펼치기
+      let tree = $.ui.fancytree.getTree("#orgTree");
+      if (tree) {
+        tree.visit(function(node) { node.setExpanded(true); });
+      }
+      
+      let modal = new bootstrap.Modal(document.getElementById("orgModal"));
+      modal.show();
+    })
+    .catch(function(error) {
+      console.error("조직도 데이터를 불러오는데 실패했습니다:", error);
+      showError({ title: "오류", text: "조직도 데이터를 불러오는데 실패했습니다." });
+    });
+}
+
+function searchAndExpandTree(keyword) {
+  const lowerKeyword = keyword.toLowerCase();
+  let found = false;
+  const tree = $.ui.fancytree.getTree("#orgTree");
+  tree.visit(function(node) {
+    if (!node.folder) {
+      const name = node.title.toLowerCase();
+      const dept = (node.data.departmentName || "").toLowerCase();
+      const team = (node.data.teamName || "").toLowerCase();
+      const rank = (node.data.rankName || "").toLowerCase();
+      if (name.includes(lowerKeyword) || dept.includes(lowerKeyword) ||
+          team.includes(lowerKeyword) || rank.includes(lowerKeyword)) {
+        found = true;
+        node.visitParents(function(parent) { parent.setExpanded(true); });
+        $(node.span).css("background", "#ffff99");
+        node.makeVisible();
+      }
+    }
+  });
+  if (!found) { showInfo({ title: "검색 결과", text: "검색 결과가 없습니다." }); }
+}
+
+function saveApprovalLineFromOrg() {
+  console.log("saveApprovalLineFromOrg 호출됨");
+  const tree = $.ui.fancytree.getTree("#orgTree");
+  const selectedNodes = tree.getSelectedNodes();
+  const newApproverList = [];
+  selectedNodes.forEach(function(node) {
+    if (!node.folder && node.data) {
+      const empId = node.data.empId || node.key;
+      if (empId) {
+        newApproverList.push({
+          draftId: null,
+          approverId: empId,
+          aprSeq: newApproverList.length + 1,
+          approverName: node.title,
+          departmentName: node.data.departmentName,
+          rankName: node.data.rankName,
+          aprStatus: "대기"
+        });
+      }
+    }
+  });
+  console.log("새로 추가할 결재 후보 데이터:", newApproverList);
+  if (newApproverList.length === 0) {
+    showError({ title: "오류", text: "결재 후보로 추가할 직원을 선택하세요." });
+    return;
+  }
+  // UI 결재자 테이블 업데이트
+  fillApproverTable(newApproverList);
+  
+  // sessionStorage에 저장되어 있는 임시 문서 데이터 업데이트
+  const currentDraftId = $("#draftId").val();
+  const empId = $("#empId").val() || "UNKNOWN";
+  const key = `tempDraft_${empId}_${currentDraftId}`;
+  let draftData = {};
+  const draftDataStr = sessionStorage.getItem(key);
+  if (draftDataStr) {
+    try {
+      draftData = JSON.parse(draftDataStr);
+    } catch (e) {
+      console.error("임시저장 데이터 파싱 오류:", e);
+    }
+  } else {
+    // 임시저장 데이터 없으면 새로 생성
+    draftData = {
+      draftId: currentDraftId,
+      templateId: $("#templateId").val() || "",
+      empId: empId,
+      departmentId: $("#departmentId").val() || "",
+      draftTitle: $("input[name='draftTitle']").val() || "",
+      draftContent: $("#draftContent").val() || "",
+      draftUrgent: $("#draftUrgent").prop("checked") ? "Y" : "N",
+      timestamp: new Date().toISOString()
+    };
+  }
+  // 결재자 목록 덮어쓰기
+  draftData.draftapproverList = newApproverList;
+  sessionStorage.setItem(key, JSON.stringify(draftData));
+  
+  // 조직도 모달 닫기
+  const modalEl = document.getElementById("orgModal");
+  const modal = bootstrap.Modal.getInstance(modalEl);
+  if (modal) modal.hide();
+}
+
+function fillApproverTable(approverList) {
+  const tableBody = document.getElementById("approverTableBody");
+  if (!tableBody) {
+    console.error("approverTableBody 엘리먼트를 찾을 수 없습니다.");
+    return;
+  }
+  tableBody.innerHTML = '';
+  approverList.forEach(function(approver) {
+    const row = document.createElement('tr');
+    row.classList.add("approverRow");
+    row.innerHTML = `
+      <td style="min-width: 40px;">
+        <input type="hidden" class="approverId" value="${approver.approverId}" />
+        <input type="text" class="form-control approverName" value="${approver.approverName}" placeholder="승인자명" />
+      </td>
+      <td style="min-width: 100px;">
+        <input type="text" class="form-control departmentName" value="${approver.departmentName || ''}" placeholder="부서명" />
+      </td>
+      <td>
+        <input type="text" class="form-control rankName" value="${approver.rankName || ''}" placeholder="직급명" />
+      </td>
+      <td>
+        <input type="number" class="form-control aprSeq" value="${approver.aprSeq}" readonly />
+      </td>
+      <td style="min-width: 50px;">
+        <select class="form-control aprStatus" disabled style="min-width: 80px;">
+          <option value="대기" selected>${approver.aprStatus || '대기'}</option>
+        </select>
+        <input type="hidden" class="aprStatusHidden" value="${approver.aprStatus || '대기'}" />
+      </td>
+    `;
+    tableBody.appendChild(row);
+  });
+}
+
+/**
+ * 최종 결재 상신 함수 (SweetAlert2 confirm 적용)
+ */
+async function submitApprovalForm() {
+  const confirmResult = await showConfirm({ title: "확인", text: "결재 요청하시겠습니까?" });
+  if (!confirmResult.isConfirmed) { 
+    return; 
+  }
+  const formElement = document.querySelector("#approvalFormContainer form");
+  if (!formElement) { 
+    showError({ title: "오류", text: "제출할 양식을 찾을 수 없습니다." });
+    return;
+  }
+  
+  // 필수 입력값 검증
+  const titleElement = document.querySelector("input[name='draftTitle']");
+  const titleValue = titleElement ? titleElement.value.trim() : "";
+  if (!titleValue) {
+    showError({ title: "입력오류", text: "문서 제목을 입력해주세요." });
+    return;
+  }
+  
+  // 수정안 (CKEditor의 reason 필드를 검사)
+  const reasonEditor = window.CKEDITOR.instances.reason; // CKEDITOR에서 reason 인스턴스
+  let reasonValue = reasonEditor ? reasonEditor.getData().trim() : "";
+  if (!reasonValue) {
+      showError({ title: "입력오류", text: "문서 사유(내용)을 입력해주세요." });
+      return;
+  }
+  
+  // 날짜 필드 검증 (연차 신청서)
+  const leaveDateElement = document.querySelector("#leaveDate");
+  const leaveEndDateElement = document.querySelector("#leaveEndDate");
+  const leaveDateValue = leaveDateElement ? leaveDateElement.value.trim() : "";
+  const leaveEndDateValue = leaveEndDateElement ? leaveEndDateElement.value.trim() : "";
+  if (!leaveDateValue || !leaveEndDateValue) {
+    showError({ title: "입력오류", text: "휴가 시작일과 종료일을 모두 입력해주세요." });
+    return;
+  }
+  
+  // 결재자 검증
+  const approverRows = document.querySelectorAll(".approverRow");
+  if (!approverRows || approverRows.length === 0) {
+    showError({ title: "입력오류", text: "적어도 한 명 이상의 결재자를 지정해주세요." });
+    return;
+  }
+  
+  // 데이터 수집
+  let draftData = {
+    draftId: document.querySelector("#draftId")?.value || null,
+    templateId: document.querySelector("#templateId")?.value || "",
+    empId: document.querySelector("#empId")?.value || "",
+    draftTitle: titleValue,
+    draftContent: "",
+    draftUrgent: document.querySelector("#draftUrgent")?.checked ? "Y" : "N",
+    departmentId: document.querySelector("#departmentId")?.value || "",
+    draftapproverList: []
+  };
+
+  if (typeof draftData.draftId === "string" && draftData.draftId.startsWith("TMP_")) {
+    draftData.draftId = null;
+  }
+  
+  approverRows.forEach((row) => {
+    let approver = {
+      aprId: "",
+      approverId: row.querySelector(".approverId")?.value || "",
+      aprSeq: row.querySelector(".aprSeq")?.value || "",
+      aprStatus: row.querySelector(".aprStatus")?.value || "대기",
+      aprReason: row.querySelector(".aprReason")?.value || "기본 사유",
+      approverName: row.querySelector(".approverName")?.value || ""
+    };
+    draftData.draftapproverList.push(approver);
+  });
+  
+  // 연차 관련 처리
+  const annualCodeValue = document.querySelector("#annualCode")?.value || "";
+  if (leaveDateValue && leaveEndDateValue && annualCodeValue.trim() !== "") {
+    draftData.annualHistory = {
+      leaveDate: leaveDateValue,
+      leaveEndDate: leaveEndDateValue,
+      reason: CKEDITOR.instances.reason ? CKEDITOR.instances.reason.getData() : "",
+      annualCode: annualCodeValue.trim()
+    };
+  }
+  
+  console.log("전송할 데이터:", JSON.stringify(draftData, null, 2));
+  axios.post("/approval/draft/submit", draftData)
+    .then(async resp => {
+      const successResult = await showSuccess({ title: "성공", text: "결재 상신이 완료되었습니다." });
+      if (successResult.isConfirmed) {
+        const empId = $("#empId").val() || "UNKNOWN";
+        const rawDraftId = $("#draftId").val();
+        const keyToDelete = `tempDraft_${empId}_${rawDraftId}`;
+        sessionStorage.removeItem(keyToDelete);
+        location.reload();
+      }
+    })
+    .catch(error => {
+      console.error("결재 상신 실패:", error.response ? error.response.data : error);
+      showError({ title: "오류", text: "결재 등록에 실패했습니다. 서버 로그를 확인하세요." });
+    });
+}
+
+
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelector("#submitApprovalBtn")?.addEventListener("click", submitApprovalForm);
+  if (CKEDITOR.instances.draftContent) { CKEDITOR.instances.draftContent.destroy(true); }
+  document.getElementById("draftContent").style.display = "none";
+});
+
+$('#approvalFormModal').on('shown.bs.modal', function () {
+  document.getElementById("draftContent").style.display = "none";
+});
+
+// ===================================================================
+// 임시저장/결재라인 관련 모듈 (approvalTempDraftSave.js)에서 export 받은 함수 사용
+// (예: saveTempDraft, loadTempDraft, listAllDrafts, submitReDraft, storeRecalledDocInSession)
+// ===================================================================
+document.addEventListener("DOMContentLoaded", async function() {
+  // 페이지 로드시 임시저장 목록 로드
+  await listAllDrafts();
+
+  // 기안 모달이 열릴 때, draftId가 없으면 임시 ID 생성 후 임시저장 데이터 로드
+  $('#approvalFormModal').on('shown.bs.modal', function () {
+    let currentDraftId = $("#draftId").val().trim();
+    if (!currentDraftId) {
+      currentDraftId = "TMP_" + new Date().getTime();
+      $("#draftId").val(currentDraftId);
+      console.log("새로운 draftId 생성: " + currentDraftId);
+    }
+    if (!$("input[name='draftTitle']").val().trim() || $("input[name='draftTitle']").val().trim() === "draftTitle") {
+      $("input[name='draftTitle']").val("연차신청서");
+    }
+    loadTempDraft();
+  });
+  
+  // 임시저장 버튼
+  $("#tempSaveDraftBtn").on("click", function() {
+    saveTempDraft();
+  });
+  
+  // 회수 버튼 (SweetAlert2 적용)
+  const retrieveBtn = document.getElementById("retrieveBtn");
+  if (retrieveBtn) {
+    retrieveBtn.addEventListener("click", async function() {
+      const confirmResult = await showConfirm({ title: "회수 확인", text: "회수하시겠습니까?", confirmButtonText: "회수", cancelButtonText: "취소" });
+      if (!confirmResult.isConfirmed) return;
+      
+      let draftId = getQueryParam("draftId") || $("#draftId").val();
+      if (!draftId) {
+        await showError({ title: "회수", text: "회수할 문서 ID가 없습니다." });
+        return;
+      }
+      const empId = await getLoggedInUserId();
+      if (!empId) {
+        await showError({ title: "회수", text: "로그인 사용자 정보가 없습니다." });
+        return;
+      }
+      try {
+        console.log("[회수 요청] draftId=", draftId, "empId=", empId);
+        const resp = await axios.post("/approval/drafter/recall", { draftId, empId });
+        if (resp.status === 200) {
+          await showSuccess({ title: "회수", text: resp.data });
+          let docData = null;
+          try {
+            const detailResp = await axios.get("/approvalProcess/myDraftDetail", { params: { draftId, empId } });
+            docData = detailResp.data;
+          } catch (err) {
+            console.warn("회수 후 상세 재조회 실패", err);
+          }
+          if (docData) {
+            console.log("회수된 문서:", docData);
+            storeRecalledDocInSession(docData, empId);
+            await listAllDrafts();
+          }
+          window.location.href = "/approval/templateList";
+        } else {
+          await showError({ title: "회수", text: "회수 호출 실패. 응답: " + resp.status });
+        }
+      } catch (error) {
+        console.error("회수 호출 실패", error);
+        await showError({ title: "회수", text: "회수 호출 실패" });
+      }
+    });
+  }
+  
+  // 재요청 버튼 (임시저장된 문서를 열어 재상신)
+  const resubmitBtn = document.getElementById("resubmitBtn");
+  if (resubmitBtn) {
+    resubmitBtn.addEventListener("click", async function() {
+      const confirmResult = await showConfirm({ title: "재요청 확인", text: "재요청 하시겠습니까?", confirmButtonText: "재요청", cancelButtonText: "취소" });
+      if (!confirmResult.isConfirmed) return;
+      let draftId = getQueryParam("draftId") || $("#draftId").val();
+      if (!draftId) {
+        await showError({ title: "재요청", text: "재상신할 문서 ID가 없습니다." });
+        return;
+      }
+      const empId = await getLoggedInUserId();
+      if (!empId) {
+        await showError({ title: "재요청", text: "로그인된 사용자 정보가 없습니다." });
+        return;
+      }
+      const key = `tempDraft_${empId}_${draftId}`;
+      const storedData = sessionStorage.getItem(key);
+      if (!storedData) {
+        await showError({ title: "재요청", text: "임시저장 데이터를 찾을 수 없습니다." });
+        return;
+      }
+      let draftData = JSON.parse(storedData);
+      await submitReDraft(draftData);
+      const modalElement = document.getElementById("approvalFormModal");
+      let modalInstance = bootstrap.Modal.getInstance(modalElement);
+      if (modalInstance) { modalInstance.hide(); }
+      sessionStorage.removeItem(key);
+      await listAllDrafts();
+    });
+  }
+  
+  // “상세보기” 페이지에서 재요청 버튼
+  const resubmitDetailBtn = document.getElementById("resubmitDetailBtn");
+  if (resubmitDetailBtn) {
+    resubmitDetailBtn.addEventListener("click", async function() {
+      const confirmResult = await showConfirm({ title: "재요청 확인", text: "재요청 하시겠습니까?", confirmButtonText: "재요청", cancelButtonText: "취소" });
+      if (!confirmResult.isConfirmed) return;
+      let draftId = getQueryParam("draftId") || $("#draftId").val();
+      if (!draftId) {
+        await showError({ title: "재요청", text: "재요청할 문서 ID가 없습니다." });
+        return;
+      }
+      const empId = await getLoggedInUserId();
+      if (!empId) {
+        await showError({ title: "재요청", text: "로그인된 사용자 정보가 없습니다." });
+        return;
+      }
+      try {
+        const resp = await axios.post("/approval/drafter/recall", { draftId, empId });
+        if (resp.status === 200) {
+          await showSuccess({ title: "재요청", text: resp.data });
+          let docData = null;
+          try {
+            const detailResp = await axios.get("/approvalProcess/myDraftDetail", { params: { draftId, empId } });
+            docData = detailResp.data;
+          } catch (error) {
+            console.warn("재요청 후 상세 재조회 실패", error);
+          }
+          if (docData) {
+            storeRecalledDocInSession(docData, empId);
+            await listAllDrafts();
+          }
+          window.location.href = "/approval/templateList";
+        } else {
+          await showError({ title: "재요청", text: "재요청 실패. 응답 상태: " + resp.status });
+        }
+      } catch (error) {
+        console.error("재요청 호출 실패", error);
+        await showError({ title: "재요청", text: "재요청 호출 실패" });
+      }
+    });
+  }
+  
+  // 페이지 로드시 상세 정보 호출
+  loadDraftDetail();
+});

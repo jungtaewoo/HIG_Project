@@ -1,0 +1,136 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>성과평가 결과 대시보드</title>
+
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            padding: 30px;
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+        }
+
+        .dashboard-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+
+        .summary-card {
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-blue { background-color: #007bff; }
+        .card-green { background-color: #28a745; }
+        .card-orange { background-color: #fd7e14; }
+        .card-red { background-color: #dc3545; }
+
+        .chart-area {
+            margin-top: 40px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .summary-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <!-- ✅ 대시보드 타이틀 -->
+    <div class="dashboard-title">📊 성과평가 결과 요약</div>
+
+    <!-- ✅ 요약 카드 4종 -->
+    <div class="row g-3">
+        <div class="col-md-3">
+            <div class="summary-card card-blue">
+                <div><i class="bi bi-people-fill summary-icon"></i> 전체 평가자</div>
+                <h3>${summary.total}명</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card card-green">
+                <div><i class="bi bi-check-circle-fill summary-icon"></i> 평가 완료</div>
+                <h3>${summary.completed}명</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card card-orange">
+                <div><i class="bi bi-bar-chart-fill summary-icon"></i> 평균 점수</div>
+                <h3>${summary.avgScore}점</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="summary-card card-red">
+                <div><i class="bi bi-exclamation-triangle-fill summary-icon"></i> 미제출</div>
+                <h3>${summary.notCompleted}명</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ 직급별 평균 점수 차트 -->
+    <div class="chart-area mt-5">
+        <h5>직급별 평균 점수</h5>
+        <canvas id="rankChart" height="120"></canvas>
+    </div>
+</div>
+
+<!-- ✅ Chart.js 스크립트 -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const chartData = JSON.parse('<c:out value="${rankScoreChartJson}" escapeXml="false" />');
+
+        const labels = chartData.map(item => item.rankName);
+        const scores = chartData.map(item => item.averageScore);
+
+        const ctx = document.getElementById('rankChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '평균 점수',
+                    data: scores,
+                    backgroundColor: '#007bff',
+                    barThickness: 40
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.parsed.y.toFixed(1)} 점`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    });
+</script>
+</body>
+</html>

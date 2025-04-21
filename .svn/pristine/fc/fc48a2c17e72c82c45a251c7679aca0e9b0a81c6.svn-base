@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+<span>
+<div id="divCustomWrapper" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 10pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;"><!-- 1. Title Section (start) -->
+<div class="titleSection" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 20pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;">구매요청서</div><!-- 1. Title Section (end) --><!-- 2. Draft Section (Start) -->
+<div class="partition" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 10pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;"><!-- 2.1 Drafter Information (Start) -->
+<div class="left" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 10pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;">
+<table style="width:265px; height:131px;"><colgroup><col width="65"><col width="200"></colgroup>
+	<tbody>
+		<tr>
+			<td class="ACel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				
+문서번호
+			</td>
+			<td class="BCel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<span unselectable="on" contenteditable="false" class="comp_wrap" data-cid="0" data-dsl="{{label:docNo}}" data-wrapper="" style="" data-value="" data-autotype=""><span class="comp_item">문서번호</span><span contenteditable="false" class="comp_active" style="display:none;"> <span class="Active_dot1"></span><span class="Active_dot2"></span> <span class="Active_dot3"></span><span class="Active_dot4"></span> </span> <span contenteditable="false" class="comp_hover" data-content-protect-cover="true" data-origin="0"> <a contenteditable="false" class="ic_prototype ic_prototype_trash" data-content-protect-cover="true" data-component-delete-button="true"></a> </span> </span>
+			</td>
+		</tr>
+		<tr>
+			<td class="ACel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				
+작 성 일
+			</td>
+			<td class="BCel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<span unselectable="on" contenteditable="false" class="comp_wrap" data-cid="1" data-dsl="{{label:draftDate}}" data-wrapper="" style="" data-value="" data-autotype=""><span class="comp_item">기안일</span><span contenteditable="false" class="comp_active" style="display:none;"> <span class="Active_dot1"></span><span class="Active_dot2"></span> <span class="Active_dot3"></span><span class="Active_dot4"></span> </span> <span contenteditable="false" class="comp_hover" data-content-protect-cover="true" data-origin="1"> <a contenteditable="false" class="ic_prototype ic_prototype_trash" data-content-protect-cover="true" data-component-delete-button="true"></a> </span> </span>
+			</td>
+		</tr>
+		<tr>
+			<td class="ACel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				
+작성부서
+			</td>
+			<td class="BCel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<span unselectable="on" contenteditable="false" class="comp_wrap" data-cid="2" data-dsl="{{label:draftDept}}" data-wrapper="" style="" data-value="" data-autotype=""><span class="comp_item">기안부서</span><span contenteditable="false" class="comp_active" style="display:none;"> <span class="Active_dot1"></span><span class="Active_dot2"></span> <span class="Active_dot3"></span><span class="Active_dot4"></span> </span> <span contenteditable="false" class="comp_hover" data-content-protect-cover="true" data-origin="2"> <a contenteditable="false" class="ic_prototype ic_prototype_trash" data-content-protect-cover="true" data-component-delete-button="true"></a> </span> </span>
+			</td>
+		</tr>
+		<tr>
+			<td class="ACel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				
+작 성 자
+			</td>
+			<td class="BCel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<span unselectable="on" contenteditable="false" class="comp_wrap" data-cid="3" data-dsl="{{label:draftUser}}" data-wrapper="" style="" data-value="" data-autotype=""><span class="comp_item">기안자</span><span contenteditable="false" class="comp_active" style="display:none;"> <span class="Active_dot1"></span><span class="Active_dot2"></span> <span class="Active_dot3"></span><span class="Active_dot4"></span> </span> <span contenteditable="false" class="comp_hover" data-content-protect-cover="true" data-origin="3"> <a contenteditable="false" class="ic_prototype ic_prototype_trash" data-content-protect-cover="true" data-component-delete-button="true"></a> </span> </span>
+			</td>
+		</tr>
+	</tbody>
+</table>
+</div><!-- 2.1 Drafter Information (end) --><!-- 2.2 Draft Line (start) -->
+<div class="inaRowRight" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 10pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;"><!-- 결재선 Start--><span unselectable="on" contenteditable="false" class="comp_wrap" data-wrapper=""><span class="sign_type1_inline" data-group-seq="0" data-group-name="결재" data-group-max-count="10" data-group-type="type1" data-is-reception=""><span class="sign_tit_wrap"><span class="sign_tit"><strong>결재</strong></span></span><span class="sign_member_wrap"><span class="sign_member"><span class="sign_rank_wrap"><span class="sign_rank" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span><span class="sign_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span><span class="sign_date_wrap"><span class="sign_date" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span></span></span><span class="sign_member_wrap"><span class="sign_member"><span class="sign_rank_wrap"><span class="sign_rank" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span><span class="sign_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span><span class="sign_date_wrap"><span class="sign_date" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span></span></span><span class="sign_member_wrap"><span class="sign_member"><span class="sign_rank_wrap"><span class="sign_rank" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span><span class="sign_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span><span class="sign_date_wrap"><span class="sign_date" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span></span></span><span class="sign_member_wrap"><span class="sign_member"><span class="sign_rank_wrap"><span class="sign_rank" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span><span class="sign_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span><span class="sign_date_wrap"><span class="sign_date" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span></span></span><span class="sign_member_wrap"><span class="sign_member"><span class="sign_rank_wrap"><span class="sign_rank" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span><span class="sign_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span><span class="sign_date_wrap"><span class="sign_date" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span></span></span><span class="sign_member_wrap"><span class="sign_member"><span class="sign_rank_wrap"><span class="sign_rank" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span><span class="sign_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span><span class="sign_date_wrap"><span class="sign_date" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span></span></span><span class="sign_member_wrap"><span class="sign_member"><span class="sign_rank_wrap"><span class="sign_rank" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span><span class="sign_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span><span class="sign_date_wrap"><span class="sign_date" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span></span></span><span class="sign_member_wrap"><span class="sign_member"><span class="sign_rank_wrap"><span class="sign_rank" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span><span class="sign_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span><span class="sign_date_wrap"><span class="sign_date" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span></span></span><span class="sign_member_wrap"><span class="sign_member"><span class="sign_rank_wrap"><span class="sign_rank" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span><span class="sign_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span><span class="sign_date_wrap"><span class="sign_date" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span></span></span><span class="sign_member_wrap"><span class="sign_member"><span class="sign_rank_wrap"><span class="sign_rank" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span><span class="sign_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span><span class="sign_date_wrap"><span class="sign_date" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;">&nbsp;</span></span></span></span></span><span contenteditable="false" class="comp_active" style="display:none;"> <span class="Active_dot1"></span><span class="Active_dot2"></span> <span class="Active_dot3"></span><span class="Active_dot4"></span> </span><span contenteditable="false" class="comp_hover" data-content-protect-cover="true"> <a contenteditable="false" class="ic_prototype ic_prototype_trash" data-content-protect-cover="true" data-component-delete-button="true"></a> </span></span><!-- 결재선 End--><!-- 합의 Start --><span unselectable="on" contenteditable="false" class="comp_wrap" data-wrapper=""><span class="sign_type1_inline" data-group-seq="10" data-group-name="합의" data-group-max-count="1" data-group-type="type1" data-is-agreement="true" id="agreementWrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;"><span class="sign_tit_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;"><span class="sign_tit" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;"><strong>합의</strong></span></span><span class="sign_member_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;"><span class="sign_member" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;"><span class="sign_rank_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;"><span class="sign_rank" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;"></span></span><span class="sign_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;"></span><span class="sign_date_wrap" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;"><span class="sign_date" style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt;"></span></span></span></span></span><span contenteditable="false" class="comp_active" style="display:none;"> <span class="Active_dot1"></span><span class="Active_dot2"></span> <span class="Active_dot3"></span><span class="Active_dot4"></span> </span><span contenteditable="false" class="comp_hover" data-content-protect-cover="true"> <a contenteditable="false" class="ic_prototype ic_prototype_trash" data-content-protect-cover="true" data-component-delete-button="true"></a> </span></span><!-- 합의 End --></div><!-- 2.2 Draft Line (end) --></div><!-- 2. Draft Section (end) --><!-- 3. Detail Section (start) -->
+<table class="detailSection"><colgroup><col width="100"><col width="300"><col width="100"><col width="300"></colgroup>
+	<tbody>
+		<tr>
+			<td colspan="1" class="ACel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				
+제목
+			</td>
+			<td colspan="3" class="BCel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<p style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;"><span unselectable="on" contenteditable="false" class="comp_wrap" data-cid="4" data-dsl="{{text:subject}}" data-wrapper="" style="width: 100%;" data-value="" data-autotype=""><input class="ipt_editor" type="text"><span contenteditable="false" class="comp_active" style="display:none;"> <span class="Active_dot1"></span><span class="Active_dot2"></span> <span class="Active_dot3"></span><span class="Active_dot4"></span> </span> <span contenteditable="false" class="comp_hover" data-content-protect-cover="true" data-origin="4"> <a contenteditable="false" class="ic_prototype ic_prototype_trash" data-content-protect-cover="true" data-component-delete-button="true"></a> </span> </span><br></p>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="1" class="ACel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<p style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;">용도</p>
+			</td>
+			<td colspan="3" class="BCel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<p style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;"><span unselectable="on" contenteditable="false" class="comp_wrap" data-cid="5" data-dsl="{{textarea}}" data-wrapper="" style="width: 100%;" data-value="" data-autotype=""><textarea class="txta_editor"></textarea><span contenteditable="false" class="comp_active" style="display:none;"> <span class="Active_dot1"></span><span class="Active_dot2"></span> <span class="Active_dot3"></span><span class="Active_dot4"></span> </span> <span contenteditable="false" class="comp_hover" data-content-protect-cover="true" data-origin="5"> <a contenteditable="false" class="ic_prototype ic_prototype_trash" data-content-protect-cover="true" data-component-delete-button="true"></a> </span> </span><br></p>
+			</td>
+		</tr>
+	</tbody>
+</table>
+<table class="detailSection"><colgroup><col width="40"><col width="290"><col width="60"><col width="60"><col width="150"><col width="200"></colgroup>
+	<tbody id="dynamic_table1">
+<!-- 기능 삽입 부분 -->
+		<tr><!-- 행 추가 삭제 버튼 -->
+			<td colspan="6" class="BCel viewModeHiddenPart noneborder right dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<a class="button" id="plus1">추가</a> <a class="button" id="minus1">삭제</a>
+			</td>
+		</tr>
+		<tr>
+			<td class="ACel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				
+번호
+			</td>
+			<td class="ACel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<p style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;">요청품목</p>
+			</td>
+			<td class="ACel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<p style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;">수량</p>
+			</td>
+			<td class="ACel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<p style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;">단위</p>
+			</td>
+			<td class="ACel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<p style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;">요청납기</p>
+			</td>
+			<td class="ACel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<p style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;">비고</p>
+			</td>
+		</tr>
+		<tr class="copyRow1">
+			<td class="BCel center copyRowNo1 dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<p style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;">1</p>
+			</td>
+			<td class="BCel center dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<p style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;"><span unselectable="on" contenteditable="false" class="comp_wrap" data-cid="6" data-dsl="{{text}}" data-wrapper="" style="width: 100%;" data-value="" data-autotype=""><input class="ipt_editor" type="text"><span contenteditable="false" class="comp_active" style="display:none;"> <span class="Active_dot1"></span><span class="Active_dot2"></span> <span class="Active_dot3"></span><span class="Active_dot4"></span> </span> <span contenteditable="false" class="comp_hover" data-content-protect-cover="true" data-origin="6"> <a contenteditable="false" class="ic_prototype ic_prototype_trash" data-content-protect-cover="true" data-component-delete-button="true"></a> </span> </span><br></p>
+			</td>
+			<td class="BCel center dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<p style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;"><span unselectable="on" contenteditable="false" class="comp_wrap" data-cid="7" data-dsl="{{text}}" data-wrapper="" style="width: 100%;" data-value="" data-autotype=""><input class="ipt_editor" type="text"><span contenteditable="false" class="comp_active" style="display:none;"> <span class="Active_dot1"></span><span class="Active_dot2"></span> <span class="Active_dot3"></span><span class="Active_dot4"></span> </span> <span contenteditable="false" class="comp_hover" data-content-protect-cover="true" data-origin="7"> <a contenteditable="false" class="ic_prototype ic_prototype_trash" data-content-protect-cover="true" data-component-delete-button="true"></a> </span> </span><br></p>
+			</td>
+			<td class="BCel center dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<p style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;"><span unselectable="on" contenteditable="false" class="comp_wrap" data-cid="8" data-dsl="{{text}}" data-wrapper="" style="width: 100%;" data-value="" data-autotype=""><input class="ipt_editor" type="text"><span contenteditable="false" class="comp_active" style="display:none;"> <span class="Active_dot1"></span><span class="Active_dot2"></span> <span class="Active_dot3"></span><span class="Active_dot4"></span> </span> <span contenteditable="false" class="comp_hover" data-content-protect-cover="true" data-origin="8"> <a contenteditable="false" class="ic_prototype ic_prototype_trash" data-content-protect-cover="true" data-component-delete-button="true"></a> </span> </span><br></p>
+			</td>
+			<td class="BCel center dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<p style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;"><span unselectable="on" contenteditable="false" class="comp_wrap" data-cid="9" data-dsl="{{text}}" data-wrapper="" style="width: 100%;" data-value="" data-autotype=""><input class="ipt_editor" type="text"><span contenteditable="false" class="comp_active" style="display:none;"> <span class="Active_dot1"></span><span class="Active_dot2"></span> <span class="Active_dot3"></span><span class="Active_dot4"></span> </span> <span contenteditable="false" class="comp_hover" data-content-protect-cover="true" data-origin="9"> <a contenteditable="false" class="ic_prototype ic_prototype_trash" data-content-protect-cover="true" data-component-delete-button="true"></a> </span> </span><br></p>
+			</td>
+			<td class="BCel center dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<p style="font-family: &quot;malgun gothic&quot;, dotum, arial, tahoma; font-size: 9pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;"><span unselectable="on" contenteditable="false" class="comp_wrap" data-cid="10" data-dsl="{{text}}" data-wrapper="" style="width: 100%;" data-value="" data-autotype=""><input class="ipt_editor" type="text"><span contenteditable="false" class="comp_active" style="display:none;"> <span class="Active_dot1"></span><span class="Active_dot2"></span> <span class="Active_dot3"></span><span class="Active_dot4"></span> </span> <span contenteditable="false" class="comp_hover" data-content-protect-cover="true" data-origin="10"> <a contenteditable="false" class="ic_prototype ic_prototype_trash" data-content-protect-cover="true" data-component-delete-button="true"></a> </span> </span><br></p>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="1" class="ACel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				
+기<br>타<br>사<br>항
+			</td>
+			<td colspan="5" class="BCel dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+				<span unselectable="on" contenteditable="false" class="comp_wrap" data-cid="11" data-dsl="{{textarea}}" data-wrapper="" style="width: 100%;" data-value="" data-autotype=""><textarea class="txta_editor"></textarea><span contenteditable="false" class="comp_active" style="display:none;"> <span class="Active_dot1"></span><span class="Active_dot2"></span> <span class="Active_dot3"></span><span class="Active_dot4"></span> </span> <span contenteditable="false" class="comp_hover" data-content-protect-cover="true" data-origin="11"> <a contenteditable="false" class="ic_prototype ic_prototype_trash" data-content-protect-cover="true" data-component-delete-button="true"></a> </span> </span>
+			</td>
+		</tr>
+	</tbody>
+</table>
+<!-- 3. Detail Section (end) --></div><!-- Page Wrapping (end) --><!--Style Start----------------------------------------><style type="text/css">
+#divCustomWrapper { word-break: break-all; font-family: malgun gothic, dotum, arial, tahoma; width:802px !important; }
+#divCustomWrapper * { max-width: 800px !important; }
+#divCustomWrapper .titleSection { text-align: center; font-size: 20pt; font-weight: bold; margin-bottom: 30px !important; margin-top: 20px !important; }
+#divCustomWrapper .detailSection > * { margin-bottom: 10px; }
+#divCustomWrapper .detailSection { width:800px !important; clear:both; margin-top: 10px !important; vertical-align: middle; }
+#divCustomWrapper table { border-collapse: collapse; word-break:break-all; }
+#divCustomWrapper div.partition { display: flex; }
+#divCustomWrapper div.partition.left { flex:1; }
+#divCustomWrapper div.inaRowRight { flex:1; text-align: right;}
+#divCustomWrapper td.BCel { font-size: 9pt !important; height:28px; border: 1px solid black !important; padding: 3px 5px 3px 5px; /*top right bottom left*/}
+#divCustomWrapper td.ACel { font-size: 9pt !important; height:28px; border: 1px solid black !important; padding: 3px 5px 3px 5px; text-align: center !important; background: #eee; font-weight: bold;}
+#divCustomWrapper td.noneborder { border: none !important; }
+#divCustomWrapper td.center { text-align: center; }
+#divCustomWrapper td.right { text-align: right; }
+#divCustomWrapper td.editor { height: 300px; vertical-align: top;}
+#divCustomWrapper td.area { height: 120px; vertical-align: middle;}
+#divCustomWrapper .div_button { word-break:break-all; padding: 3px; margin-top:2px; margin-bottom:2px !important; height: 22px; vertical-align: middle; }
+#divCustomWrapper a.button { background: rgb(102, 102, 102); color: rgb(255, 255, 255); padding: 2px 5px; border-radius: 3px; }
+p.freeP{font-weight: normal; font-size: 9pt; margin: 3px 1px 3px 5px;}
+</style><style type="text/css">
+@media print {
+.viewModeHiddenPart {display: none;}
+h1,h2,h3,h4,h5,dl,dt,dd,ul,li,ol,th,td,p,blockquote,form,fieldset,legend,div,body {-webkit-print-color-adjust:exact;}
+#divCustomWrapper {margin-left:auto !important; margin-right:auto !important;}
+/*#divCustomWrapper td.ACel {border:none\9 !important; outline:black solid 0.5px\9 !important;}
+#divCustomWrapper td.BCel {border:none\9 !important; outline:black solid 0.5px\9 !important;}*/
+}
+</style><p style="font-family: &quot;맑은 고딕&quot;; font-size: 10pt; line-height: 150%; margin-top: 0px; margin-bottom: 0px;"><br></p></span>
+
+
+
+</body>
+</html>

@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+ * == 개정이력(Modification Information) ==
+ *   
+ *   수정일            수정자           수정내용
+ *  ============    =============== =======================
+ *  2025. 3. 12.    CHOI            최초 생성
+ *  2025. 4. 11.    CHOI            템플릿 분류 CASE 로직 수정 및 getTemplateFileByTemplateId 추가
+-->
+<mapper namespace="kr.or.ddit.mybatis.mappers.approval.ApprovalMapper">
+     
+    <!-- DraftTemplateVO와 매핑할 resultMap -->
+    <resultMap id="draftTemplateResultMap" type="DraftTemplateVO">
+        <id property="templateId" column="TEMPLATE_ID"/>
+        <result property="empId" column="EMP_ID"/>
+        <result property="templateTite" column="TEMPLATE_TITE"/>
+        <result property="templateContent" column="TEMPLATE_CONTENT"/>
+        <result property="templateCategory" column="TEMPLATE_CATEGORY"/>
+        <result property="temlpateDeleted" column="TEMLPATE_DELETED"/>
+        <result property="templateCreate" column="TEMPLATE_CREATE" jdbcType="DATE"/>
+        <result property="templateFiles" column="TEMPLATE_FILE"/>
+        <result property="aprStatus" column="APR_STATUS"/>
+        <result property="roleName" column="ROLE_NAME"/>
+	    
+	    <!-- EmployeeVO와 매핑 (1:1 관계) -->
+	    <association property="employee" javaType="EmployeeVO">
+	        <id property="empId" column="EMP_ID"/>
+	        <result property="name" column="NAME"/>
+	    </association>
+	    
+	    <!-- 파일 상세 정보 추가 -->
+	    <collection property="fileDetails" ofType="FileDetailVO">
+	        <id property="detailId" column="DETAIL_ID"/>
+	        <result property="fileId" column="FILE_ID"/>
+	        <result property="fileName" column="FILE_NAME"/>
+	        <result property="fileSavename" column="FILE_SAVENAME"/>
+	        <result property="filePath" column="FILE_PATH"/>
+	        <result property="fileStatus" column="FILE_STATUS"/>
+	        <result property="fileSize" column="FILE_SIZE"/>
+	        <result property="fileType" column="FILE_TYPE"/>
+	        <result property="uploadDate" column="UPLOAD_DATE"/>
+	    </collection>
+	    
+	    <!-- 결재자 목록 (1:N) -->
+	    <collection property="approverList" ofType="DraftApproverVO">
+	        <id property="approverId" column="APPROVER_ID"/>
+	        <result property="aprId" column="APR_ID" />
+	        <result property="aprStatus" column="APR_STATUS" />
+	        <result property="aprDate" column="APR_DATE" />
+	    </collection>
+	    
+	    <!-- 문서함 목록 (1:N) -->
+	    <collection property="draftBoxList" ofType="kr.or.ddit.approval.vo.DraftBoxVO">
+	        <id property="boxId" column="BOX_ID"/>
+	        <result property="docType" column="DOC_TYPE"/>
+	        <result property="docStatus" column="DOC_STATUS" jdbcType="TIMESTAMP"/>
+	    </collection>
+	    
+	    <!-- 참조자 목록 (1:N) -->
+	    <collection property="draftParList" ofType="DraftParVO" autoMapping="true">
+	        <id property="parId" column="PAR_ID"/>
+	        <result property="role" column="ROLE"/>
+	        <result property="isRead" column="IS_READ"/>
+	        <result property="checkedAt" column="CHECKED_AT"/>
+	    </collection>
+    </resultMap>
+
+    <!-- TeamVO에 매핑할 resultMap -->
+    <resultMap id="teamResultMap" type="kr.or.ddit.team.vo.TeamVO">
+        <id property="teamId" column="TEAM_ID"/>
+        <result property="teamName" column="TEAM_NAME"/>
+    </resultMap>
+    
+    <!-- 파일 디테일 resultMap -->
+    <resultMap id="fileDetails" type="kr.or.ddit.file.vo.FileDetailVO">
+        <id property="detailId" column="DETAIL_ID"/>
+        <result property="fileId" column="FILE_ID"/>
+        <result property="fileName" column="FILE_NAME"/>
+        <result property="fileSavename" column="FILE_SAVENAME"/>
+        <result property="filePath" column="FILE_PATH"/>
+        <result property="fileStatus" column="FILE_STATUS"/>
+        <result property="fileSize" column="FILE_SIZE"/>
+        <result property="fileType" column="FILE_TYPE"/>
+        <result property="uploadDate" column="UPLOAD_DATE"/>
+    </resultMap>
+    
+    <!-- 결재 양식 리스트 조회 -->
+    <select id="DraftTemplateList" resultMap="draftTemplateResultMap">  
+        SELECT
+            dt.template_id,
+            dt.template_tite,
+            dt.template_content,
+            CASE
+                WHEN dt.template_tite LIKE '%사직서%'
+                     OR dt.template_tite LIKE '%재직증명서%'
+                     OR dt.template_tite LIKE '%경력증명서%'
+                     OR dt.template_tite LIKE '%채용%'
+                THEN '인사관리'
+                WHEN dt.template_tite LIKE '%연차%'
+                     OR dt.template_tite LIKE '%출장보고서%'
+                     OR dt.template_tite LIKE '%출장신청서%'
+                     OR dt.template_tite LIKE '%휴일근무신청서%'
+                     OR dt.template_tite LIKE '%출장%'
+                THEN '근태관리'
+                WHEN dt.template_tite LIKE '%사무용품%'
+                     OR dt.template_tite LIKE '%차량%'
+                THEN '복리후생'
+                WHEN dt.template_tite LIKE '%경비%'
+                     OR dt.template_tite LIKE '%법인카드%'
+                THEN '재무/회계'
+                WHEN dt.template_tite LIKE '%작업%'
+                     OR dt.template_tite LIKE '%불량%'
+                THEN '생산/품질 관리'
+                WHEN dt.template_tite LIKE '%시스템%'
+                     OR dt.template_tite LIKE '%계정%'
+                THEN 'IT/보안'
+                ELSE '공통 문서'
+            END AS template_category,
+            dt.temlpate_deleted,
+            dt.template_create,
+            dt.emp_id,
+            COALESCE(e.name, '알 수 없음') AS name,
+            COALESCE(r.role_name, '알 수 없음') AS role_name
+        FROM
+            draft_template dt
+            LEFT JOIN employee e ON dt.emp_id = e.emp_id
+            LEFT JOIN account a ON e.emp_id = a.account_id
+            LEFT JOIN role r ON a.role_id = r.role_id
+        ORDER BY
+            dt.template_create DESC
+    </select>
+    
+    <!-- 템플릿 카테고리 목록 조회 -->
+    <select id="getAllTemplateCategories" resultType="String"> 
+        SELECT DISTINCT template_category
+        FROM draft_template
+        WHERE template_category IS NOT NULL
+        ORDER BY template_category ASC
+    </select>
+    
+    <!-- 결재 양식 선택 (사원용) -->
+    <select id="draftTemplateListEmp" resultMap="draftTemplateResultMap">
+        SELECT
+            dt.template_id,
+            dt.template_tite,
+            CASE
+                WHEN dt.template_tite LIKE '%사직서%'
+                     OR dt.template_tite LIKE '%재직증명서%'
+                     OR dt.template_tite LIKE '%경력증명서%'
+                     OR dt.template_tite LIKE '%채용%'
+                THEN '인사관리'
+                WHEN dt.template_tite LIKE '%연차%'
+                     OR dt.template_tite LIKE '%출장보고서%'
+                     OR dt.template_tite LIKE '%출장신청서%'
+                     OR dt.template_tite LIKE '%휴일근무신청서%'
+                     OR dt.template_tite LIKE '%출장%'
+                THEN '근태관리'
+                WHEN dt.template_tite LIKE '%사무용품%'
+                     OR dt.template_tite LIKE '%차량%'
+                THEN '복리후생'
+                WHEN dt.template_tite LIKE '%경비%'
+                     OR dt.template_tite LIKE '%법인카드%'
+                THEN '재무/회계'
+                WHEN dt.template_tite LIKE '%작업%'
+                     OR dt.template_tite LIKE '%불량%'
+                THEN '생산/품질 관리'
+                WHEN dt.template_tite LIKE '%시스템%'
+                     OR dt.template_tite LIKE '%계정%'
+                THEN 'IT/보안'
+                ELSE '공통 문서'
+            END AS template_category
+        FROM
+            draft_template dt
+        ORDER BY
+            template_category ASC,
+            dt.template_create DESC
+    </select>
+    
+    <!-- 결재 양식 상세 조회 -->
+    <select id="draftTemplateDetail" resultMap="draftTemplateResultMap">
+        SELECT
+            dt.template_id,
+            dt.template_tite,
+            dt.template_content,
+            COALESCE(t.team_name, 
+                CASE 
+                    WHEN dt.template_tite LIKE '%사직서%'
+                         OR dt.template_tite LIKE '%재직증명서%'
+                         OR dt.template_tite LIKE '%경력증명서%'
+                         OR dt.template_tite LIKE '%채용%'
+                    THEN '인사관리'
+                    WHEN dt.template_tite LIKE '%연차%'
+                         OR dt.template_tite LIKE '%출장보고서%'
+                         OR dt.template_tite LIKE '%출장신청서%'
+                         OR dt.template_tite LIKE '%휴일근무신청서%'
+                         OR dt.template_tite LIKE '%출장%'
+                    THEN '근태관리'
+                    WHEN dt.template_tite LIKE '%사무용품%'
+                         OR dt.template_tite LIKE '%차량%'
+                    THEN '복리후생'
+                    WHEN dt.template_tite LIKE '%경비%'
+                         OR dt.template_tite LIKE '%법인카드%'
+                    THEN '재무/회계'
+                    WHEN dt.template_tite LIKE '%작업%'
+                         OR dt.template_tite LIKE '%불량%'
+                    THEN '생산/품질 관리'
+                    WHEN dt.template_tite LIKE '%시스템%'
+                         OR dt.template_tite LIKE '%계정%'
+                    THEN 'IT/보안'
+                    ELSE '공통 문서'
+                END
+            ) AS template_category,
+            dt.temlpate_deleted,
+            dt.template_create,
+            dt.emp_id,
+            dt.template_file,
+            e.name,
+            r.role_name,
+            da.approver_id,
+            da.apr_status,
+            da.apr_date,
+            db.box_id,
+            db.doc_type,
+            db.doc_status,
+            dl.par_id,
+            dl.role,
+            dl.is_read,
+            dl.checked_at,
+            fd.detail_id,
+            fd.file_id,
+            fd.file_name,
+            fd.file_savename,
+            fd.file_path,
+            fd.file_status,
+            fd.file_size,
+            fd.file_type,
+            fd.upload_date
+        FROM
+            draft_template dt
+            LEFT JOIN employee e ON dt.emp_id = e.emp_id
+            LEFT JOIN account a ON e.emp_id = a.account_id
+            LEFT JOIN role r ON a.role_id = r.role_id
+            LEFT JOIN draft_approver da ON dt.template_id = da.draft_id
+            LEFT JOIN draft_box db ON dt.template_id = db.draft_id
+            LEFT JOIN draft_par dl ON dt.template_id = dl.draft_id
+            LEFT JOIN file_detail fd ON dt.template_file = fd.file_id
+            LEFT JOIN team t ON dt.template_category = t.team_name
+        WHERE
+            dt.template_id = #{templateId}
+        ORDER BY
+            da.apr_date DESC
+    </select>
+    
+    <!-- getTemplateFileByTemplateId: 파일 상세 정보 조회 (템플릿 관련) -->
+    <select id="getTemplateFileByTemplateId" parameterType="Long" resultMap="fileDetails">
+        SELECT 
+            f.DETAIL_ID,
+            f.FILE_ID,
+            f.FILE_NAME,
+            f.FILE_SAVENAME,
+            f.FILE_PATH, 
+            f.FILE_STATUS,
+            f.FILE_SIZE,
+            f.FILE_TYPE,
+            f.UPLOAD_DATE
+        FROM FILE_DETAIL f
+        JOIN draft_template dt ON f.FILE_ID = dt.TEMPLATE_FILE
+        WHERE dt.template_id = #{templateId}
+          AND f.FILE_STATUS = 'N'
+    </select>
+    
+    <!-- 팀 목록 조회 -->
+    <select id="getTeamList" resultMap="teamResultMap">
+        SELECT 
+            team_id,
+            team_name 
+        FROM team
+    </select>
+
+    <!-- 결재 양식 수정 -->
+    <update id="updateDraftTemplate" parameterType="kr.or.ddit.approval.vo.DraftTemplateVO">
+        UPDATE DRAFT_TEMPLATE
+        SET
+            TEMPLATE_TITE = #{templateTite},
+            TEMPLATE_CONTENT = #{templateContent},
+            TEMPLATE_CATEGORY = #{templateCategory},
+            TEMLPATE_DELETED = #{temlpateDeleted}
+            <if test="templateFiles != null and templateFiles != ''">
+                , TEMPLATE_FILE = #{templateFiles}
+            </if>
+        WHERE
+            TEMPLATE_ID = #{templateId}
+    </update> 
+
+    <!-- 결재 양식 삭제 -->
+    <delete id="deleteDraftTemplate" parameterType="Long">
+        DELETE FROM draft_template
+        WHERE template_id = #{templateId}
+    </delete>
+
+    <!-- 결재 양식 추가 -->
+    <insert id="insertDraftTemplate" parameterType="kr.or.ddit.approval.vo.DraftTemplateVO">
+        INSERT INTO DRAFT_TEMPLATE 
+        (TEMPLATE_ID, EMP_ID, TEMPLATE_TITE, TEMPLATE_CONTENT, TEMPLATE_CATEGORY, TEMLPATE_DELETED, TEMPLATE_CREATE, TEMPLATE_FILE)
+        VALUES
+        (
+            draft_id_seq.NEXTVAL, 
+            #{empId}, 
+            #{templateTite}, 
+            #{templateContent}, 
+            #{templateCategory}, 
+            #{temlpateDeleted}, 
+            #{templateCreate}, 
+            #{templateFiles}
+        )
+    </insert>
+
+    <!-- FILE_DETAIL 테이블에 템플릿 ID와 파일 ID 매핑 -->
+    <insert id="insertDraftTemplateFile" parameterType="map">
+        INSERT INTO FILE_DETAIL (FILE_ID, TEMPLATE_FILE)
+        SELECT
+            F.FILE_ID,
+            #{templateId}
+        FROM "FILE" F
+        WHERE F.FILE_ID = #{fileIds}
+    </insert>
+
+</mapper>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="security" %>
+
+<title>직원 로그인</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+  body {
+    caret-color: transparent;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    background-image: url('${pageContext.request.contextPath}/resources/template/dist/assets/static/images/logo/sityImg.jpg');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  .login-card {
+    backdrop-filter: blur(12px);
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+  }
+
+  .login-card h2 {
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 30px;
+    color: #ffffff;
+  }
+
+  .form-control {
+    background-color: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+  }
+
+  .form-control::placeholder {
+    color: rgba(255,255,255,0.7);
+  }
+
+  .btn-login {
+    width: 100%;
+    background: rgba(0,123,255,0.9);
+    border: none;
+  }
+
+  .btn-login:hover {
+    background: rgba(0,123,255,1);
+  }
+
+  .error-message {
+    margin-top: 10px;
+    color: #ffdddd;
+    text-align: center;
+    font-size: 0.9rem;
+  }
+</style>
+
+<div class="login-card">
+  <div class="d-flex align-items-center justify-content-center mb-4">
+    <img src="${pageContext.request.contextPath}/resources/template/dist/assets/static/images/logo/ddit.png" style="width: 499px;
+    height: 272px;
+    margin-left: -98px;
+    margin-top: -60px;
+    margin-right: -88px;" alt="Logo"></a>
+  </div>
+
+  <c:if test="${param.resetMail eq 'success'}">
+    <div class="alert alert-success text-center">
+       📧 비밀번호 재설정 링크가 이메일로 발송되었습니다.
+    </div>
+  </c:if>
+	
+	<c:if test="${param.resetMail eq 'fail'}">
+  <div class="alert alert-danger text-center">
+    ❌ 해당 사번의 이메일이 존재하지 않습니다.
+  </div>
+</c:if>
+  <form action="${pageContext.request.contextPath}/login/loginProcess" method="post">
+
+    <c:if test="${param.error != null}">
+        <div class="alert alert-danger" role="alert">
+            사번 또는 비밀번호가 잘못되었습니다. 다시 확인해주세요.
+        </div>
+    </c:if>
+
+	
+    <security:authorize access="isAnonymous()">
+      <div class="mb-3">
+        <input type="text" name="accountId" class="form-control" placeholder="아이디" required>
+      </div>
+      <div class="mb-3">
+        <input type="password" name="password" class="form-control" placeholder="비밀번호" required>
+      </div>
+
+      <div class="mb-3">
+        <select class="form-select text-center" id="accountSelect" name="selectedRole" onchange="setAccountInfo()">
+          <option value="">계정을 선택하세요</option>
+          <option value="2020010001" data-password="12345678!">이진우 - 인사관리자(2020010001)</option>
+<!--           <option value="2025031589" data-password="12345">정태우 - 인사팀장(2025031589)</option> -->
+<!--           <option value="2025031903" data-password="1234">이영준 - 일반팀장(2025031903)</option> -->
+<!--           <option value="2025050301" data-password="1234">박영규 - 일반팀장(2025050301)</option> -->
+<!--           <option value="2023050904" data-password="1234">이인구 - 일반사원(2023050904)</option> -->
+<!--           <option value="2025032501" data-password="4321">김현수 - 일반팀장(2025032501)</option> -->
+<!--           <option value="2025032001" data-password="1234">김형태 - 일반팀장(2025032001)</option> -->
+          <option value="2023050704" data-password="12345678!">최윤식 - 일반팀장(2023050704)</option>
+          <option value="2022022801" data-password="12345678!">차하윤 - 일반사원(2022022801)</option>
+        </select>
+      </div>
+
+      <button class="btn w-100 py-2 fw-semibold text-white" style="background: linear-gradient(135deg, #007bff, #0056b3); border: none; border-radius: 8px;">
+        🔐 로그인
+      </button>
+    </security:authorize>
+  </form>
+
+  <security:authorize access="isAuthenticated()">
+    <script>
+      window.location.href = "${pageContext.request.contextPath}/account/login/home";
+    </script>
+  </security:authorize>
+
+  <div class="text-center mt-3">
+    <button type="button" id="openFindModal"
+            class="btn btn-outline-light btn-sm rounded-pill px-4 py-2 fw-semibold shadow-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#exampleModal"
+            style="transition: all 0.2s;">
+      🔒 아이디 / 비밀번호를 잊으셨나요?
+    </button>
+  </div>
+</div>
+
+
+<!-- 기본 비밀번호 안내 모달 -->
+<div class="modal fade" id="initPwModal" tabindex="-1" aria-labelledby="initPwModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-warning text-dark">
+        <h1 class="modal-title fs-5" id="initPwModalLabel">
+          초기 비밀번호 사용중
+        </h1>
+        <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        초기 비밀번호로 설정되어 있습니다.<br>
+        보안을 위해 <strong>비밀번호 재설정 링크</strong>를 이메일로 전송했습니다.<br>
+        메일을 확인해주세요.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-warning" data-bs-dismiss="modal">확인</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 비밀번호 찾기 모달 -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-primary text-white">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">
+          🔐 계정(ID)/비밀번호 찾기
+        </h1>
+        <button type="button" class="btn btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+	      <div class="modal-body bg-light-subtle" id="modalBodyContainer">
+
+	      </div>
+      <div class="modal-footer d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">닫기</button>
+        <button type="button" class="btn btn-warning" id="btnForgotPassword">비밀번호찾기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 스크립트 영역 -->
+<script src="${pageContext.request.contextPath}/resources/js/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="${pageContext.request.contextPath}/resources/js/account/accountFind.js"></script>
+<script src="${pageContext.request.contextPath}/resources/js/account/passwordFind.js"></script>
+
+<script type="text/javascript">
+  var contextPath = '${pageContext.request.contextPath}';
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("initPw") === "true") {
+      const initPwModal = new bootstrap.Modal(document.getElementById("initPwModal"));
+      initPwModal.show();
+    }
+  });
+
+  function setAccountInfo() {
+    let select = document.getElementById("accountSelect");
+    let selectedOption = select.options[select.selectedIndex];
+    let accountId = selectedOption.value;
+    let password = selectedOption.getAttribute("data-password");
+    document.getElementsByName("accountId")[0].value = accountId;
+    document.getElementsByName("password")[0].value = password;
+  }
+</script>

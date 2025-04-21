@@ -1,0 +1,109 @@
+package kr.or.ddit.attendance.service;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Param;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import kr.or.ddit.annual.vo.AnnualManageVO;
+import kr.or.ddit.attendance.vo.AttendanceVO;
+import kr.or.ddit.department.vo.DepartmentVO;
+import kr.or.ddit.employee.vo.EmployeeVO;
+import kr.or.ddit.mybatis.mappers.attendance.attendanceMapper;
+import kr.or.ddit.team.vo.TeamVO;
+import kr.or.ddit.workstatus.vo.WorkstautsVO;
+
+@Service
+public class AttendanceServiceImpl implements AttendanceService {
+	
+	@Autowired
+	attendanceMapper dao;
+	
+	@Override
+	public List<AttendanceVO> attendanceList() {
+		return dao.attendanceList();
+		
+	}
+	
+	@Override
+	public List<AttendanceVO> attendanceList(String departmentId ,String teamId ,String date 
+	) {
+        return dao.attendanceList(departmentId, teamId, date );
+    }
+	
+	@Override
+	public List<AttendanceVO> myAttendance(String empId, String workDate) {
+		return dao.myAttendance(empId,workDate);
+	}
+
+	
+	@Override
+	public List<AttendanceVO> attendanceDetail(String empId, String startDate, String endDate) {
+		return dao.attendanceDetail(empId,startDate,endDate);
+	}
+
+	@Override
+	public void attendanceInsert(AttendanceVO attendance) {
+		dao.attendanceInsert(attendance);
+	}
+
+	@Override
+	public AttendanceVO findTodayAttendance(String empId) {
+		return dao.findTodayAttendance(empId);
+	}
+
+	@Override
+	public void updateWorkEnd(AttendanceVO attendance) {
+		dao.updateWorkEnd(attendance);
+		
+	}
+	
+	@Override
+	public List<DepartmentVO> departmentList(String teamId) {
+		return dao.departmentList(teamId);
+	}
+
+	@Override
+	public List<TeamVO> teamList(String teamId) {
+		return dao.teamList(teamId);
+	}
+	
+	@Override
+	public EmployeeVO Employee(String empId) {
+		return dao.Employee(empId);
+	}
+
+	@Override
+	public List<WorkstautsVO> workStatusList() {
+		return dao.workStatusList();
+	}
+
+	@Override
+	public AttendanceVO workStatusEmployee(String empId) {
+		return dao.workStatusEmployee(empId);
+	}
+
+	@Override
+	public AttendanceVO updateAttendance(String empId) {
+		return dao.updateAttendance(empId);
+	}
+
+	@Override
+	public List<AttendanceVO> findTodayAttendanceList() {
+		return dao.findTodayAttendanceList();
+	}
+
+	@Override
+	public void insertAbsentStatus(AttendanceVO attendance) {
+		dao.insertAbsentStatus(attendance);
+		
+	}
+	
+	@Override
+	public AttendanceVO getMax() {
+		return dao.getMax();
+	}
+	
+
+}

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.annual.AnnualMapper">
+
+<resultMap type="AnnualVO" id="AnnualResultMap" autoMapping="true">
+	<id property="annualId" column="annual_id" />
+	<association property="annualManage" javaType="AnnualManageVO" autoMapping="true"/>
+	<association property="employee" javaType="EmployeeVO" autoMapping="true">
+		<association property="department" javaType="DepartmentVO" autoMapping="true"/>
+		<association property="team" javaType="TeamVO" autoMapping="true"/>
+		<association property="rank" javaType="RankVO" autoMapping="true"/>
+	</association>
+</resultMap>
+
+<resultMap type="AnnualHistoryVO" id="AnnualDetailResultMap" autoMapping="true">
+		<association  property="employee" javaType="EmployeeVO" autoMapping="true">
+			<association property="department" javaType="DepartmentVO" autoMapping="true"/>
+			<association property="team" javaType="TeamVO" autoMapping="true"/>
+			<association property="rank" javaType="RankVO" autoMapping="true"/>
+		</association>
+		<association property="annualType" javaType="AnnualManageVO" autoMapping="true"/>	
+</resultMap>
+
+<select id="annualList" resultMap="AnnualResultMap">
+SELECT
+    a.annual_id
+  , a.emp_id
+  , a.total_annual
+  , a.used_annual
+  , a.remaining_annual
+  , e.name
+  , e.hire_date
+  , d.department_name
+  , t.team_id
+  , t.team_name
+  , r.rank_name
+FROM
+         annual a
+    JOIN employee       e ON a.emp_id = e.emp_id
+    JOIN department     d ON e.department_id = d.department_id
+    JOIN team           t ON t.team_id = e.team_id
+    JOIN rank           r ON r.rank_id = e.rank_id
+    LEFT JOIN annual_history h ON a.emp_id = h.emp_id
+    where 1=1
+     <if test="teamId != null or teamId != ''">
+    	and t.team_id = #{teamId}
+    </if>
+GROUP BY
+    a.annual_id
+  , a.emp_id
+  , a.total_annual
+  , a.used_annual
+  , a.remaining_annual
+  , e.name
+  , e.hire_date
+  , d.department_name
+  , t.team_id
+  , t.team_name
+  , r.rank_name
+ORDER BY
+    a.used_annual DESC
+</select>
+
+<select id="annualDetail" resultMap="AnnualDetailResultMap">
+SELECT
+    ah.history_id
+  , ah.emp_id
+  , ah.leave_date
+  , ah.leave_end_date
+  , ah.status
+  , ah.reason
+  , ah.reject_reason
+  , ah.request_date
+  , ah.annual_code
+<!--   , (TRUNC(TO_DATE(ah.leave_end_date, 'YYYY-MM-DD')) - TRUNC(TO_DATE(ah.leave_date, 'YYYY-MM-DD')) + 1) AS leave_day -->
+  , e.name
+  , at.annual_name
+  , t.team_name
+  , r.rank_name
+  , d.department_name
+FROM
+    annual_history ah
+LEFT JOIN employee e ON ah.emp_id = e.emp_id
+LEFT JOIN annual a  ON ah.emp_id = a.emp_id
+LEFT JOIN annual_type at ON at.annual_code = ah.annual_code
+join department d on e.department_id = d.department_id
+join team t on t.team_id = e.team_id
+join rank r on r.rank_id = e.rank_id
+WHERE 
+    ah.emp_id = #{empId}
+  AND 
+  	ah.status = '승인'
+  	 <if test="date == null or date == ''">
+          AND TO_CHAR(ah.leave_date, 'YYYY') = TO_CHAR(SYSDATE, 'YYYY')
+      </if>
+      <if test="date != null and date != ''">
+          AND  TO_CHAR(ah.leave_date, 'YYYY') = #{date}
+      </if>
+ ORDER BY leave_date DESC
+</select>
+
+<select id="annaulCount">
+SELECT
+    a.annual_id
+  , a.emp_id
+  , a.total_annual
+  , a.used_annual
+  , a.remaining_annual
+FROM
+    annual a
+where 
+	a.emp_id = #{empId}
+</select>
+
+<update id="updateAnnual">
+UPDATE 
+	annual
+SET
+      used_annual = used_annual + #{count}
+	, remaining_annual = remaining_annual - #{count}
+	, last_updated = sysdate
+WHERE
+    emp_id = #{empId}
+</update>
+
+</mapper>

@@ -1,0 +1,94 @@
+package kr.or.ddit.signature.controller;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.UUID;
+
+import javax.servlet.ServletContext;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+
+import kr.or.ddit.account.vo.AccountVO;
+import kr.or.ddit.security.SecurityUtil;
+import kr.or.ddit.signature.service.SignatureService;
+import kr.or.ddit.signature.vo.SignatureVO;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Controller
+public class SignatureController {
+	
+	@Autowired
+	private SignatureService service;
+	
+	@Autowired
+	private ServletContext servletContext; // 업로드 경로 설정을 위한 ServletContext
+	
+	// 서명 등록폼
+	@GetMapping("/signature/registerForm")
+	public String registerForm(Model model) {
+		AccountVO account = SecurityUtil.getrealUser();
+		model.addAttribute("empId", account.getEmpId());
+		return "tiles:signature/signatureRegister";
+	}
+
+	// 서명 등록 요청처리
+	@PostMapping("/signature/register")
+	public String register(@RequestParam("signImage") MultipartFile signImage, Model model) {
+		AccountVO account = SecurityUtil.getrealUser();
+		String empId = account.getEmpId();
+
+	    if (signImage.isEmpty()) {
+	    	model.addAttribute("error", "서명 이미지를 선택해야 합니다.");
+	        return "redirect:/signature/registerForm?empId=" + empId;
+	    }
+
+	    // 실제 저장될 경로 (웹 접근 가능하도록 resources 폴더 사용)
+	    String uploadDir = servletContext.getRealPath("/resources/signatures/");
+        File dir = new File(uploadDir);
+        if (!dir.exists()) {
+            dir.mkdirs(); // 폴더 없으면 생성
+        }
+
+	    // 파일 저장 경로 설정
+	    String extension = signImage.getOriginalFilename().substring(signImage.getOriginalFilename().lastIndexOf("."));
+	    String fileName = empId + "_" + UUID.randomUUID().toString() + extension;
+	    String filePath = uploadDir + File.separator + fileName;
+
+	    try {
+	        File file = new File(filePath);
+	        signImage.transferTo(file);
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	        model.addAttribute("error", "파일 업로드 중 오류가 발생했습니다.");
+	        return "redirect:/signature/registerForm?empId=" + empId;
+	    }
+
+	    // DB에는 웹에서 접근 가능한 경로만 저장
+	    String webPath = "/resources/signatures/" + fileName;
+
+	    // 서명 정보 저장
+	    SignatureVO sign = new SignatureVO();
+	    sign.setEmpId(empId);
+	    sign.setSignImagePath(webPath);
+	    service.insertSign(sign);
+
+	    return "redirect:/signature/list";
+	}
+
+	// 서명 목록 조회
+	@GetMapping("/signature/list")
+    public String listSignatures(Model model) {
+        List<SignatureVO> signatures = service.selectSign();
+        System.out.println("JSP로 전달되는 서명 리스트: " + signatures);
+        model.addAttribute("signatures", signatures);
+        return "tiles:signature/signatureList";  // JSP 페이지 반환
+    }
+}

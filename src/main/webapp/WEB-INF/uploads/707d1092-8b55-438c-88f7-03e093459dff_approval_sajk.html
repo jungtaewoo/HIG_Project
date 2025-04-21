@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>사직서</title>
+</head>
+<body>
+
+<!-- 사직서 양식 폼 -->
+<span style="font-family: '맑은 고딕'; font-size: 10pt; line-height: normal; margin-top: 0; margin-bottom: 0;">
+<form id="approvalForm">
+  <!-- CKEditor로 감싸는 전체 양식 -->
+  <div id="editor">
+
+    <!-- 상단 테이블 (사직서, 승인자 정보 영역) -->
+    <table style="width: 800px; border-collapse: collapse !important; color: black; background: white; border: 1px solid black; font-size: 12px; font-family: malgun gothic,dotum,arial,tahoma;">
+      <colgroup>
+        <col style="width: 90px;">
+        <col style="width: 180px;">
+        <col style="width: 90px;">
+        <col style="width: 120px;">
+        <col style="width: 90px;">
+        <col>
+      </colgroup>
+      <tbody>
+        <tr>
+          <td colspan="2" style="padding: 3px; border: 1px solid black; height: 90px !important; font-size: 27px; font-weight: bold; text-align: center; vertical-align: middle;">
+            사직서
+          </td>
+          <td colspan="4" style="padding: 3px; height: 20px; vertical-align: middle; border: 1px solid black; text-align: right;">
+            <!-- 승인자 정보 영역 -->
+            <td style="width:500px; padding: 20px; vertical-align: top;">
+              <table id="approverTable" style="width: 100%; border: 1px solid #ccc; border-collapse: collapse; font-size: 12px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 5px; text-align: center;">승인자명</th>
+                    <th style="padding: 5px; text-align: center;">부서</th>
+                    <th style="padding: 5px; text-align: center;">직급</th>
+                    <th style="padding: 5px; text-align: center;">승인순번</th>
+                    <th style="padding: 5px; text-align: center;">상태</th>
+                  </tr>
+                </thead>
+                <tbody id="approverTableBody">
+                  <!-- 예시 데이터: 기안자보다 높은 직급의 상사 -->
+	                <tr>
+	                  <td style="padding: 5px; text-align: center;">김부장</td>
+	                  <td style="padding: 5px; text-align: center;">경영지원본부</td>
+	                  <td style="padding: 5px; text-align: center;">부장</td>
+	                  <td style="padding: 5px; text-align: center;">1</td>
+	                  <td style="padding: 5px; text-align: center;">대기</td>
+	                </tr>
+                </tbody>
+              </table>
+            </td>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: center; font-weight: bold;">
+            기안부서
+          </td>
+          <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: left;">
+            <!-- 기안부서 값 -->
+            인사팀
+          </td>
+          <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: center; font-weight: bold;">
+            기 안 일
+          </td>
+          <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: left;">
+            <!-- 기안일 값 -->
+            2025-05-31
+          </td>
+          <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: center; font-weight: bold;">
+            문서번호
+          </td>
+          <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: left; font-size: 12px;">
+            <!-- 문서번호 값 -->
+            0001
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: center; font-weight: bold;">
+            기 안 자
+          </td>
+          <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: left;">
+            <!-- 기안자 값 -->
+            홍길동
+          </td>
+          <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: center; font-weight: bold;">
+            보존년한
+          </td>
+          <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: left;">
+            <!-- 보존연한 값 -->
+            3년
+          </td>
+          <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: center; font-weight: bold;">
+            비밀등급
+          </td>
+          <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: left;">
+            <!-- 비밀등급 값 -->
+            2
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 중간 공백 테이블(마진) -->
+    <table style="width: 800px; border-collapse: collapse; border-spacing: 0px; border: 1px solid black;">
+      <tbody>
+        <tr>
+          <td style="padding: 0 !important; height: 10px; vertical-align: middle; border: 1px solid black; font-size: 9px;">
+            <p style="font-family: '맑은 고딕'; font-size: 7pt; line-height: 14px; margin: 0;">
+              <br>
+            </p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 제목 및 내용 테이블 -->
+    <table style="width: 800px; border-collapse: collapse !important; color: black; background: white; border: 1px solid black; font-size: 12px; font-family: malgun gothic,dotum,arial,tahoma;">
+      <colgroup>
+        <col style="width: 90px;">
+        <col style="width: 710px;">
+      </colgroup>
+      <tbody>
+        <tr>
+          <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: center; font-weight: bold;">
+            제&nbsp;&nbsp;&nbsp;목
+          </td>
+          <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: left;">
+            <!-- 제목 값 -->
+            사직서 제출
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding: 3px; vertical-align: top; border: 0px solid black;" class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+            <table style="width: 770px; margin: 9px; border-collapse: collapse !important; color: black; background: white; border: 2px solid black; font-size: 12px; font-family: malgun gothic,dotum,arial,tahoma;">
+              <colgroup>
+                <col style="width: 100px;">
+                <col style="width: 120px;">
+                <col style="width: 100px;">
+                <col style="width: 120px;">
+                <col style="width: 110px;">
+                <col style="width: 120px;">
+              </colgroup>
+              <tbody>
+                <tr>
+                  <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: center; font-weight: bold;">
+                    부&nbsp;서
+                  </td>
+                  <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: left;">
+                    <!-- 부서 값 -->
+                    경영지원1팀
+                  </td>
+                  <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: center; font-weight: bold;">
+                    직&nbsp;위
+                  </td>
+                  <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: left;">
+                    <!-- 직위 값 -->
+                    대리
+                  </td>
+                  <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: center; font-weight: bold;">
+                    성&nbsp;명
+                  </td>
+                  <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: left;">
+                    <!-- 성명 값 -->
+                    홍길동
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: center; font-weight: bold;">
+                    주민등록번호
+                  </td>
+                  <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: left;">
+                    <!-- 주민등록번호 값 -->
+                    900101-1234567
+                  </td>
+                  <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: center; font-weight: bold;">
+                    입사일자
+                  </td>
+                  <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: left;">
+                    <!-- 입사일자 값 -->
+                    2020-01-01
+                  </td>
+                  <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: center; font-weight: bold;">
+                    퇴사예정일자
+                  </td>
+                  <td style="padding: 3px; height: 20px; border: 1px solid black; text-align: left;">
+                    <!-- 퇴사예정일자 값 -->
+                    2025-05-31
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 3px; height: 59px; border: 1px solid black; text-align: center; font-weight: bold;">
+                    퇴사후 주소<br>연락처
+                  </td>
+                  <td colspan="5" style="padding: 3px; height: 59px; border: 1px solid black; text-align: left;">
+                    <table style="width:570px; font-size: 12px; font-family: malgun gothic,dotum,arial,tahoma;">
+                      <colgroup>
+                        <col style="width: 70px;">
+                        <col style="width: 500px;">
+                      </colgroup>
+                      <tbody>
+                        <tr>
+                          <td class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                            주소:
+                          </td>
+                          <td class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                            <!-- 주소 값 -->
+                            서울특별시 강남구 역삼동 101
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                            연락처:
+                          </td>
+                          <td class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                            <!-- 연락처 값 -->
+                            (010-1234-5678)
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="6" style="padding: 3px; height: 400px; border: 1px solid black; vertical-align: top;">
+                    <!-- 에디터(본문) 값 -->
+                    <div style="white-space: pre-wrap; font-size: 11pt; line-height: 1.5; font-family: '맑은 고딕';">
+                      퇴직 사유: 개인적인 일로 인한 사직입니다.<br>
+                      재직 기간 동안 많은 지도와 도움에 감사드립니다.
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 3px; height: 59px; border: 1px solid black; text-align: center; font-weight: bold;">
+                    업무인수자
+                  </td>
+                  <td colspan="2" style="padding: 3px; height: 59px; border: 1px solid black; text-align: left;">
+                    <table style="font-size: 12px; font-family: malgun gothic,dotum,arial,tahoma;">
+                      <tbody>
+                        <tr>
+                          <td class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                            직위:
+                          </td>
+                          <td class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                            <!-- 업무인수자 직위 값 -->
+                            대리
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                            성명:
+                          </td>
+                          <td class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                            <!-- 업무인수자 성명 값 -->
+                            김인수
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                  <td style="padding: 3px; height: 59px; border: 1px solid black; text-align: center; font-weight: bold;">
+                    면담자
+                  </td>
+                  <td colspan="2" style="padding: 3px; height: 59px; border: 1px solid black; text-align: left;">
+                    <table style="font-size: 12px; font-family: malgun gothic,dotum,arial,tahoma;">
+                      <tbody>
+                        <tr>
+                          <td class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                            직위:
+                          </td>
+                          <td class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                            <!-- 면담자 직위 값 -->
+                            차장
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                            성명:
+                          </td>
+                          <td class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+                            <!-- 면담자 성명 값 -->
+                            박차장
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 3px; height: 99px; border: 1px solid black; text-align: center; font-weight: bold;">
+                    면담내용
+                  </td>
+                  <td colspan="5" style="padding: 3px; height: 99px; border: 1px solid black; text-align: left; vertical-align: top;">
+                    <!-- 면담내용 값 -->
+                    <div style="white-space: pre-wrap; font-family: '맑은 고딕';">
+                      그동안 고생하셨습니다. 감사합니다.
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="3" style="padding: 3px; height: 20px; border: 1px solid black; text-align: center; font-weight: bold;">
+                    퇴직 명령일자
+                  </td>
+                  <td colspan="3" style="padding: 3px; height: 20px; border: 1px solid black; text-align: left;">
+                    <!-- 퇴직 명령일자 값 -->
+                    2025-06-01
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 하단 푸터(여기서는 비어있음) -->
+    <table style="width: 800px; font-size: 12px; font-family: malgun gothic,dotum,arial,tahoma;">
+      <tbody>
+        <tr>
+          <td style="padding:10px; font-size:16px; text-align:center; font-weight:bold;" class="dext_table_border_t dext_table_border_r dext_table_border_b dext_table_border_l">
+            <!-- 빈 푸터 영역 -->
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+</form>
+</span>
+</body>
+</html>

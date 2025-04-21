@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+ * == 개정이력(Modification Information) ==
+ *
+ *   수정일       			수정자           수정내용
+ *  ============   	============== =======================
+ *  2025. 3. 12.     	LIG            최초 생성
+ *
+-->
+
+ <mapper namespace="kr.or.ddit.mybatis.mappers.departmentboard.DepartmentBoardMapper">
+
+    <resultMap type="DepartmentBoardVO" id="DepartmentBoardMAP" autoMapping="true">
+        <id property="deptnoticeId" column="DEPTNOTICE_ID" />
+        <association property="department" javaType="DepartmentVO" autoMapping="true" />
+        <!--  파일 상세 정보 추가 -->
+	   <collection property="fileDetails" ofType="FileDetailVO">
+	       <id property="detailId" column="DETAIL_ID"/>
+	       <result property="fileId" column="FILE_ID"/>
+	       <result property="fileName" column="FILE_NAME"/>
+	       <result property="fileSavename" column="FILE_SAVENAME"/>
+	       <result property="filePath" column="FILE_PATH"/>
+	       <result property="fileStatus" column="FILE_STATUS"/>
+	       <result property="fileSize" column="FILE_SIZE"/>
+	       <result property="fileType" column="FILE_TYPE"/>
+	       <result property="uploadDate" column="UPLOAD_DATE"/>
+	   </collection>
+    </resultMap>
+
+	<!-- 게시글 상단 고정글 리스트 -->
+	<select id="topFixedList" resultMap="DepartmentBoardMAP">
+		select 
+		    e.name AS author,
+		    DN.CONTENT,
+		    d.department_name,
+		    DN.DEPTNOTICE_ID,
+		    DN.NOTICE_DATE,
+		    DN.TITLE,
+		    DN.VIEW_COUNT
+		from 
+	        department_notice DN
+	        JOIN department d ON d.department_id = dn.department_id
+		    JOIN employee   e ON e.EMP_ID = dn.author
+		where
+	    	DN.IMPORTANCE = 'Y'
+		and
+	    	1 = 1
+		and
+	    	dn.department_id = #{departmentId}
+	</select>
+
+
+	<!-- 공지글 조회 쿼리문 -->
+   <select id="boardList" resultMap="DepartmentBoardMAP">
+	SELECT
+	    dn.deptnotice_id,
+	    d.department_name,
+	    dn.title,
+	    e.name AS author,
+	    dn.view_count,
+	    dn.notice_date
+	FROM
+	    department_notice dn
+	    JOIN department d ON d.department_id = dn.department_id
+	    JOIN employee   e ON e.EMP_ID = dn.author
+
+	where
+		1 = 1
+		and dn.department_id = #{departmentId}
+		and dn.importance = 'N'
+   </select>
+   
+   <!-- 공지글 작성 쿼리문 -->
+    <insert id="boardInsert" parameterType="DepartmentBoardVO">
+    insert into department_notice (
+       DEPTNOTICE_ID,
+       DEPARTMENT_ID,
+       TITLE,
+       CONTENT,
+       AUTHOR,
+       VIEW_COUNT,
+       NOTICE_DATE,
+       DEPT_FILE,
+       IMPORTANCE
+      ) values (
+        deptnotice_seq.NEXTVAL,
+        #{departmentId},
+        #{title},
+        #{content},
+        #{author},
+        0,
+        SYSDATE,
+        #{oneFile},
+    	<if test="importance eq null">
+    		'N'
+    	</if>
+    	<if test="importance neq null">
+    		#{importance}
+    	</if>
+         )
+    </insert>
+
+	<!-- 공지글 상세조회 쿼리문 -->
+   <select id="boardDetail"
+       resultMap="DepartmentBoardMAP">
+      select
+      DN.DEPTNOTICE_ID,
+      DN.DEPARTMENT_ID,
+      D.DEPARTMENT_NAME,
+      DN.TITLE,
+      DN.IMPORTANCE,
+      E.NAME as AUTHOR,
+      DN.VIEW_COUNT,
+      DN.NOTICE_DATE,
+      DN.CONTENT,
+      DN.DEPT_FILE,
+      FD.DETAIL_ID,
+	  FD.FILE_ID,
+	  FD.FILE_NAME,
+	  FD.FILE_SAVENAME,
+	  FD.FILE_PATH,
+	  FD.FILE_STATUS,
+	  FD.FILE_SIZE,
+      FD.FILE_TYPE,
+	  FD.UPLOAD_DATE
+   from department_notice DN
+      join DEPARTMENT D on D.DEPARTMENT_ID = DN.DEPARTMENT_ID
+      JOIN employee   e ON  e.EMP_ID = dn.author
+ left outer join FILE_DETAIL FD ON DN.DEPT_FILE = FD.FILE_ID
+   where
+     	  DN.DEPTNOTICE_ID = #{deptnoticeId}
+   </select>
+
+
+
+   <!-- 조회수 업데이트 -->
+    <update id="updateViews">
+        UPDATE department_notice
+        SET VIEW_COUNT = VIEW_COUNT + 1
+        WHERE DEPTNOTICE_ID = #{deptnoticeId}
+    </update>
+
+    <!-- 공지글 수정 -->
+    <update id="updateBoard">
+    UPDATE department_notice
+	SET
+    	TITLE = #{title}
+    	, CONTENT = #{content}
+	WHERE DEPTNOTICE_ID = #{deptnoticeId}
+    </update>
+
+    <!-- FILE_DETAIL 테이블에 템플릿 ID와 파일 ID 매핑 -->
+	<insert id="insertDeftNoFiles" parameterType="map" >
+        INSERT INTO FILE_DETAIL (FILE_ID, DEPT_FILE)
+        SELECT
+            F.FILE_ID,
+            #{deptnoticeId}
+        FROM "FILE" F
+        WHERE F.FILE_ID = #{fileIds}
+	</insert>
+
+	<!-- 공지글 삭제 -->
+	<delete id="deleteBoard" parameterType="Long">
+	    DELETE from department_notice
+	    WHERE DEPTNOTICE_ID = #{deptnoticeId}
+	</delete>
+
+	
+</mapper>

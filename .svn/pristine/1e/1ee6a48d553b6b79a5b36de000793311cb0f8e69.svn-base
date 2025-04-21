@@ -1,0 +1,607 @@
+/** 
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *   
+ *   수정일               수정자           수정내용
+ *  -----------      -------------    ---------------------------
+ * 2025. 4. 1.        youngjun            최초 생성
+ *
+ * </pre>
+ */
+let allStatus = false;
+let salaryTableInstance = null;
+
+function initializeDataTable() {
+  if ($.fn.DataTable.isDataTable("#salaryTable")) {
+    $("#salaryTable").DataTable().clear().destroy();
+  }
+
+  salaryTableInstance = $("#salaryTable").DataTable({
+    responsive: true,
+    scrollX: true,
+    language: {
+      url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/ko.json"
+    }
+  });
+}
+
+
+
+let targetFinalButton = null;
+let targetFinalInfo = {};
+
+//  단건 확정 버튼 클릭 시 - 모달 준비
+function salaryFinal(button) {
+  const tr = button.closest("tr");
+
+  const empId = tr.querySelector("td[data-salaryid]")?.textContent.trim();
+  const salaryId = tr.querySelector("td[data-salaryid]")?.getAttribute("data-salaryid");
+  const netSalary = parseInt(tr.querySelector("td:nth-child(11)")?.innerText.replace(/,/g, "") || 0);
+  const payStatus = button.innerText.trim();
+  console.log("확정payStatus",payStatus);
+
+  const requestBtn = tr.querySelector("button[onclick*='salaryRequest']");
+  const requestStatus = requestBtn?.innerText.trim();
+  console.log("확정requestStatus",requestStatus);
+
+  if (payStatus === "확정" && requestStatus === "승인") {
+    alert("확정취소 불가: 승인된 급여입니다.");
+    return;
+  }
+
+  // 대상 저장
+  targetFinalButton = button;
+  targetFinalInfo = { empId, salaryId, payStatus };
+
+  // 모달 내용 설정
+  document.getElementById("modalEmpCount").innerText = 1;
+  document.getElementById("modalTotalAmount").innerText = netSalary.toLocaleString();
+
+  const modal = new bootstrap.Modal(document.getElementById("confirmModal"));
+  modal.show();
+
+  const finalBtn = document.getElementById("confirmFinal");
+  finalBtn.innerText = payStatus === "확정" ? "확정취소" : "확정진행";
+  finalBtn.onclick = doFinalSingle;
+
+}
+
+//salaryFinal
+//  단건 확정 실제 실행
+function doFinalSingle() {
+   
+  const btn = targetFinalButton;
+  const { empId, salaryId, payStatus } = targetFinalInfo;
+  const afterStatus = payStatus === "확정" ? "확정대기" : "확정";
+
+  $.ajax({
+    url: "/salary/final",
+    type: "POST",
+    data: { empId, salaryId },
+    success: function (res) {
+      console.log("확정쪽 res",res);
+      if (res.cnt === "1" ) {
+        // 버튼 상태 반영
+        btn.innerText = afterStatus;
+        btn.classList.toggle("btn-danger", afterStatus === "확정");
+        btn.classList.toggle("btn-outline-primary", afterStatus === "확정대기");
+      // 확정일 처리
+           const td = btn.closest("td");
+           let dateDiv = td?.querySelector(".confirm-date");
+
+         if (afterStatus === "확정") {
+             if (!dateDiv) {
+               dateDiv = document.createElement("small");
+               dateDiv.className = "confirm-date text-muted mt-1";
+               td.appendChild(dateDiv);
+             }
+             dateDiv.innerText = res.finalDate;
+           } else {
+             if (dateDiv) dateDiv.remove();
+           }
+      console.log("dateDiv : ", dateDiv);
+      console.log("res : ", res);
+      
+      //if (dateDiv != null && undefined != res){
+       //  dateDiv.innerText = res.finalDate;   
+      //}
+
+        // 상단 카운트 업데이트
+        document.getElementById("confirmCount").innerText = `${res.finalCount}명`;
+        document.getElementById("salaryFinal").innerText = `${res.PayStatus}`;
+      
+        // 토스트 메시지
+        showToast("✅ 작업이 성공적으로 완료되었습니다.");
+
+        // 모달 닫기
+        const modalEl = document.getElementById("confirmModal");
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modalInstance.hide();
+      
+      } else {
+        alert("처리 중 오류가 발생했습니다.");
+      }
+     
+    },//success끝
+    error: function () {
+      alert("서버 통신 실패");
+    }
+  });
+}
+
+function doFinalBulk(obj){
+   
+   const selectedDate = document.querySelector("#payDate").value;
+   const [selectYear, selectMonth] = selectedDate.split("-");
+   
+   
+   const rows = document.querySelectorAll("#salaryTable tr"); //페이지에 보이는인원만 확정되는 오류
+   //const allDataTr = newDT.data.data;
+   //if(newDT && newDT.data && newDT.data.data){
+   //   const allData = newDT.data.data;
+      //const allRows = newDT.table.querySelectorAll("tbody tr");
+   //}
+   
+
+   const salaryList = [];
+   console.log("confirmCount확정인원 확인", confirmCount);
+   //console.log("일괄확정 값확인rows",rows);
+   
+   rows.forEach(row => {
+      const salaryBtn = row.querySelector("button[onclick*='salaryFinal']");
+      const status = salaryBtn?.innerText.trim();
+
+      const empId = row.querySelector("td[data-salaryid]")?.textContent.trim();
+      const salaryId = row.querySelector("td[data-salaryid]")?.getAttribute("data-salaryid");
+      
+      console.log("empId",empId);
+      console.log("salaryId",salaryId);
+      
+      if (!allStatus && status === "확정대기") {
+         if (empId && salaryId) {
+            salaryList.push({ empId, salaryId });
+         }
+      }
+
+      if (allStatus && status === "확정") {
+         if (empId && salaryId) {
+            salaryList.push({ empId, salaryId });
+         }
+      }
+   });
+
+   if (salaryList.length === 0) {
+      alert(allStatus ? "확정취소 대상이 없습니다." : "확정할 대상이 없습니다.");
+      return;
+   }
+
+   const param = {
+      //salaryList : salaryList,
+      salaryList,
+      payYear:selectYear,
+      payMonth:selectMonth
+   };
+
+
+   $.ajax({
+      url: `/salary/final/all?payYear=${selectYear}&payMonth=${selectMonth}`,  // 쿼리스트링으로 추가
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify(param),
+      success: function (res) {
+         console.log("일괄시 카운트",res.finalCount);
+         document.querySelector("#confirmCount").innerText = `${res.finalCount}명`;
+         
+         alert(allStatus ? "일괄 확정취소 완료" : "일괄 확정 완료");
+         allStatus = !allStatus;
+         obj.innerText = allStatus ? "일괄취소" : "일괄확정";
+
+         salaryList.forEach(item => {
+            const row = [...rows].find(r => r.querySelector("td[data-salaryid]")?.getAttribute("data-salaryid") === item.salaryId);
+            const btn = row?.querySelector("button[onclick*='salaryFinal']");
+            const dateDiv = row?.querySelector(".confirm-date");
+
+            if (btn) {
+               btn.innerText = allStatus ? "확정": "확정대기";
+               btn.classList.toggle("btn-danger", allStatus);
+               btn.classList.toggle("btn-primary", !allStatus);
+            }
+
+            if (dateDiv) {
+               dateDiv.innerText = allStatus ? new Date().toISOString().split("T")[0] : "";
+            }
+         });
+      
+      },
+      error: function () {
+         alert("일괄 처리 실패");
+      }
+   });
+}
+
+
+//일괄확정 모달
+function openFinalBulkModal(obj) {
+  const selectedDate = document.querySelector("#payDate").value;
+  const [selectYear, selectMonth] = selectedDate.split("-");
+
+  const rows = document.querySelectorAll("#salaryTable tr");
+  const salaryList = [];
+
+  let totalNetAmount = 0;
+
+  rows.forEach(row => {
+    const salaryBtn = row.querySelector("button[onclick*='salaryFinal']");
+    const status = salaryBtn?.innerText.trim();
+
+    const empId = row.querySelector("td[data-salaryid]")?.textContent.trim();
+    const salaryId = row.querySelector("td[data-salaryid]")?.getAttribute("data-salaryid");
+    const netSalary = parseInt(row.querySelector("td:nth-child(11)")?.innerText.replace(/,/g, "") || "0");
+
+    if ((!allStatus && status === "확정대기") || (allStatus && status === "확정")) {
+      if (empId && salaryId) {
+        salaryList.push({ empId, salaryId });
+        totalNetAmount += netSalary;
+      }
+    }
+  });
+
+  if (salaryList.length === 0) {
+    alert(allStatus ? "확정취소 대상이 없습니다." : "확정할 대상이 없습니다.");
+    return;
+  }
+
+  // 저장
+  window.bulkParam = {
+    obj,
+    payYear: selectYear,
+    payMonth: selectMonth,
+    salaryList
+  };
+
+  // 모달 정보 삽입
+  document.getElementById("modalEmpCount").innerText = salaryList.length;
+  document.getElementById("modalTotalAmount").innerText = totalNetAmount.toLocaleString();
+
+  const finalBtn = document.getElementById("confirmFinal");
+  const newFinalBtn = finalBtn.cloneNode(true);
+  finalBtn.parentNode.replaceChild(newFinalBtn, finalBtn);
+
+  newFinalBtn.innerText = allStatus ? "일괄 확정취소" : "일괄확정";
+
+  newFinalBtn.addEventListener("click", () => {
+    doFinalBulk(obj);  // 실제 확정 처리
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("confirmModal"));
+    modal.hide();
+  });
+
+  // 모달 오픈
+  const modal = new bootstrap.Modal(document.getElementById("confirmModal"));
+  modal.show();
+}
+
+
+
+/*
+function initializeDataTable() {
+  if ($.fn.DataTable.isDataTable("#salaryTable")) {
+    $("#salaryTable").DataTable().clear().destroy();
+  }
+
+  salaryTableInstance = $("#salaryTable").DataTable({
+    responsive: true,
+    scrollX: true,
+    language: {
+      url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/ko.json"
+    }
+  });
+}
+*/
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+let targetReqButton = null;
+let targetReqInfo = {};
+
+//단건 승인 모달
+function salaryRequest(button) {
+   const tr = button.closest("tr");
+  console.log("단건 요청시작");
+
+   const empId = tr.querySelector("td[data-salaryid]")?.textContent.trim();
+   const salaryId = tr.querySelector("td[data-salaryid]")?.getAttribute("data-salaryid");
+   const netSalary = parseInt(tr.querySelector("td:nth-child(11)")?.innerText.replace(/,/g, "") || 0);
+   const payStatus = button.innerText.trim();
+   console.log("payStatus",payStatus);
+   
+   const finalBtn = tr.querySelector("button[onclick*='salaryFinal']");
+   console.log("finalBtn",finalBtn);
+   const finalStatus = finalBtn?.innerText.trim();  
+
+  if (finalStatus === "확정대기") {
+    alert("지급 요청은 급여가 확정된 이후 가능합니다.");
+    return;
+  }
+
+  targetReqButton = button;
+  targetReqInfo = { empId, salaryId, payStatus };
+
+  document.getElementById("requestEmpCount").innerText = 1;
+  document.getElementById("requestTotalAmount").innerText = netSalary.toLocaleString();
+
+  const modal = new bootstrap.Modal(document.getElementById("requestModal"));
+  modal.show();
+
+  const reqBtn = document.getElementById("confirmRequest");
+  reqBtn.innerText = payStatus === "승인" ? "승인취소" : "지급승인";
+  reqBtn.onclick = doRequestSingle;
+}
+
+// 단건 승인 요청 처리
+function doRequestSingle() {
+  const btn = targetReqButton;
+  const { empId, salaryId, payStatus } = targetReqInfo;
+  const afterStatus = payStatus === "승인" ? "승인대기" : "승인";
+
+  $.ajax({
+    url: "/salary/request",
+    type: "POST",
+    data: { empId, salaryId },
+    success(res) {
+   console.log("요청쪽 res", res);
+      if (res.cnt === 1) {
+   console.log("요청쪽 res.cnt", res.cnt);
+        btn.innerText = afterStatus;
+        btn.classList.toggle("btn-danger", afterStatus === "승인");
+        btn.classList.toggle("btn-outline-primary", afterStatus === "승인대기");
+
+        const td = btn.closest("td");
+        let dateDiv = td?.querySelector(".request-date");
+
+        if (afterStatus === "승인") {
+          if (!dateDiv) {
+            dateDiv = document.createElement("small");
+            dateDiv.className = "request-date text-muted mt-1";
+            td.appendChild(dateDiv);
+          }
+          dateDiv.innerText = res.reqDate;
+		  
+		  // 여기서 다시 tr 선언
+		  const tr = btn.closest("tr");
+		  
+		  //3초후 지급완료 버튼반영
+		  setTimeout(() => {
+		           const paidBtn = tr.querySelector("button[onclick*='salaryPaid']");
+		           if (paidBtn) {
+		             paidBtn.innerText = "지급완료";
+		             paidBtn.classList.remove("btn-outline-primary");
+		             paidBtn.classList.add("btn-danger");
+
+		             let payDateDiv = paidBtn.querySelector("small");
+		             if (!payDateDiv) {
+		               payDateDiv = document.createElement("small");
+		               payDateDiv.className = "request-date text-muted mt-1";
+		               paidBtn.appendChild(payDateDiv);
+		             }
+		             payDateDiv.innerText = new Date().toISOString().split("T")[0];
+		           }
+		         }, 3000);
+		  
+		  
+        } else {
+          if (dateDiv) dateDiv.remove();
+        }
+
+        document.querySelector("#reqPayCount").innerText = `${res.reqCount}명`;
+        showToast("✅ 작업이 성공적으로 완료되었습니다.");
+
+        const modalEl = document.getElementById("requestModal");
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modalInstance.hide();
+		
+      } else {
+        alert("승인처리 중 오류가 발생했습니다.");
+      }
+    },
+    error() {
+      alert("서버 통신 실패");
+    }
+  });
+}
+
+
+let allReqStatus = false;
+
+// 일괄 승인 모달 오픈
+function openRequestBulkModal(obj) {
+  const selectedDate = document.querySelector("#payDate").value;
+  const [selectYear, selectMonth] = selectedDate.split("-");
+
+  const rows = document.querySelectorAll("#salaryTable tr");
+  const salaryList = [];
+  
+  let totalNetAmount = 0;
+
+  rows.forEach(row => {
+    const btn = row.querySelector("button[onclick*='salaryRequest']");
+    const status = btn?.innerText.trim();
+
+    const empId = row.querySelector("td[data-salaryid]")?.textContent.trim();
+    const salaryId = row.querySelector("td[data-salaryid]")?.getAttribute("data-salaryid");
+    const netSalary = parseInt(row.querySelector("td:nth-child(11)")?.innerText.replace(/,/g, "") || "0");
+
+    if ((!allReqStatus && status === "승인대기") || (allReqStatus && status === "승인")) {
+      if (empId && salaryId) {
+        salaryList.push({ empId, salaryId });
+      totalNetAmount += netSalary;
+      }
+    }
+  });
+
+  if (salaryList.length === 0) {
+    alert(allReqStatus ? "승인취소 대상이 없습니다." : "승인할 대상이 없습니다.");
+    return;
+  }
+
+  // 전역 저장
+  window.reqBulkParam = {
+    obj,
+    payYear: selectYear,
+    payMonth: selectMonth,
+    salaryList
+  };
+  
+  console.log("일괄모달로드 obj",obj);
+
+  // 모달 내용 표시
+  document.getElementById("requestEmpCount").innerText = salaryList.length;
+  document.getElementById("requestTotalAmount").innerText = totalNetAmount.toLocaleString();
+
+  // 버튼 리바인딩
+  const reqBtn = document.getElementById("confirmRequest");
+  const newReqBtn = reqBtn.cloneNode(true);
+  reqBtn.parentNode.replaceChild(newReqBtn, reqBtn);
+
+  newReqBtn.innerText = allReqStatus ? "일괄 승인취소" : "일괄 승인";
+  
+  newReqBtn.addEventListener("click", () => {
+    doRequestBulk(obj);  // 아래 함수 호출
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("requestModal"));
+    modal.hide();
+  });
+
+  // 모달 오픈
+  const modal = new bootstrap.Modal(document.getElementById("requestModal"));
+  modal.show();
+}
+
+// 일괄 승인 Ajax 요청
+function doRequestBulk(obj) {
+  console.log("일괄승인 들어오는지 확인");
+  console.log("obj", obj);
+  const selectedDate = document.querySelector("#payDate").value;
+  const [selectYear, selectMonth] = selectedDate.split("-");
+
+  const rows = document.querySelectorAll("#salaryTable tr");
+  const salaryList = [];
+
+  rows.forEach(row => {
+    const requestBtn = row.querySelector("button[onclick*='salaryRequest']");
+    const status = requestBtn?.innerText.trim();
+
+    const empId = row.querySelector("td[data-salaryid]")?.textContent.trim();
+    const salaryId = row.querySelector("td[data-salaryid]")?.getAttribute("data-salaryid");
+
+    if (!allReqStatus && status === "승인대기") {
+      if (empId && salaryId) {
+        salaryList.push({ empId, salaryId });
+      }
+    }
+
+    if (allReqStatus && status === "승인") {
+      if (empId && salaryId) {
+        salaryList.push({ empId, salaryId });
+      }
+    }
+  });
+
+  if (salaryList.length === 0) {
+    alert(allReqStatus ? "승인취소 대상이 없습니다." : "승인할 대상이 없습니다.");
+    return;
+  }
+
+  const param = {
+    salaryList,
+    payYear: selectYear,
+    payMonth: selectMonth
+  };
+
+  $.ajax({
+    url: `/salary/requestAll?payYear=${selectYear}&payMonth=${selectMonth}`,
+    type: "POST",
+    contentType: "application/json",
+    data: JSON.stringify(param),
+    success: function (res) {
+      console.log("일괄승인  res", res);
+      document.querySelector("#reqPayCount").innerText = `${res.reqPayCount}명`;
+      alert(allReqStatus ? "일괄 승인취소 완료" : "일괄 승인 완료");
+
+      allReqStatus = !allReqStatus;
+      obj.innerText = allReqStatus ? "승인 일괄취소" : "승인 일괄신청";
+
+      salaryList.forEach(item => {
+        const row = document.querySelector(`#salaryTable td[data-salaryid="${item.salaryId}"]`)?.closest("tr");
+        const btn = row?.querySelector("button[onclick*='salaryRequest']");
+        let dateDiv = row?.querySelector(".request-date");
+
+        if (btn) {
+          const newStatus = allReqStatus ? "승인" : "승인대기";
+          btn.innerText = newStatus;
+          btn.classList.remove("btn-danger", "btn-primary");
+          btn.classList.add(newStatus === "승인" ? "btn-danger" : "btn-primary");
+
+          if (newStatus === "승인") {
+            if (!dateDiv) {
+              dateDiv = document.createElement("small");
+              dateDiv.className = "request-date text-muted mt-1";
+              btn.parentElement.appendChild(dateDiv);
+            }
+            dateDiv.innerText = new Date().toISOString().split("T")[0];
+
+            // 3초 후 지급완료 버튼으로 자동 변경
+            setTimeout(() => {
+              const paidAllBtn = row.querySelector("button[onclick*='salaryPaid']");
+              if (paidAllBtn) {
+                paidAllBtn.innerText = "지급완료";
+                paidAllBtn.classList.remove("btn-outline-primary");
+                paidAllBtn.classList.add("btn-danger");
+
+                let payDateDiv = paidAllBtn.querySelector("small");
+                if (!payDateDiv) {
+                  payDateDiv = document.createElement("small");
+                  payDateDiv.className = "request-date text-muted mt-1";
+                  paidAllBtn.appendChild(payDateDiv);
+                }
+                payDateDiv.innerText = new Date().toISOString().split("T")[0];
+              }
+            }, 3000);
+          } else {
+            if (dateDiv) dateDiv.remove();
+          }
+        }
+      });
+
+      showToast("✅ 일괄 승인 처리가 완료되었습니다.");
+    },
+    error() {
+      alert("승인요청 처리 실패");
+    }
+  });
+}
+
+		   
+		   
+
+
+
+
+// 공통 토스트 메시지
+function showToast(msg) {
+  const container = document.getElementById("toastArea");
+  container.innerHTML = `
+    <div class="toast align-items-center text-bg-success border-0 show" role="alert">
+      <div class="d-flex">
+        <div class="toast-body">${msg}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  `;
+  const toastEl = container.querySelector(".toast");
+  const bsToast = new bootstrap.Toast(toastEl);
+  bsToast.show();
+}
+
+
+
+
+
+

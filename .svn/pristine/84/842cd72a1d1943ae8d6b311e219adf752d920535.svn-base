@@ -1,0 +1,87 @@
+package kr.or.ddit.approval.service;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.annotations.Param;
+
+import kr.or.ddit.approval.vo.ApprovalStatusCountVO;
+import kr.or.ddit.approval.vo.DraftApproverVO;
+import kr.or.ddit.employee.vo.EmployeeVO;
+
+public interface ApproverService {
+
+	/**
+	 * 결재자 결재 문서 정보 -> 결재 대기함 
+	 */
+	public List<DraftApproverVO> getMyApprovalInfo(String aprId);
+	
+	
+	
+	/**
+	 * 결재라인 리스트 
+	 * @param empId
+	 * @return
+	 */
+	public List<EmployeeVO> getLineApprovers(String empId);
+	
+	
+	/**
+	 * 시연용 결재라인 즐겨찾기 리스트 
+	 * @param empId
+	 * @return
+	 */
+	public List<EmployeeVO> getFavoriteApprovers(String empId);
+	
+	
+	
+	/**
+	 * 본인 부서 노드 열 때 사용 
+	 * @param empId
+	 * @return
+	 */
+	public EmployeeVO getEmployeeById(String empId);
+	
+	
+	/**
+     * 여러 결재라인을 등록합니다.
+     */
+    public List<DraftApproverVO> insertApprovalLine(List<DraftApproverVO> approverList);
+	
+    
+    /**
+     * 결재 진행함 목록 조회
+     * (보류 상태 또는 승인 상태이지만 후속 결재자가 남아있는 경우)
+     */
+    public List<DraftApproverVO> approverProcessList(String approverId);
+    
+    
+    /**
+	 * 결재자 입장에서 -> 대기/승인/반려/결재중 문서 확인 차트용 
+	 * @param approverId
+	 * @return
+	 */
+	public List<ApprovalStatusCountVO> selectApproverChart(String approverId);
+    
+    
+    /**
+	 * 대기/승인/반려 카운트 
+	 * @return
+	 */
+	public List<Map<String, Object>> selectApproverCountsGroup(String empId);
+    
+    /**
+     * 종결함 -> 최종 승인, 반려된 문서 조회(남은 결재라인 x) 
+     * @param approverId
+     * @return
+     */
+    public List<DraftApproverVO> approverComplitedList(String approverId);
+	/**
+	 * 결재자가 결재 대기 상세정보를 볼 때 
+	 * @param draftId
+	 * @return
+	 */
+	public List<DraftApproverVO>  getMyApprovalInfoDetail(Long draftId);
+	
+}

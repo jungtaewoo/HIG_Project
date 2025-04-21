@@ -1,0 +1,451 @@
+package kr.or.ddit.approval.service;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import kr.or.ddit.annual.vo.AnnualHistoryVO;
+import kr.or.ddit.annual.vo.AnnualManageVO;
+import kr.or.ddit.approval.vo.DraftApproverVO;
+import kr.or.ddit.approval.vo.DraftBoxVO;
+import kr.or.ddit.approval.vo.DraftDetailVO;
+import kr.or.ddit.approval.vo.DraftManageMentVO;
+import kr.or.ddit.approval.vo.DraftTemplateVO;
+import kr.or.ddit.employee.vo.EmployeeVO;
+import kr.or.ddit.file.vo.FileDetailVO;
+import kr.or.ddit.mybatis.mappers.annual.AnnualMapper;
+import kr.or.ddit.mybatis.mappers.approval.ApprovalMapper;
+import kr.or.ddit.mybatis.mappers.approval.ApprovalProcessMapper;
+import kr.or.ddit.mybatis.mappers.attendance.attendanceMapper;
+import kr.or.ddit.mybatis.mappers.employee.EmployeeMapper;
+import kr.or.ddit.qr.controller.QrWebSocket;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 
+ * @author CHOI
+ * @since 2025. 3. 18.
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *   
+ *   수정일      			수정자           수정내용
+ *  -----------   	-------------    ---------------------------
+ *  2025. 3. 18.     	CHOI	        전자결재 진행 
+ *
+ * </pre>
+ */
+@Slf4j
+@Service
+public class ApprovalProcessServiceImpl implements ApprovalProcessService {
+	// 연차 사용 내역 업데이트 및 근태기록 인서트 
+	@Inject
+	private AnnualMapper Amapper;
+	@Inject
+	private attendanceMapper amapper;
+	
+	@Inject
+	private ApprovalProcessMapper mapper;
+	
+	@Inject
+	private ApprovalMapper apprMapper;
+	
+	@Inject
+	private EmployeeMapper empMapper;
+	
+	//기안자가 결재를 올렸을 때 -> 해당 결재자에게 알림 전송 
+	@Inject
+	private QrWebSocket qrWebSocket;
+	
+	/**
+	 * 기안자가 본인의 기안자 정보, 문서 카테고리, 최종 결재자, 첨부 파일 여부 볼 수 있음
+	 * @param empId 기안자 
+	 * @return
+	 */
+	@Override
+	public List<DraftManageMentVO> writeDraftMangeMent(String empId)  {
+		return mapper.writeDraftMangeMent(empId);
+	}
+	
+	
+	/**
+     * 기안자가 본인의 상신 상세 정보를 조회한다.
+     * @param params - 조회 조건(Map) (예: draftId, empId)
+     * @return 기안 상세 정보 (결재자 정보는 리스트로 매핑됨)
+     */
+    public DraftManageMentVO getMyDraftDetail(Map<String, Object> params) {
+    	return mapper.getMyDraftDetail(params);
+    }
+	
+	
+	/**
+	 * 기안된 문서 리스트 조회 -> 기안자 정보, 문서 카테고리, 최종 결재자, 첨부 파일 여부
+	 */
+	@Override
+	public List<DraftManageMentVO> writeDraftMangeMentList() {
+		return mapper.writeDraftMangeMentList();
+	}
+
+	/**
+	 * 기안 관련 정보 넣기 
+	 */
+	@Override
+	public void insertAnnualHistory(AnnualHistoryVO historyVO) {
+		mapper.insertAnnualHistory(historyVO);
+	}
+	
+	/**
+     * 연차 종류 필드에 들어갈 select 태그 
+     * @return
+     */
+	@Override
+    public List<AnnualManageVO> selectAvailableAnnualTypes(){
+    	return mapper.selectAvailableAnnualTypes();
+    }
+	
+	/**
+	 * 전자결재 문서 기안 (여러 개의 insert, update 하면 트랜잭션 기능)
+	 * 
+	 */
+	@Transactional
+	@Override
+	public void submitDraft(DraftManageMentVO draftMentVO
+			, List<DraftApproverVO> approverList
+			, AnnualHistoryVO historyVO
+			, List<DraftBoxVO> draftBoxList
+			) {
+		 // 기본 기안 상태를 설정 (최초 기안 시 아무 값이 없다면 "대기"로 지정)
+		if (StringUtils.isBlank(draftMentVO.getDraftStatus())) {
+		    draftMentVO.setDraftStatus("대기");
+		}
+		
+		// 재상신이라면 상태를 "대기"로 바꿔치기
+	    if ("반려".equals(draftMentVO.getDraftStatus()) || "회수".equals(draftMentVO.getDraftStatus())) {
+	        draftMentVO.setDraftStatus("대기");
+	    }
+		
+		//1. 기안 문서를 저장 
+		mapper.insertDraftManagement(draftMentVO);
+		
+		//기안자가 해당 문서를 결재자에게 보내는 거니까 알림을 보내는 사람은 로그인한 유저이므로 -> authName값 셋팅 
+		 // 기안자 이름이 null이라면 현재 로그인 사용자에서 얻어오기 (예시)
+	    if(draftMentVO.getDraftEmpName() == null || draftMentVO.getDraftEmpName().trim().isEmpty()){
+	        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	        if(auth != null){
+	        	String loginUserId = auth.getName();
+	        	EmployeeVO empVO = empMapper.selectEmp(loginUserId);
+	        	// empVO.getEmpName() → "박도칠"
+	        	draftMentVO.setDraftEmpName(empVO.getName()); 
+	        }
+	    }
+		
+		
+		  // 2. 결재자 정보 삽입
+        for (DraftApproverVO approverOne : approverList) {
+        	 if (approverOne.getDraftId() == null) {
+        		 approverOne.setDraftId(draftMentVO.getDraftId());
+             }
+            // (A) 결재자 이름으로 DB에서 emp_id 조회
+            if (approverOne.getApproverName() != null && !approverOne.getApproverName().isEmpty()) {
+                String foundId = mapper.selectEmpIdByName(approverOne.getApproverName());
+                // foundId가 null이면 '해당 이름의 직원이 없음' 처리 or 기본값 설정
+                approverOne.setApproverId(foundId);
+            }
+
+            // (B) 기본값 세팅
+            if (approverOne.getAprYn() == null || approverOne.getAprYn().trim().isEmpty()) {
+                approverOne.setAprYn("N");      // 기본값 예: 미결(N)
+            }
+            if (approverOne.getAprReason() == null || approverOne.getAprReason().trim().isEmpty()) {
+                approverOne.setAprReason("기본 사유");  // 기본 사유 공백 등
+            }
+            if (approverOne.getAprStatus() == null || approverOne.getAprStatus().trim().isEmpty()) {
+                approverOne.setAprStatus("대기"); // 기본 결재 상태
+            }
+
+            // (C) 기안 문서와 연결
+            approverOne.setDraftId(draftMentVO.getDraftId());
+
+            // (D) DB insert
+            mapper.insertDraftApprover(approverOne);
+            
+            
+            log.info("======================approver{}",draftMentVO);
+        	if(approverOne.getApproverId() != null && !approverOne.getApproverId().isEmpty()) {
+        		qrWebSocket.sendMessageToUser(approverOne.getApproverId(), 
+        				"기안자 : " + draftMentVO.getDraftEmpName()+"님의 문서가 제출되었습니다.");
+        	}
+            
+        }
+		
+	    
+	    //템플릿 카테고리 넣기
+		DraftTemplateVO drafTemVO = apprMapper.draftTemplateDetail(draftMentVO.getTemplateId());
+		String templateCategory = null;
+	    if (drafTemVO != null) {
+	        templateCategory = drafTemVO.getTemplateCategory(); 
+	        // 실제 컬럼명 / VO 필드명은 프로젝트에 맞게 수정
+	    }
+		
+	    // 3. 연차 정보 insert (AnnualHistory)
+	    if(historyVO != null) {
+	    	historyVO.getHistoryId(); // 시퀀스 자동 생성 연차기록코드
+	    	historyVO.setEmpId(draftMentVO.getEmpId()); // 직원 id 셋팅
+	    	historyVO.getLeaveDate(); // 연차 시작일
+	    	historyVO.getLeaveEndDate(); // 연차 종료일
+	    	// 만약 historyVO의 상태가 이미 설정되어 있다면 (예: "반려"), 그대로 사용하고
+	        // 그렇지 않으면 기본값 "대기"를 넣도록 한다.
+	        if(historyVO.getStatus() == null || historyVO.getStatus().trim().isEmpty()) {
+	            historyVO.setStatus("대기");
+	        }
+	    	historyVO.getReason(); // 연차신청 사유
+	    	historyVO.setRejectReason("");// 반려 사유 
+	    	historyVO.getRequestDate(); // 요청 날짜 
+	    	historyVO.getAnnualCode(); // 연차종류 코드
+	    	historyVO.setDraftId(draftMentVO.getDraftId()); // draftId 값에 기안자 코드 넣기 
+	    	//연차 관련 정보 삽입 
+	    	mapper.insertAnnualHistory(historyVO);
+	    }
+	    
+	     // 4. 문서함 등록
+		 // 결재자 중 첫 번째 결재자(혹은 0번 인덱스) ID를 가져온다고 가정
+	    String firstApproverId = null;
+	    if (approverList != null && !approverList.isEmpty()) {
+	        firstApproverId = approverList.get(0).getApproverId();
+	    }
+	    // 결재라인이 없거나 첫 번째 결재자의 ID가 없다면 기안자의 empId를 기본값으로 사용하거나 예외 발생
+	    if (firstApproverId == null || firstApproverId.trim().isEmpty()) {
+	        // 예외를 던져 결재라인 지정 없이 제출되지 않도록 할 수도 있고...
+	        
+	        // 또는 기안자(empId)를 기본 결재자로 설정 (비즈니스 로직에 따라 다름)
+	        firstApproverId = draftMentVO.getEmpId();
+	    }
+
+	    
+		// 여기서 draftBoxList가 비어있다면, 서버 쪽에서 기본 문서함 생성하여 설정
+        //draftBoxList가 널이거나 비어있으면
+        if(draftBoxList == null || draftBoxList.isEmpty()) {
+        	DraftBoxVO defBoxVO = new DraftBoxVO();
+        	defBoxVO.getBoxId(); // 기본 문서함 코드 
+        	defBoxVO.setDraftId(draftMentVO.getDraftId()); //기안자 코드
+        	defBoxVO.setEmpId(draftMentVO.getEmpId()); //로그인한 코드
+        	defBoxVO.setApproverId(firstApproverId); //결재자 ID 
+        	defBoxVO.setDocTitle(draftMentVO.getDraftTitle()); //문서명 
+        	defBoxVO.setDocCategory(templateCategory); // 문서 카테고리 -> 근태관리, 인사관리
+        	defBoxVO.setDocType("상신함"); // 문서함 유형 
+        	defBoxVO.setDocStatus("등록"); // 등록 -> 기본 상태 
+        	defBoxVO.getLastUpdate(); // 마지막 수정일
+        	defBoxVO.getCreateDate(); // 문서 등록일
+//        	defBoxVO.getDocFile(); //문서함에 등록된 파일 
+        	mapper.insertDraftBox(defBoxVO);
+        } else {
+        	// 비어 있지 않으면 
+        	for(DraftBoxVO draftBox : draftBoxList) {
+	            draftBox.setDraftId(draftMentVO.getDraftId());
+	            mapper.insertDraftBox(draftBox); 
+	        }
+        }
+        
+        
+       
+		
+		
+	}
+
+    /**
+     * 템플릿 제목 조회 메서드 추가
+     */
+    @Override
+    public String getTemplateTitle(Long templateId) {
+         return mapper.selectTemplateTitle(templateId);
+    }
+
+    /**
+     * 결재자 이름 검색 
+     */
+    @Override
+	public DraftApproverVO selectApproverName(String approverName) {
+		return mapper.selectApproverName(approverName);
+	}
+    
+    /**
+     * 연차 기록업데이트
+     */
+    @Override
+    @Transactional
+    public void updateAnnualHistoryStatus(AnnualHistoryVO historyVO) {
+        mapper.updateAnnualHistoryStatus(historyVO);
+    }
+    
+    
+	/**
+	 * 결재자가 결재 승인/반려/보류
+	 */
+    @Transactional
+    @Override
+    public void approveDraft(DraftApproverVO approverVO) {
+    	
+        // 1. 결재자 상태 업데이트
+    	log.info("1. 결재자 상태 업데이트 : {}", approverVO);
+        mapper.updateDraftApprover(approverVO);
+        
+        // 2. 남은 결재자 수 확인
+        int pendingApprovals = mapper.countPendingApprovals(approverVO.getDraftId());
+        log.info("2. 남은 결재자 수 확인 : {}", pendingApprovals);
+        
+        
+        // 3. 결재자의 상태에 따른 처리: 승인, 반려
+        // 3-1. 결재자의 상태정보 업데이트 정보 선언 -> 상태가 널이 아닐땐 해당 상태정보, 널일땐 대기 
+        String aprStatus = approverVO.getAprStatus() != null ? approverVO.getAprStatus().trim() : "대기";
+        
+        if ("승인".equalsIgnoreCase(aprStatus)) {
+        	
+            if (pendingApprovals == 0) {
+
+                double usedAnnual = 0.0;
+
+                if ("AC_10".equals(approverVO.getAnnualCode()) || "AC_11".equals(approverVO.getAnnualCode())) {
+                    // 반차는 날짜 계산 없이 0.5일 고정
+                    usedAnnual = 0.5;
+                } else {
+                    // 전체 연차는 날짜 범위 계산 필요
+                	
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    LocalDate startDate = LocalDateTime.parse(approverVO.getLeaveDate(), formatter).toLocalDate();
+                    LocalDate endDate = LocalDateTime.parse(approverVO.getLeaveEndDate(), formatter).toLocalDate();
+                          
+                    long days = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+                    usedAnnual = 1.0 * days;
+                }
+                // 연차 차감 및 사용 처리
+                Amapper.updateAnnual(approverVO.getDraftEmpId(), usedAnnual);
+
+                // 문서 상태 업데이트
+                mapper.updateDraftManagementStatus(approverVO.getDraftId(), "완료");
+                mapper.updateDraftBoxStatus(approverVO.getDraftId(), "완료");
+            }
+            
+        } else if ("반려".equalsIgnoreCase(aprStatus)) {
+            // 반려 상태일 경우, 문서 상태를 반려로 업데이트
+            mapper.updateDraftManagementStatus(approverVO.getDraftId(), "반려"); // 문서 상태: 반려
+            mapper.updateDraftBoxStatus(approverVO.getDraftId(), "반려"); // 문서함 상태: 반려
+        } else if ("보류".equalsIgnoreCase(aprStatus)) {
+            // 보류 상태일 경우, 문서 상태를 보류로 업데이트
+            mapper.updateDraftManagementStatus(approverVO.getDraftId(), "보류"); // 문서 상태: 보류
+            mapper.updateDraftBoxStatus(approverVO.getDraftId(), "보류"); // 문서함 상태: 보류
+        }
+        
+        log.info("4. 연차 기록 업데이트 초기치 : {}", approverVO);
+        // 4. 연차 기록 업데이트 (reject_reason은 사용하지 않으므로 상태만 업데이트)
+        AnnualHistoryVO historyVO = new AnnualHistoryVO();
+        historyVO.setDraftId(approverVO.getDraftId()); // 결재자 기안관리ID랑 매핑  
+        // 결재 처리 상태에 따라 연차 기록의 상태를 결정 (예: "완료", "반려",)
+        historyVO.setStatus(approverVO.getAprStatus());
+        //연차기록 상태 업데이트 
+        updateAnnualHistoryStatus(historyVO);
+        
+        
+        
+        
+        //결재 승인/반려시 기안자에게 알림 전송 
+        log.info("5-1. 결재 승인/반려시 기안자에게 알림 전송 approverVO : {}", approverVO);
+        DraftDetailVO draftDetailVO = mapper.getDraftDocDetail(approverVO.getDraftId());
+        log.info("5-2. 결재 승인/반려시 기안자에게 알림 전송 draftDetailVO : {}", draftDetailVO);
+        // ★ 결재 승인/반려 시 기안자에게 알림 전송 ★
+        // 먼저, 결재자 이름이 null이라면 현재 로그인 사용자의 정보를 이용하여 설정
+        if (approverVO.getApproverName() == null || approverVO.getApproverName().trim().isEmpty()) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null) {
+                String loginUserId = auth.getName();
+                EmployeeVO empVO = empMapper.selectEmp(loginUserId);
+                if (empVO != null && empVO.getName() != null) {
+                    approverVO.setApproverName(empVO.getName());
+                }
+            }
+        }
+        
+        log.info("6-1. 승인 / 반려 draftDetailVO : {}", draftDetailVO); // null로 해당 값은 비어있음 
+        log.info("6-2. 승인 / 반려 approverVO : {}", approverVO);
+        if(approverVO != null && approverVO.getApproverId() != null) {
+            String draftEmpId = approverVO.getApproverId();
+            // approverVO.getApproverName() 가 결재자 이름, 결재 처리 상태는 aprStatus
+            
+            log.info("승인 / 반려 draftDetailVO : {}", approverVO);
+            
+            String message = approverVO.getApproverName() + " 결재자가 기안 문서를 " 
+                             + approverVO.getAprStatus() + " 처리하였습니다.";
+            qrWebSocket.sendMessageToUser(draftEmpId, message);
+        }
+        
+        log.info("7. Approver processed: {}", approverVO);
+        
+    }
+    
+    
+    /**
+     * 상세보기 -> 파일처리 
+     */
+    public void insertDraftMentFile(Map<String, Object> paramMap) {
+    	mapper.insertDraftMentFile(paramMap);
+    }
+
+
+
+	/**
+	 * 기안코드를 통해 파일을 불러오기 
+	 */
+	@Override
+	public List<FileDetailVO> getFilesByDraftId(Long draftId) {
+		
+		return mapper.getFilesByDraftId(draftId);
+	}
+
+
+
+	
+	/**
+	 * 기안자가 작성한 문서를 불러오기 
+	 * @param draftId
+	 * @return
+	 */
+	@Override
+	public DraftDetailVO getDraftDocDetail(Long draftId) {
+		
+		return mapper.getDraftDocDetail(draftId);
+	}
+
+
+	/**
+	 * 기안자가 본인 문서를 회수 -> 대기, 결재 진행중, 보류 
+	 */
+	@Override
+	public void recallDraft(Map<String, Object> params) {
+		mapper.recallDraft(params);
+	}
+
+
+
+	
+
+
+
+
+	
+
+
+
+	
+
+}

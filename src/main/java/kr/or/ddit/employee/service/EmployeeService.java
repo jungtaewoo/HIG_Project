@@ -1,0 +1,45 @@
+package kr.or.ddit.employee.service;
+
+import java.util.List;
+import java.util.Map;
+
+import kr.or.ddit.employee.vo.EmployeeVO;
+
+public interface EmployeeService {
+	
+	public List<EmployeeVO> readEmpList();
+	public EmployeeVO readEmp(String empId); 
+	public boolean createEmp(EmployeeVO emp);
+	public boolean modifyEmp(EmployeeVO emp);
+	
+	//직원 상태 변경시 근로계약서 상태도 변경
+	public boolean updateEmpStatus(String empId, String empStatus);
+	
+	//전체 직원 수 조회
+	public int empCount();
+	
+	//올해 퇴사자 수 조회
+	public int resignCount();
+	
+	//올해 입사자 수 조회
+	public int  hireCount();
+	
+	// 직급별 인원수 비율
+	public List<Map<String, Object>> rankPercent(); 
+	
+	//근속년수별 인원수 비율
+	public List<Map<String, Object>> tunurePercent();
+	
+	//퇴사,휴직 관련
+	public int updateRetireInfo(EmployeeVO employeeVO);
+
+	public int updateLeaveInfo(EmployeeVO employeeVO);
+	
+	public List<EmployeeVO> selectEmpListList();
+	
+	//퇴사자 리스트
+	public List<EmployeeVO> retrieveRetireLeaveList();
+	
+	//인사 발령에서 부서와 팀을 기준으로 직원 추출
+	public List<Map<String,Object>> filterEmployee(String departmentId,String teamId);
+}

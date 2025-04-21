@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- * == 개정이력(Modification Information) ==
+ *
+ * 수정일 			수정자 			수정내용
+ * ============ ============== =======================
+ * 2025. 3. 13.     KHS 			최초 생성
+ *
+ -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.team.TeamMapper">
+
+	<!-- ResultMap 정의 -->
+	<resultMap id="teamMap" type="kr.or.ddit.team.vo.TeamVO" >
+		<id property="teamId" column="TEAM_ID" />
+		<result property="teamName" column="TEAM_NAME" />
+		<result property="teamStatus" column="TEAM_STATUS" />
+		<result property="teamPhonenumber" column="TEAM_PHONENUMBER" />
+		<result property="teamFaxnumber" column="TEAM_FAXNUMBER" />
+		<result property="departmentId" column="DEPARTMENT_ID" />
+
+		<association property="department"
+			javaType="kr.or.ddit.department.vo.DepartmentVO">
+			<result property="departmentId" column="DEPARTMENT_ID" />
+			<result property="departmentName" column="DEPARTMENT_NAME" />
+		</association>
+
+		<collection property="teamMembers" ofType="TeamMemberVO">
+			<id property="tmId" column="TM_ID" />
+			<result property="tmHr" column="TM_HR" />
+			<result property="teamId" column="TEAM_ID" />
+		</collection>
+
+		<collection property="accounts"
+			ofType="kr.or.ddit.account.vo.AccountVO" autoMapping="true">
+		</collection>
+
+		<collection property="employees"
+			ofType="kr.or.ddit.employee.vo.EmployeeVO" autoMapping="true">
+	        <association property="job" column="JOB_ID" javaType="kr.or.ddit.job.vo.JobVO">
+	            <result property="jobId" column="JOB_ID"/>
+	            <result property="jobName" column="JOB_NAME"/>
+	        </association>
+		</collection>
+
+	</resultMap>
+
+
+	<!-- 팀 목록 가져오기 -->
+	<select id="teamManageList" resultMap="teamMap">
+		SELECT
+		    D.DEPARTMENT_ID,
+		    D.DEPARTMENT_NAME,
+		    T.TEAM_ID,
+		    T.TEAM_NAME,
+		    E.NAME,
+		    J.JOB_NAME,
+		    D.DEPARTMENT_STATUS,
+		    T.TEAM_STATUS,
+            T.TEAM_PHONENUMBER,
+            T.TEAM_FAXNUMBER
+		FROM TEAM T
+		LEFT JOIN (
+		    SELECT *
+		    FROM EMPLOYEE
+		    WHERE JOB_ID IN (
+		          SELECT JOB_ID
+		          FROM JOB
+		          WHERE JOB_NAME = '팀장'
+		    )
+		) E ON T.TEAM_ID = E.TEAM_ID
+		LEFT JOIN DEPARTMENT D
+		    ON D.DEPARTMENT_ID = T.DEPARTMENT_ID
+		LEFT JOIN JOB J
+		    ON E.JOB_ID = J.JOB_ID
+		ORDER BY T.TEAM_ID ASC
+
+	</select>
+
+    <!-- 팀 상세 조회 -->
+    <select id="selectTeam" resultMap="teamMap">
+	    SELECT
+	        D.DEPARTMENT_ID,
+	        D.DEPARTMENT_NAME,
+	        T.TEAM_ID,
+	        T.TEAM_NAME,
+	        E.NAME,
+	        J.JOB_NAME,
+	        D.DEPARTMENT_STATUS,
+	        T.TEAM_STATUS,
+	        T.TEAM_PHONENUMBER,
+            T.TEAM_FAXNUMBER
+	    FROM TEAM T
+	    LEFT JOIN EMPLOYEE E
+	        ON T.TEAM_ID = E.TEAM_ID
+	    LEFT JOIN DEPARTMENT D
+	        ON D.DEPARTMENT_ID = T.DEPARTMENT_ID
+	    LEFT JOIN JOB J
+	        ON E.JOB_ID = J.JOB_ID
+	    WHERE T.TEAM_ID = #{teamId}
+	    ORDER BY J.JOB_ID DESC
+
+    </select>
+
+
+
+	<!-- 팀 등록 -->
+	<insert id="insertTeam" parameterType="kr.or.ddit.team.vo.TeamVO">
+	    <selectKey resultType="java.lang.Long" keyProperty="teamId" order="BEFORE">
+        	SELECT teamid_seq.NEXTVAL FROM DUAL
+    	</selectKey>
+	    INSERT INTO TEAM (
+	         TEAM_ID,
+	         DEPARTMENT_ID,
+	         TEAM_NAME,
+	         TEAM_PHONENUMBER,
+	         TEAM_FAXNUMBER,
+	         TEAM_STATUS
+	    ) VALUES (
+	         #{teamId,jdbcType=NUMERIC},
+	         #{departmentId,jdbcType=NUMERIC},
+	         #{teamName,jdbcType=VARCHAR},
+	         #{teamPhonenumber,jdbcType=VARCHAR},
+	         #{teamFaxnumber,jdbcType=VARCHAR},
+	         'Y'
+	    )
+	</insert>
+
+<!-- 	팀장 여부 등록 여러개 (테이블 수정으로 필요없음)-->
+<!-- 	<insert id="insertTeamMembers" parameterType="java.util.List"> -->
+<!-- 	    INSERT INTO TEAM_MEMBER (TEAM_ID, TM_ID, TM_HR) -->
+<!-- 	    <foreach collection="list" item="insertMember" separator="UNION ALL" open="SELECT * FROM ("> -->
+<!-- 	        SELECT -->
+<!-- 	            #{insertMember.teamId} AS TEAM_ID, -->
+<!-- 	            #{insertMember.tmId} AS TM_ID, -->
+<!-- 	            #{insertMember.tmHr} AS TM_HR -->
+<!-- 	        FROM DUAL -->
+<!-- 	    </foreach> -->
+<!-- 	    ) -->
+<!-- 	</insert> -->
+
+
+<!-- 	팀장 여부 등록 (테이블 수정으로 필요없음)-->
+<!-- 	<update id="insertTeamMember" parameterType="kr.or.ddit.team.vo.TeamMemberVO"> -->
+<!-- 		INSERT INTO TEAM_MEMBER ( -->
+<!-- 			TEAM_ID, -->
+<!-- 			TM_ID, -->
+<!-- 			TM_HR -->
+<!-- 		) VALUES ( -->
+<!-- 			#{teamId}, -->
+<!-- 			#{tmId}, -->
+<!-- 			#{tmHr} -->
+<!-- 		) -->
+<!-- 	</update> -->
+
+	<!-- 팀 항목 수정 -->
+	<update id="updateTeam" parameterType="kr.or.ddit.team.vo.TeamVO">
+	    UPDATE TEAM
+	    SET TEAM_NAME = #{teamName,jdbcType=VARCHAR},
+	        DEPARTMENT_ID = #{departmentId,jdbcType=NUMERIC},
+	        TEAM_PHONENUMBER = #{teamPhonenumber,jdbcType=VARCHAR},
+	        TEAM_FAXNUMBER = #{teamFaxnumber,jdbcType=VARCHAR}
+	    WHERE TEAM_ID = #{teamId,jdbcType=NUMERIC}
+	</update>
+
+	<!-- 팀 여러개 삭제 -->
+	<delete id="deleteTeams">
+	    DELETE FROM TEAM WHERE TEAM_ID IN
+	    <foreach item="teamId" collection="teamIds" open="(" separator="," close=")">
+	        #{teamId}
+	    </foreach>
+	</delete>
+
+	<!-- 팀 1개 삭제 -->
+	<delete id="deleteTeam">
+		DELETE FROM TEAM
+		WHERE TEAM_ID = #{teamId}
+	</delete>
+
+<!-- 	테이블 수정으로 아래쿼리 안씀 -->
+<!-- 	<update id="updateTeamMemberHR" parameterType="kr.or.ddit.team.vo.TeamMemberVO"> -->
+<!--         UPDATE TEAM_MEMBER -->
+<!--         SET TM_HR = #{updatemember.tmHr} -->
+<!--         WHERE TM_ID = #{updatemember.tmId} -->
+<!--         AND TEAM_ID = #{updatemember.teamId} -->
+<!-- 	</update> -->
+
+<!-- 	<delete id="deleteTeamMember" parameterType="java.util.List"> -->
+<!-- 		DELETE FROM TEAM_MEMBER -->
+<!-- 		WHERE TEAM_ID = #{teamId} -->
+<!-- 		AND TM_ID = #{tmId} -->
+
+<!-- 	</delete> -->
+
+
+
+
+<!-- 	<update id="updateTeamMembers" parameterType="java.util.List"> -->
+    <!-- 1. 기존 팀원 중 tmId가 변경된 경우 삭제 -->
+<!--     <foreach collection="list" item="deletemember"> -->
+<!--         <if test="deletemember.newTmId != null and deletemember.tmId != deletemember.newTmId"> -->
+<!--             DELETE FROM TEAM_MEMBER -->
+<!--             WHERE TM_ID = #{deletemember.tmId} -->
+<!--             AND TEAM_ID = #{deletemember.teamId} -->
+<!--         </if> -->
+<!--     </foreach> -->
+
+    <!-- 2. 기존 팀원 정보 업데이트 (tmHr 변경) -->
+<!--     <foreach collection="list" item="updatemember"> -->
+<!--         <if test="updatemember.newTmId == null or updatemember.tmId == updatemember.newTmId"> -->
+<!--             UPDATE TEAM_MEMBER -->
+<!--             SET TM_HR = #{updatemember.tmHr} -->
+<!--             WHERE TM_ID = #{updatemember.tmId} -->
+<!--             AND TEAM_ID = #{updatemember.teamId} -->
+<!--         </if> -->
+<!--     </foreach> -->
+
+<!--     3. 신규 팀원 추가 또는 tmId 변경 시 삽입 -->
+<!--     <foreach collection="list" item="insertmember"> -->
+<!--         <if test="insertmember.newTmId != null"> -->
+<!--             INSERT INTO TEAM_MEMBER (TEAM_ID, TM_ID, TM_HR) -->
+<!--             VALUES ( -->
+<!--                 #{insertmember.teamId}, -->
+<!--                 <choose> -->
+<!--                     <when test="insertmember.newTmId != null and insertmember.tmId != insertmember.newTmId"> -->
+<!--                         #{insertmember.newTmId} -->
+<!--                     </when> -->
+<!--                     <otherwise> -->
+<!--                         #{insertmember.tmId} -->
+<!--                     </otherwise> -->
+<!--                 </choose>, -->
+<!--                 #{insertmember.tmHr} -->
+<!--             ) -->
+<!--         </if> -->
+<!--     </foreach> -->
+<!-- 	</update> -->
+
+
+
+
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

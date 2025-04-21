@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+ * == 개정이력(Modification Information) ==
+ *   
+ *   수정일      			수정자           수정내용
+ *  ============   	============== =======================
+ *  2025. 3. 27.     	LIG            최초 생성
+ *
+-->
+
+<mapper namespace="kr.or.ddit.mybatis.mappers.deptcomment.DeptCommentMapper">
+	
+	<resultMap type="DeptCommentVO" id="DeptCommentMAP" autoMapping="true">
+		<id property="commentId" column="COMMENT_ID" />
+		<result property="name" column="name" />
+		<association property="rank" javaType="RankVO" autoMapping="true" />
+	</resultMap>
+
+
+
+	<!-- 글의 모든 댓글 리스트 -->
+	<select id="commentList" resultMap="DeptCommentMAP">
+		select 
+	    	dc.comment_id,
+            dc.DEPTNOTICE_ID,
+	    	dc.account_id,
+	    	dc.create_at,
+	    	dc.comment_content
+	    	,e.name
+            ,r.rank_name
+		from
+	    	dept_comment dc
+	    	JOIN employee e on e.emp_id = dc.account_id
+            join rank r on r.rank_id = e.rank_id
+		where
+	    	dc.DEPTNOTICE_ID = #{deptnoticeId}
+	    	ORDER BY CREATE_AT DESC
+	</select>
+	
+	<select id="commentDetail" resultMap="DeptCommentMAP">
+		select 
+	    	dc.comment_id,
+            dc.DEPTNOTICE_ID,
+	    	dc.account_id,
+	    	dc.create_at,
+	    	dc.comment_content
+	    	,e.name
+            ,r.rank_name
+		from
+	    	dept_comment dc
+	    	JOIN employee e on e.emp_id = dc.account_id
+            join rank r on r.rank_id = e.rank_id
+		where
+	    	dc.DEPTNOTICE_ID = #{deptnoticeId}
+	    	AND dc.comment_id = #{commentId}
+	</select>
+	
+	
+	<!-- 댓글 등록 -->
+	<insert id="commentInsert" parameterType="DeptCommentVO" keyColumn="COMMENT_ID" keyProperty="commentId">
+		<selectKey order="BEFORE" keyProperty="commentId" resultType="long">
+		  SELECT 
+		        DEPTCOMMENT_SEQ.NEXTVAL AS commentId
+		    FROM DUAL
+		</selectKey>
+		insert into DEPT_COMMENT (
+		    COMMENT_ID,
+		    DEPTNOTICE_ID,
+		    ACCOUNT_ID,
+		    CREATE_AT,
+		    COMMENT_CONTENT
+		    )
+		values (
+		    #{commentId},
+		    #{deptnoticeId},
+		    #{accountId},
+		    SYSDATE,
+		    #{commentContent}
+		    )
+	</insert>
+	
+	<!-- 댓글 삭제 -->
+	<delete id="deleteComment" parameterType="Long">
+		DELETE from DEPT_COMMENT
+	    WHERE comment_id = #{commentId}
+	</delete>
+	
+	
+</mapper>

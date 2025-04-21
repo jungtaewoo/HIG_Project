@@ -1,0 +1,96 @@
+package kr.or.ddit.account.vo;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+
+import kr.or.ddit.attendance.vo.AttendanceVO;
+import kr.or.ddit.department.vo.DepartmentVO;
+import kr.or.ddit.employee.vo.EmployeeVO;
+import kr.or.ddit.job.vo.JobVO;
+import kr.or.ddit.passwordrest.vo.PasswordResetVO;
+import kr.or.ddit.rank.vo.RankVO;
+import kr.or.ddit.role.vo.RoleVO;
+import kr.or.ddit.team.vo.TeamMemberVO;
+import kr.or.ddit.validate.InsertGroup;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
+@Data
+@ToString(exclude = "password")
+@EqualsAndHashCode(of="accountId")
+public class AccountVO implements Serializable{
+	@NotBlank(groups = InsertGroup.class)
+	private String accountId;//계정Id 20250509-01
+	@NotBlank(groups = InsertGroup.class)
+	private String empId;// 직원id 20250509-01
+	@NotBlank
+	private String password;
+	@NotNull
+	private Long departmentId; //부서id
+	@NotNull
+	private Long jobId; //직책id
+	@NotBlank(groups = InsertGroup.class)
+	private String empName;//직원이름
+	private int roleId;//권한 (권한설정으로 3/28, String에서 int로 변환)
+	@NotBlank
+	private boolean accountStatus;//계정상태, boolean타입 notnull불가
+	@NotBlank
+	private String accountDate;//계정등록일
+	private String accountDel;//계정비활성화일
+	private String accountUpdate;//계정수정일
+	private String tmId;
+	private String rankId;
+	
+	//계정비활성화 갯수
+	private String disabledAccountCount;
+	//권한별 계정개수
+	private int roleCount;
+	//권한별 롤타입
+	private String role_type;
+	
+	
+	//3.15일 컬럼추가
+	private String accountAdd1;
+	private String accountAdd2;
+	private String accountEmail;
+	private String accountPh;
+	
+	//3.27일 계정찾기로 인한 추가 직원테이블 컬럼
+	private String juminFront;
+	
+	//has a
+	private DepartmentVO department;
+	private RoleVO role;
+	private EmployeeVO employee;
+	private JobVO job;
+	private RankVO rank;
+//	private TeamMemberVO teamMember;
+	
+	//has many
+	private List<AttendanceVO> Attendance;
+
+	//로그인처리
+    private List<String> authorities; 
+    
+    private PasswordResetVO passwordReset;
+    
+    //권한설정
+    public List<String>getAuthorities(){
+    	List<String> roles = new ArrayList<>();
+    	switch(this.roleId) {
+    		case 90: roles.add("ROLE_USER"); break;
+    		case 91: roles.add("ROLE_TEAM_LEADER"); break;
+    		case 92: roles.add("ROLE_HR_ADMIN"); break;
+    		case 93: roles.add("ROLE_HR_MANAGER"); break;
+    	}
+    	return roles;
+    }
+    
+    
+}

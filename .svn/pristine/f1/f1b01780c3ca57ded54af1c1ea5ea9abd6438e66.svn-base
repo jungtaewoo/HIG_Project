@@ -1,0 +1,132 @@
+/** 
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *   
+ *   수정일      			수정자           수정내용
+ *  -----------   	-------------    ---------------------------
+ * 2025. 3. 19.     	CHOI            최초 생성
+ *
+ * </pre>
+ */
+$(document).ready(function() {
+    fn_approverProcess();
+});
+
+function fn_approverProcess() {
+    getLoggedInApproverId(function(approverId) {
+        if (!approverId) {
+            console.warn(" 로그인한 결재자 ID를 가져오지 못했습니다.");
+            return;
+        }
+
+        $.ajax({
+            url: '/approvalProcess/approverDrafts',
+            type: 'get',
+            data: { aprId: approverId }, // 동적으로 가져온 결재자 ID 파라미터로 전달
+            dataType: 'json',
+            success: function(data) {
+            //    console.log("결재자 기준 문서 조회", data);
+                renderDraftDocuments(data);  // 데이터 처리 후 렌더링
+            },
+            error: function() {
+                console.error("문서 조회 실패");
+                $("#draftDocumentsContainer").html(`<tr><td colspan="10">⚠️ 문서 조회 중 오류가 발생했습니다.</td></tr>`);
+            }
+        });
+    });
+}
+
+// 동적으로 로그인한 결재자 ID 가져오기
+function getLoggedInApproverId(callback) {
+    $.ajax({
+        url: '/approvalProcess/getApproverId',
+        type: 'GET',
+        success: function(empId) {
+       //     console.log("현재 로그인한 결재자 ID:", empId);
+            callback(empId); // 콜백 함수에 empId 전달
+        },
+        error: function(xhr, status, error) {
+           console.error("결재자 ID 조회 실패:", error);
+            callback(null); // 실패 시 null 전달
+        }
+    });
+}
+
+function renderDraftDocuments(data) {
+    let html = "";
+
+    if (!data || data.length === 0) {
+        console.warn("등록된 기안 문서가 없습니다.");
+        html = `<tr><td colspan="10">등록된 기안 문서가 없습니다.</td></tr>`;
+    } else {
+      //  console.log("문서 개수:", data.length); // 데이터 개수 확인
+
+        data.forEach(function(doc, index) {
+        //    console.log(`[${index}] 개별 데이터:`, doc);
+
+            let approvers = doc.draftApproverList && doc.draftApproverList.length > 0
+                ? doc.draftApproverList.map(a => `${a.approverName} (${a.aprStatus})`).join(", ")
+                : "결재 진행 중";
+
+				html += `<tr>
+		                       <td>${formatDate(doc.draftDate) || '-'}</td>
+							   <td>
+		                        <a href="/approval/draft/detailView?draftId=${doc.draftId}" class="draftDetailLink">
+		                          ${doc.draftTitle || '-'}
+		                        </a>
+		                      </td>
+		                       <td>${doc.draftDepartmentName || '미정'}</td>
+		                       <td>${doc.draftEmpName || '미등록'}</td>
+		                       <td>${doc.draftStatus || '-'}</td>
+		                       <td>${approvers}</td>
+		                       <td>${doc.aprYn === 'Y' ? '승인' : doc.aprYn === 'N' ? '미승인' : '미정'}</td>
+		                   </tr>`;
+        });
+    }
+
+    $("#draftDocumentsContainer").html(html); // 기존 내용 교체
+
+    // 데이터 로딩 후 DataTable 초기화
+    initializeDataTable();
+}
+
+function formatDate(dateString) {
+    if (!dateString) return "-";
+
+    let date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+        console.error("❌ Invalid date format:", dateString);
+        return "-";
+    }
+
+    let year = date.getFullYear();
+    let month = ('0' + (date.getMonth() + 1)).slice(-2);
+    let day = ('0' + date.getDate()).slice(-2);
+
+    return `${year}-${month}-${day}`;
+}
+
+// DataTable 초기화 함수
+function initializeDataTable() {
+    const dataTable = new simpleDatatables.DataTable("#approvalTable", {
+        searchable: true,
+        fixedHeight: false,
+    });
+
+    // 페이지 수 조절
+    document.getElementById("entriesPerPage").addEventListener("change", function() {
+        dataTable.pageLength = parseInt(this.value);
+        dataTable.refresh();
+    });
+
+    // 검색 기능
+    document.getElementById("searchBox").addEventListener("input", function() {
+        dataTable.search(this.value);
+    });
+}
+
+
+
+
+
+

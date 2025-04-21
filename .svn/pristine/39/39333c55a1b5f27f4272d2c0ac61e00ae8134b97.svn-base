@@ -1,0 +1,10 @@
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- 로고 심볼 -->
+  <g transform="translate(250, 150)">
+    <!-- 로고 아이콘 - 이제 흰색으로 변경 -->
+    <path d="M150 0 L250 60 L200 100 L150 70 L100 100 L150 140 L250 60 L300 100 L150 200 L0 100 L50 60 L150 130 L200 100 L150 70 L100 100 L50 60 Z" fill="white"/>
+  </g>
+  
+  <!-- 텍스트 - 이제 흰색으로 변경 -->
+  <text x="400" y="450" font-family="Arial, sans-serif" font-size="48" font-weight="bold" text-anchor="middle" fill="white">DAEDEOK ELECTRONICS</text>
+</svg>

@@ -1,0 +1,247 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://www.springframework.org/security/tags"
+	prefix="security"%>
+<!DOCTYPE html>
+<html lang="ko">
+<style>
+/* DataTables가 자동으로 할당하는 .even / .odd 등에서 폰트가 달라지지 않도록 통일 */
+.dataTables_wrapper tr.even td,
+.dataTables_wrapper tr.odd td {
+  font-size: inherit !important;
+}
+
+</style>
+<head>
+  <meta charset="UTF-8">
+  <title>결재현황</title>
+  
+  <!-- DataTables CSS (CDN 예시) -->
+  <link rel="stylesheet" type="text/css"
+        href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+  
+  <!-- 공통 스타일 -->
+  <style>
+    .dashboard-container { display: flex; flex-direction: column; gap: 1.5rem; }
+    .table-header { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+    .table-filters { display: flex; gap: .5rem; align-items: center; }
+    .summary-stats { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+    .stat-card {
+      flex: 1; min-width: 120px; padding: 1rem; text-align: center;
+      background: #f8f9fa; border-radius: .5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .stat-card .stat-title { font-size: .9rem; color: #6c757d; margin-bottom: .5rem; }
+    .stat-card .stat-value .badge { font-size: 1.2rem; font-weight: bold; }
+    .data-visualization { display: flex; justify-content: center; margin-bottom: 1.5rem; }
+    .chart-container {
+      max-width: 400px; width: 100%; padding: 1rem; background: #fff;
+      border-radius: .5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .chart-container canvas { width: 100% !important; height: auto !important; }
+    .table-container {
+      background: #fff; padding: 1rem; border-radius: .5rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+   .table-filters {
+	  display: flex;
+	  flex-wrap: wrap;
+	  align-items: center;
+	  gap: 0.5rem;
+	}
+	
+	/* 모든 필터 컨트롤의 기본 block/width를 inline-auto로 */
+	.table-filters .form-select-sm,
+	.table-filters .form-control-sm,
+	.table-filters .btn {
+	  display: inline-block;
+	  width: auto;
+	  margin: 0;
+	}
+	
+	/* 버튼을 input 높이에 맞춰 padding, height 조정 */
+	.table-filters .btn {
+	  padding: 0.375rem 0.75rem;              /* form-control 과 같은 수직 패딩 */
+	  height: calc(1.5em + 0.75rem + 2px);    /* bootstrap form-control-sm 높이와 동일 */
+	  line-height: 1.5;                       /* 텍스트 수직 정렬 */
+	}
+	
+	/* 라벨 간격 및 줄바꿈 방지 */
+	.table-filters label {
+	  margin: 0 0.25rem 0 0;
+	  white-space: nowrap;
+	}
+	.top-bar {
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+           padding: 10px 20px;
+           margin-bottom: 20px;
+           background-color: transparent; 
+           box-shadow: none;
+           border: none;
+	 }
+	 /* 배지 공통 스타일 (Bootstrap과 유사) */
+	.badge-status {
+	  display: inline-block;
+	  min-width: 50px;    /* 상태명이 2~3글자라도 최소 너비 확보 */
+	  text-align: center;
+	  padding: 0.4em 0.7em;   /* 배지 안쪽 여백 */
+	  font-size: 0.8rem;      /* 글자 크기 통일 */
+	  color: #fff;            /* 배경색 대비 텍스트 흰색 */
+	  border-radius: 0.4rem;
+	  /* bg-success, bg-danger 등은 Bootstrap 클래스 사용 */
+	}
+	
+	/* 배지 옆에 달린 결재자명 등은 배지 밖에서 별도 표시 */
+	.approver-name {
+	  margin-left: 4px;   /* 배지와 일정 간격 */
+	  color: #666;        /* 일반 텍스트 색상 예시 */
+	  font-size: 0.8rem;  /* 배지 글자 크기와 비슷하게 맞춤 */
+	}
+	 
+	 /* 예: DataTables 테이블 내 링크 스타일 통일 */
+	a:link, a:visited {
+	  color: #435EBE; 
+	  font-size: 16px; 
+	  /* ... */
+	}
+	 /* DataTables에서 생성하는 행(짝수/홀수 모두) 및 셀에 동일한 폰트 크기, 줄 높이 적용 */
+   #approverTable tbody tr,
+   #approverTable tbody td {
+     font-size: 16px !important;  /* 원하는 폰트 크기로 조절 */
+     line-height: 1.5 !important;  /* 줄 높이 조절 */
+   }
+	 
+	 
+  </style>
+  
+  <!-- (옵션) Chart.js + summary 업데이트 스크립트 -->
+  <script src="${pageContext.request.contextPath}/resources/js/approval/approverChart.js"></script>
+</head>
+<body>
+<div class="top-bar">
+    <!-- 좌측: 버튼 그룹 -->
+    <div>
+      <button type="button" class="btn btn-outline-secondary" onclick="history.back();">
+        <i class="fas fa-arrow-left"></i> 
+      </button>
+    </div>
+    
+    
+    <!-- 우측: Breadcrumb -->
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item fw-bold text-primary">📌 Quick Menu</li>
+        <li class="breadcrumb-item"><a href="/approval/templateList">문서작성</a></li>
+        <li class="breadcrumb-item "><a href="/approval/mydrafts">제출문서</a></li>
+        <li class="breadcrumb-item active" aria-current="page">결재현황</a></li>
+        
+        <security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+        	<li class="breadcrumb-item"><a href="/approval/list">결재양식</a></li>
+        </security:authorize>
+      </ol>
+    </nav> 
+</div>
+
+<section class="section">
+  <div class="card">
+    <!-- 카드 헤더 -->
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 class="mb-0">결재현황</h2>
+      <div>
+        <a class="btn btn-primary btn-sm" href="/approval/templateList">문서 작성</a>
+        <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">새로고침</button>
+      </div>
+    </div>
+    
+    <!-- 카드 바디 -->
+    <div class="card-body dashboard-container">
+      <!-- 필터 바 -->
+      <div class="table-header">
+        <div class="table-filters">
+          <label for="statusFilter">상태:</label>
+          <select id="statusFilter" class="form-select form-select-sm">
+            <option value="all">전체</option>
+            <option value="draft">대기</option>
+            <option value="process">진행중</option>
+            <option value="approved">승인</option>
+            <option value="rejected">반려</option>
+          </select>
+          <label for="rowsPerPage">건수:</label>
+          <select id="rowsPerPage" class="form-select form-select-sm">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+          <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="검색">
+          <button id="searchBtn" class="btn btn-sm btn-primary">검색</button>
+        </div>
+      </div>
+      
+      <!-- 요약 카드 (옵션) -->
+      <div class="summary-stats">
+        <div class="stat-card">
+          <div class="stat-title">대기</div>
+          <div class="stat-value">
+            <span class="badge bg-secondary" data-status="대기">0</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">진행중</div>
+          <div class="stat-value">
+            <span class="badge bg-info" data-status="진행중">0</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">승인</div>
+          <div class="stat-value">
+            <span class="badge bg-success" data-status="승인">0</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">반려</div>
+          <div class="stat-value">
+            <span class="badge bg-danger" data-status="반려">0</span>
+          </div>
+        </div>
+        
+      </div>
+      
+      <!-- 차트 (옵션) -->
+      
+      
+      <!-- 테이블 -->
+        <table id="approverTable" class="table table-striped">
+          <thead>
+            <tr>
+              <th>문서ID</th>
+              <th>제목</th>
+              <th>기안일</th>
+              <th>기안자</th>
+              <th>부서</th>
+              <th>결재자</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody id="approverTable" style="width: 100%;">
+            <!-- JS에서 <tr> 생성 -->
+          </tbody>
+        </table>
+    </div>
+  </div>
+</section>
+<!-- jQuery, DataTables JS (CDN 예시) -->
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<!-- JSP에서 contextPath를 JS 전역변수로 설정 -->
+<script type="text/javascript">
+  var ctx = '${pageContext.request.contextPath}';
+</script>
+
+<!-- 통합 스크립트 (ctx, jQuery, DataTables 모두 로드된 후) -->
+<script src="${pageContext.request.contextPath}/resources/js/approval/approverCombined.js"></script>
+
+</body>
+</html>

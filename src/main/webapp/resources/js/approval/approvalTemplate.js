@@ -1,0 +1,159 @@
+/**
+ * 템플릿(HTML 양식) 불러오기 + 데이터 자동 삽입
+ */
+async function loadTemplate(templateId) {
+    try {
+        const response = await axios.get(`/approval/template/${templateId}`);
+        const file = response.data;
+
+        if (!file.detailId) {
+            throw new Error("detailId가 존재하지 않습니다.");
+        }
+
+        let filePath = `/file/download/${file.detailId}`;
+
+        console.log(" 다운로드할 파일 경로:", filePath);
+
+        // 다운로드 버튼에 링크 설정
+        const downloadBtn = document.getElementById("downloadButton");
+        if (downloadBtn) {
+            downloadBtn.setAttribute("href", filePath);
+            downloadBtn.setAttribute("download", `template_${templateId}.html`);
+        }
+
+        // HTML 파일 다운로드 및 파싱
+        const htmlResponse = await axios.get(filePath);
+        console.log(" 불러온 HTML:", htmlResponse.data);
+
+        // 다운로드된 HTML을 DOM으로 변환
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlResponse.data, "text/html");
+
+        const formElement = doc.querySelector("form");
+        if (!formElement) {
+            throw new Error(" 불러온 HTML에 <form> 태그가 없습니다.");
+        }
+
+        // 모달 내부 컨테이너에 HTML 삽입
+        document.getElementById("approvalFormContainer").innerHTML = doc.body.innerHTML;
+
+        // CKEditor 재초기화
+        reinitializeCKEditor();
+
+        // 데이터 채우기
+        await fillFormData(templateId);
+
+        // 폼 초기화 (이벤트 리스너 등 추가)
+        initApprovalForm();
+
+    } catch (error) {
+        console.error("템플릿 로드 오류:", error);
+        alert("템플릿을 불러오는 중 오류가 발생했습니다: " + error.message);
+    }
+}
+
+/**
+ * 폼 관련 초기화 (이벤트 바인딩 등)
+ */
+function initApprovalForm() {
+    // 예시: 상신 버튼 클릭 이벤트
+    const submitBtn = document.querySelector("#submitApprovalBtn");
+    if (submitBtn) {
+        submitBtn.addEventListener("click", submitApprovalForm);
+    } else {
+        console.warn("상신 버튼(#submitApprovalBtn)을 찾을 수 없습니다.");
+    }
+}
+
+/**
+ * 불러온 HTML 템플릿 내부의 데이터를 자동으로 채우기
+ */
+async function fillFormData(templateId) {
+    try {
+        const response = await axios.get(`/approval/draft/data/${templateId}`);
+        const draftData = response.data;
+        
+        // input, textarea, select를 순회하며 draftData 매핑
+        document.querySelectorAll("#approvalFormContainer input, #approvalFormContainer textarea, #approvalFormContainer select")
+          .forEach(obj => {
+            const name = obj.getAttribute("name");
+            if (name && draftData.hasOwnProperty(name)) {
+                if (obj.type === "checkbox") {
+                    obj.checked = (draftData[name] === true || draftData[name] === "Y");
+                } else if (obj.type === "date") {
+                    obj.value = draftData[name] ? draftData[name].split("T")[0] : "";
+                } else if (obj.tagName === "SELECT") {
+                    // 셀렉트 박스 처리
+                    let optionlist = draftData[name];
+                    let txt = '<option value="">선택하세요</option>\n';
+                    for (let i = 0; i < optionlist.length; i++) {
+                        let code = optionlist[i].cd;
+                        let codename = optionlist[i].nm;
+                        txt += `<option value="${code}">${codename}</option>\n`;
+                    }
+                    obj.innerHTML = txt;
+					
+					
+					
+                } else {
+                    // 일반 input, textarea
+                    obj.value = draftData[name];
+                }
+            }
+        });
+
+        // ─────────────────────────────────────
+        // ★★★ "기안자"라면 승인자 버튼 보여주기 ★★★
+        // 예) 서버에서 isDraftOwner를 내려준다 가정
+        
+        showApproverButtons();
+        
+
+    } catch (error) {
+        console.error("문서 데이터 로드 실패:", error);
+        alert("문서 데이터를 불러오는 데 실패했습니다.");
+    }
+}
+
+
+/**
+ * 모달 내부에 동적 HTML 삽입 후, CKEditor 재초기화 함수
+ */
+function reinitializeCKEditor() {
+    document.querySelectorAll("#approvalFormContainer textarea").forEach((textarea, idx) => {
+        if (!textarea.id) {
+            textarea.id = "draftContent_" + idx;
+        }
+        if (CKEDITOR.instances[textarea.id]) {
+            CKEDITOR.instances[textarea.id].destroy(true);
+        }
+        CKEDITOR.replace(textarea.id, {
+			// 필요에 따라 autoParagraph 등의 설정 조정 가능
+		    enterMode: CKEDITOR.ENTER_BR,  // 엔터키 입력 시 <br> 태그 적용
+		    shiftEnterMode: CKEDITOR.ENTER_BR,  // Shift+Enter 키 입력 시 <br> 태그 적용
+			autoParagraph: false,          // 자동 단락 생성 비활성화
+			versionCheck: false 
+		 });
+    });
+}
+
+
+function showApproverButtons() {
+    // 예: 기안자인지 확인해서 승인자 추가 버튼 노출
+    const isDraftOwner = true; // 서버에서 받은 값 등
+    const openOrgModalBtn = document.getElementById("openOrgModalBtn");
+    if (isDraftOwner) {
+        openOrgModalBtn.style.display = "inline-block";
+    } else {
+        openOrgModalBtn.style.display = "none";
+    }
+}
+
+/**
+ * 상신 버튼 클릭 시 호출될 함수
+ */
+async function submitApprovalForm() {
+    console.log("상신 버튼 클릭됨. 여기서 결재 상신 로직 처리.");
+    // 여기에 실제 결재 상신 로직(axios.post 등)을 구현하거나,
+    // approvalDraft.js의 submitApprovalForm() 함수를 호출하는 방식으로 연결
+}

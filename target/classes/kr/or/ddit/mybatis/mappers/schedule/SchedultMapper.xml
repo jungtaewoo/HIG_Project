@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.schedule.ScheduleMapper">
+<resultMap id="scheduleMap" type="kr.or.ddit.schedule.vo.ScheduleVO" autoMapping="true">
+</resultMap>
+
+<select id="ScheduleList">
+	select
+		s.*
+		,e.name as empName
+	from
+		Schedule s
+	   join employee e on e.emp_id = s.emp_id
+</select>
+
+
+<insert id="ScheduleInsert">
+    <selectKey order="BEFORE" keyProperty="scheduleId" resultType="long">
+        select
+            nvl(max(SCHEDULE_ID) +1 ,0)
+        from
+            SCHEDULE
+    </selectKey>
+    INSERT INTO schedule (
+          schedule_id
+        , emp_id
+        , schedule_title
+        , schedule_context
+        , start_date
+        , end_date
+        , schedule_visibility
+        , color_code
+    ) VALUES (
+            #{scheduleId}
+          , #{empId}
+          , #{scheduleTitle}
+          , #{scheduleContext}
+       	  , TO_DATE(#{startDate}, 'YYYY-MM-DD HH24:MI:SS')
+          , TO_DATE(#{endDate}, 'YYYY-MM-DD HH24:MI:SS')
+          , #{scheduleVisibility}
+          , #{colorCode}
+    )
+</insert>
+
+<update id="ScheduleUpdate">
+	UPDATE
+		SCHEDULE
+	SET
+ 	      EMP_ID = #{empId,jdbcType=VARCHAR}
+		, SCHEDULE_TITLE = #{scheduleTitle,jdbcType=VARCHAR}
+		, SCHEDULE_CONTEXT = #{scheduleContext,jdbcType=VARCHAR}
+		, START_DATE = TO_DATE(#{startDate}, 'YYYY-MM-DD HH24:MI:SS')
+		, END_DATE = TO_DATE(#{endDate}, 'YYYY-MM-DD HH24:MI:SS')
+		, SCHEDULE_VISIBILITY = #{scheduleVisibility,jdbcType=CHAR}
+		, COLOR_CODE = #{colorCode,jdbcType=VARCHAR}
+	WHERE
+		  SCHEDULE_ID = #{scheduleId,jdbcType=NUMERIC}
+</update>
+
+<delete id="ScheduleDelete">
+	DELETE FROM
+		 SCHEDULE
+	WHERE
+		SCHEDULE_ID = #{scheduleId,jdbcType=NUMERIC}
+</delete>
+
+<select id="getSchedulesByEmpId">
+  SELECT
+      s.*,
+      e.name AS empName
+  FROM
+      Schedule s
+      JOIN employee e ON e.emp_id = s.emp_id
+  WHERE
+      e.emp_id = #{empId}
+</select>
+
+
+<select id="getSchedulesByEmpIdWithinRange" parameterType="map" resultMap="scheduleMap">
+    SELECT
+        s.*,
+        e.name AS empName
+    FROM
+        Schedule s
+        JOIN employee e ON e.emp_id = s.emp_id
+    WHERE
+        s.start_date &gt;= TO_TIMESTAMP(#{startDateTime}, 'YYYY-MM-DD HH24:MI:SS')
+    AND 
+    	s.end_date &lt;= TO_TIMESTAMP(#{endDateTime}, 'YYYY-MM-DD HH24:MI:SS')
+      <if test="empId != null and empId != ''">
+        AND e.emp_id = #{empId}
+      </if>
+    ORDER BY s.start_date
+</select>
+
+
+
+
+
+</mapper>

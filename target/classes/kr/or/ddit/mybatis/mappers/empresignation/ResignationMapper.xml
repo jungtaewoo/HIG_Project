@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.mybatis.mappers.empresignations.ResignationMapper">
+	
+	<resultMap type="ResignationVO" id="ResignationResultMap" autoMapping="true">
+		<id property="resignId" column="resign_id" />
+	
+		<association property="employee" javaType="EmployeeVO" autoMapping="true"/>
+		<association property="department" javaType="DepartmentVO" autoMapping="true"/>
+		<association property="team" javaType="TeamVO" autoMapping="true"/>
+		<association property="rank" javaType="RankVO" autoMapping="true"/>
+		<association property="job" javaType="JobVO" autoMapping="true"/>
+		<association property="position" javaType="PositionVO" autoMapping="true"/>
+
+	</resultMap>
+	
+	<select id="selectResignList" resultMap="ResignationResultMap">
+		SELECT 
+		     re. RESIGN_ID
+			,re. RESIGN_DATE
+			,re. RESIGN_REASON
+			,re. RESIGN_TYPE
+			,re. RESIGN_INTERVIEW
+			,re. RESIGN_INTERVIEW_CONTENT
+			,re. ID_STATUS
+			,e. EMP_ID
+			,e. NAME 
+			,d. DEPARTMENT_ID
+			,d. DEPARTMENT_NAME
+			,t. TEAM_ID
+			,t. TEAM_NAME
+			,j. JOB_ID
+			,j. JOB_NAME
+			,r. RANK_ID
+			,r. RANK_NAME
+			,p. POSITION_ID
+			,p. POSITION_NAME
+		FROM EMP_RESIGNATION re
+		LEFT JOIN EMPLOYEE e ON re.EMP_ID = e.EMP_ID
+		LEFT JOIN JOB j ON re.JOB_ID = j.JOB_ID
+		LEFT JOIN DEPARTMENT d ON re.DEPARTMENT_ID = d.DEPARTMENT_ID
+		LEFT JOIN POSITION p ON re.POSITION_ID = p.POSITION_ID
+		LEFT JOIN TEAM t ON re.TEAM_ID = t.TEAM_ID
+		LEFT JOIN RANK r ON re.RANK_ID = r.RANK_ID
+		
+	</select>
+	
+	<select id="selectResign" resultMap="ResignationResultMap">
+		SELECT 
+		     re. RESIGN_ID
+			,re. RESIGN_DATE
+			,re. RESIGN_REASON
+			,re. RESIGN_TYPE
+			,re. RESIGN_INTERVIEW
+			,re. RESIGN_INTERVIEW_CONTENT
+			,re. ID_STATUS
+			,e. EMP_ID
+			,e. NAME 
+			,d. DEPARTMENT_ID
+			,d. DEPARTMENT_NAME
+			,t. TEAM_ID
+			,t. TEAM_NAME
+			,j. JOB_ID
+			,j. JOB_NAME
+			,r. RANK_ID
+			,r. RANK_NAME
+			,p. POSITION_ID
+			,p. POSITION_NAME
+		FROM EMP_RESIGNATION re
+		LEFT JOIN EMPLOYEE e ON re.EMP_ID = e.EMP_ID
+		LEFT JOIN JOB j ON re.JOB_ID = j.JOB_ID
+		LEFT JOIN DEPARTMENT d ON re.DEPARTMENT_ID = d.DEPARTMENT_ID
+		LEFT JOIN POSITION p ON re.POSITION_ID = p.POSITION_ID
+		LEFT JOIN TEAM t ON re.TEAM_ID = t.TEAM_ID
+		LEFT JOIN RANK r ON re.RANK_ID = r.RANK_ID
+		WHERE RESIGN_ID = #{resignId }
+	</select>
+	
+</mapper>

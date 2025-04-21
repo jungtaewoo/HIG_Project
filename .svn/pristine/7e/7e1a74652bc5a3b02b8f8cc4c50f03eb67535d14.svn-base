@@ -1,0 +1,198 @@
+<!-- 
+ * == 개정이력(Modification Information) ==
+ *   
+ *   수정일             수정자           수정내용
+ *  ============    =============== =======================
+ *  2025. 3. 19.      CHOI            최초 생성
+ *
+-->
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://www.springframework.org/security/tags"
+	prefix="security"%>
+
+    <!-- 스타일만 추가 -->
+    <style>
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .summary-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .stat-card {
+            flex: 1;
+            min-width: 120px;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            background: #f8f9fa;
+        }
+        .stat-card .stat-title {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+        .stat-card .stat-value .badge {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .data-visualization {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .chart-container {
+            max-width: 600px;         /* 최대 폭 제한 */
+            width: 100%;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background: #fff;
+        }
+    	.top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            background-color: transparent; 
+            box-shadow: none;
+            border: none;
+        }
+        /* 나머지 테이블 스타일은 기존 그대로 유지 */
+    </style>
+
+	<script src="${pageContext.request.contextPath}/resources/js/approval/approverChartStatusCount.js"></script>
+</head>
+ <!-- ================= Quick Menu ================= -->
+<div class="top-bar">
+    <!-- 좌측: 버튼 그룹 -->
+    <div>
+      <button type="button" class="btn btn-outline-secondary" onclick="history.back();">
+        <i class="fas fa-arrow-left"></i> 
+      </button>
+    </div>
+    
+    
+    <!-- 우측: Breadcrumb -->
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item fw-bold text-primary"><a href="${pageContext.request.contextPath}/account/login/home">📌 Main</a> </li>
+        <li class="breadcrumb-item"><a href="/approval/templateList">기안작성</a></li>
+        <li class="breadcrumb-item active" aria-current="page">제출문서</li>
+        <li class="breadcrumb-item"><a href="/approval/approverDrafts">결재현황</a></li>
+        
+        <security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+        	<li class="breadcrumb-item"><a href="/approval/list">결재양식</a></li>
+        </security:authorize>
+      </ol>
+    </nav>
+
+    
+</div>
+<section class="section">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">제출문서</h2>
+            <!-- 필요시 버튼 추가 -->
+            <div>
+		        <a class="btn btn-primary btn-sm" href="${pageContext.request.contextPath}/approval/templateList">기안작성</a>
+		        <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">새로고침</button>
+		    </div>
+        </div>
+
+        <div class="card-body dashboard-container">
+            <!-- 1) 상태별 요약 패널 (JS에서 data-status로 채워줍니다) -->
+            <div class="summary-stats">
+                <div class="stat-card">
+                    <div class="stat-title">대기</div>
+                    <div class="stat-value">
+                        <span class="badge bg-secondary" data-status="대기">${APRSTATUS}</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">회수</div>
+                    <div class="stat-value">
+                        <span class="badge bg-info" data-status="회수">${APRSTATUS}</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">완료</div>
+                    <div class="stat-value">
+                        <span class="badge bg-success" data-status="승인">${APRSTATUS}</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">반려</div>
+                    <div class="stat-value">
+                        <span class="badge bg-danger" data-status="반려">${APRSTATUS}</span>
+                    </div>
+                </div>
+            </div>
+
+            
+
+            <!-- 3) 기존 데이터테이블 컨테이너 -->
+            <div id="draftDocumentsContainer"
+                 class="dataTable-wrapper dataTable-loading no-footer sortable searchable fixed-columns">
+                <div class="dataTable-top"></div>
+            </div>
+        </div>
+    </div>
+    
+
+    
+</section>
+
+<!-- 기존 스크립트들 그대로 유지 -->
+<script type="module" src="${pageContext.request.contextPath}/resources/js/approval/approvalProcess.js"></script>
+<script src="${pageContext.request.contextPath}/assets/extensions/simple-datatables/umd/simple-datatables.js"></script>
+<script src="${pageContext.request.contextPath}/resources/template/dist/assets/static/js/pages/simple-datatables.js"></script>
+
+
+<script>
+$(document).ready(function () {
+    // 1) 전체 문서 조회
+    fetchMyDraftDocument();
+
+
+    // 2) 로컬스토리지 복원(기존 코드)
+    const savedStatus = localStorage.getItem("draftStatusFilterValue");
+    if (savedStatus) {
+        $("#draftStatusFilter").val(savedStatus);
+        filterDraftDocuments(window.draftData);
+        localStorage.removeItem("draftStatusFilterValue");
+    }
+    
+ 
+    // 3) 요약 카드 클릭 시 필터링
+    $('.stat-card .badge')
+      .css('cursor', 'pointer')
+      .on('click', function() {
+        // APRSTATUS 값
+        const aprStatus = $(this).data('status'); // '대기' | '승인' | '반려'
+        // APRSTATUS → draftStatus 매핑
+        const mapping = {
+          '대기': '대기',
+          '완료': '승인',  // 여기가 핵심!
+          '반려': '반려'
+        };
+        const filterVal = mapping[aprStatus] || 'all';
+		
+        
+        
+        // select 값 동기화
+        $('#draftStatusFilter').val(filterVal);
+        // 실제 필터링 호출
+        filterDraftDocuments(window.draftData);
+      });
+});
+</script>
+

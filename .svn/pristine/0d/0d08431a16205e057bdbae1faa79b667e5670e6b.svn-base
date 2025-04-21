@@ -1,0 +1,653 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ * == 개정이력(Modification Information) ==
+ *   
+ *   수정일               수정자           수정내용 
+ *  ============      ============== =======================
+ *  2025. 3. 19.        youngjun            최초 생성
+ *  2025. 3. 20.        youngjun            공제, 수당조회
+ *  2025. 3. 21.        youngjun            전직원 급여등록
+ *  2025. 3. 23.        youngjun        수당 공제 등록시 급여에 총액반영 후 실지급액 총지급액 업데이트
+ *  2025. 3. 23.        youngjun        년/월별 총 사원수, 지급, 공제, 수당, 실지급액 조회
+ *  2025. 3. 26.        youngjun        연/월별 데이터조회, 그래프반영
+ *  2025. 4. 01.        youngjun        급여 기본급참조 변경 (직원->근로계약테이블)
+-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.salary.SalaryMapper">
+
+<resultMap type="SalaryVO" id="salaryMap" autoMapping="true">
+    <!--  id 먼저 선언 -->
+    <id property="salaryId" column="salary_id"/>
+
+    <!--  association (employee) -->
+<association property="employee" javaType="EmployeeVO">
+    <id property="empId" column="emp_id"/>
+    <result property="name" column="name"/>
+    <result property="departmentId" column="department_id"/>
+    <result property="teamId" column="team_id"/>
+    <result property="rankId" column="rank_id"/>
+
+    <!-- 부서 정보 -->
+    <association property="department" javaType="DepartmentVO">
+        <result property="departmentId" column="department_id"/>
+        <result property="departmentName" column="department_name"/>
+    </association>
+
+    <!-- 팀 정보 -->
+    <association property="team" javaType="TeamVO">
+        <result property="teamId" column="team_id"/>
+        <result property="teamName" column="team_name"/>
+    </association>
+
+    <!-- 직급 정보 -->
+    <association property="rank" javaType="RankVO">
+        <result property="rankId" column="rank_id"/>
+        <result property="rankName" column="rank_name"/>
+    </association>
+</association>
+
+
+
+    <!-- deductionList -->
+    <collection property="deductionList" ofType="DeductionVO">
+        <id property="deductionId" column="deduction_id"/>
+        <result property="deductionCode" column="deduction_code"/>  
+        <result property="deductionAmount" column="deduction_amount"/>
+
+        <association property="deductionCodeVO" javaType="DeductionCodeVO" autoMapping="true">
+            <id property="deductionCode" column="deduction_code"/>
+        </association>
+    </collection>
+
+    <!--  allowanceList -->
+    <collection property="allowanceList" ofType="AllowanceVO" autoMapping="true">
+        <id property="allowanceId" column="allowance_id"/>
+        <result property="allowanceCode" column="allowance_code"/>  
+        <result property="allowanceAmount" column="allowance_amount"/>
+
+        <association property="allowanceCodeVO" javaType="AllowanceCodeVO" autoMapping="true">
+            <id property="allowanceCode" column="allowance_code"/>
+        </association>
+    </collection>
+
+    <!--  employeeList (다대다 매핑)컴 -->
+    <collection property="employeeList" resultMap="employeeMap"/>
+</resultMap>
+
+
+<resultMap type="EmployeeVO" id="employeeMap" autoMapping="true">
+   <id property="empId" column="emp_id"/>
+   <result property="name" column="name"/>
+   <association property="team" javaType="TeamVO" autoMapping="true"/>
+   <association property="department" javaType="DepartmentVO" autoMapping="true"/>
+   <association property="rank" javaType="RankVO" autoMapping="true"/>
+</resultMap>
+
+<select id="salaryList" resultMap="salaryMap">
+ SELECT
+  S.SALARY_ID,
+  S.EMP_ID,
+  S.PAY_YEAR,
+  S.PAY_MONTH,
+  S.BASE_SALARY,
+  S.TOTAL_ALLOWANCE,
+  S.TOTAL_PAY,
+  S.TOTAL_DEDUCTION,
+  S.NET_SALARY,
+  S.PAY_STATUS,
+  TO_CHAR(S.PAY_STDAY, 'YYYY-MM-DD') AS PAY_STDAY,
+  S.PAY_ENDDAY,
+  S.PAY_YEAR || '년 ' || S.PAY_MONTH || '월' AS PAY_MONTH,
+  TO_CHAR(S.CONFIRM_DATE , 'YYYY-MM-DD') AS CONFIRM_DATE ,
+  E.EMP_ID,
+  E.NAME,
+  NVL(D.DEPARTMENT_NAME,'-') AS DEPARTMENT_NAME,
+  D.DEPARTMENT_ID,
+   NVL(T.TEAM_NAME,'-') AS TEAM_NAME,
+  R.RANK_ID,
+  R.RANK_NAME,
+  S.PAYMENT_REQUEST,
+  S.TRANSFER_REQUEST_DATE,
+  S.PAID,
+  S.PAY_DATE
+FROM SALARY_MANAGEMENT S
+LEFT JOIN EMPLOYEE E ON S.EMP_ID = E.EMP_ID
+LEFT JOIN DEPARTMENT D ON D.DEPARTMENT_ID = E.DEPARTMENT_ID
+LEFT JOIN RANK R ON R.RANK_ID = E.RANK_ID
+LEFT JOIN TEAM T ON T.TEAM_ID = E.TEAM_ID
+where 1=1
+<if test="payYear != null and payYear != ''">
+   AND S.PAY_YEAR = #{payYear}
+   AND S.PAY_MONTH = #{payMonth}
+</if> 
+<if test="payYear == null or payYear == ''">
+   AND S.PAY_YEAR = TO_CHAR(SYSDATE, 'YYYY')
+   AND S.PAY_MONTH = TO_CHAR(SYSDATE, 'MM')
+</if>
+
+</select>
+
+<select id="salarySelected" resultMap="salaryMap">
+SELECT
+  S.SALARY_ID,
+  S.EMP_ID,
+  S.PAY_YEAR,
+  S.PAY_MONTH,
+  S.BASE_SALARY,
+  S.TOTAL_ALLOWANCE ,
+  A.ALLOWANCE_AMOUNT , 
+  A.ALLOWANCE_CODE ,
+  A.ALLOWANCE_ID,
+  AC.ALLOWANCE_NAME,
+  S.TOTAL_DEDUCTION ,
+  DE.DEDUCTION_ID,
+  DE.DEDUCTION_AMOUNT ,  
+  DC.DEDUCTION_CODE ,
+  DC.DEDUCTION_NAME,
+  S.TOTAL_PAY,
+  S.NET_SALARY,
+  S.PAY_DATE,
+  S.PAY_STATUS,
+  S.PAY_STDAY,
+  S.PAY_ENDDAY,
+  S.PAY_YEAR || '년 ' || S.PAY_MONTH || '월' AS PAY_MONTH,
+  E.EMP_ID,
+  E.NAME,
+  D.DEPARTMENT_NAME,
+  D.DEPARTMENT_ID,
+  T.TEAM_NAME,
+  R.RANK_ID,
+  R.RANK_NAME
+FROM SALARY_MANAGEMENT S
+LEFT JOIN EMPLOYEE E ON S.EMP_ID = E.EMP_ID
+LEFT JOIN DEPARTMENT D ON D.DEPARTMENT_ID = E.DEPARTMENT_ID
+LEFT JOIN RANK R ON R.RANK_ID = E.RANK_ID
+LEFT JOIN TEAM T ON E.TEAM_ID=T.TEAM_ID
+LEFT JOIN DEDUCTION DE ON S.SALARY_ID = DE.SALARY_ID  
+LEFT JOIN DEDUCTION_CODE DC ON DE.DEDUCTION_CODE = DC.DEDUCTION_CODE
+LEFT JOIN ALLOWANCE A ON S.SALARY_ID = A.SALARY_ID 
+LEFT JOIN ALLOWANCE_CODE AC ON AC.ALLOWANCE_CODE = A.ALLOWANCE_CODE
+WHERE E.EMP_ID = #{empId} AND PAY_YEAR= #{payYear} AND PAY_MONTH= #{payMonth}
+</select>
+
+<!-- 수당항목조회 -->
+<select id="AllowanceList">
+SELECT
+    ALLOWANCE_CODE
+  , ALLOWANCE_NAME
+  , ALLOWANCE_DESC
+FROM
+    ALLOWANCE_CODE
+</select>
+
+<!-- 공제항목 조회 -->
+<select id="DeductionList">
+SELECT
+   DEDUCTION_CODE
+  , DEDUCTION_NAME
+  , DEDUCTION_DESC
+  , DEDUCTION_RATE
+  , DEDUCTION_CALC_BASE 
+  , DEDUCTION_CALC_LOGIC
+FROM
+    DEDUCTION_CODE
+</select>
+
+<!-- 전직원 급여등록 근로계약서 테이블 기본급참조 -->
+<insert id="InsertSalary">
+   INSERT INTO salary_management (
+    SALARY_ID
+    , EMP_ID
+    , PAY_YEAR
+    , PAY_MONTH
+    , BASE_SALARY
+    , TOTAL_ALLOWANCE
+    , TOTAL_PAY
+    , TOTAL_DEDUCTION
+    , NET_SALARY
+    , CREATE_AT
+    , PAY_STATUS
+    , PAY_STDAY
+    , PAY_ENDDAY
+) 
+    SELECT
+    EMP_ID || #{payYear} || LPAD(#{payMonth}, 2, '0')
+    ,EMP_ID
+    ,#{payYear}
+    ,#{payMonth}
+    ,BASE_SALARY
+    ,0
+    ,BASE_SALARY+0
+    ,0
+    ,BASE_SALARY+0
+    ,SYSDATE
+    ,'확정대기'
+    ,TO_DATE(#{payYear} || '-' || LPAD(#{payMonth}, 2, '0') || '-01', 'YYYY-MM-DD')
+    ,LAST_DAY(TO_DATE(#{payYear} || '-' || LPAD(#{payMonth}, 2, '0') || '-01', 'YYYY-MM-DD'))
+  FROM EMP_CONTRACT
+</insert>
+
+<!-- 수당등록 급여테이블 참조 -->
+<insert id="InsertDeducation">
+  BEGIN
+    PROC_INSERT_DEDUCTION(#{payYear}, #{payMonth});
+  END;
+</insert>
+
+<!-- 공제등록 - 인사기록카드 참조 -->
+<insert id="InsertAllowance">
+BEGIN
+  PROC_INSERT_ALLOWANCE(#{payYear}, #{payMonth});
+END;
+</insert>
+
+
+<!-- 사원수,급여등록 수등 기능에 필요한 인원수 구하는 정보 -->
+<select id="salaryInfo" resultMap="salaryMap">
+SELECT 
+<!--   기간별 재직인원수 -->
+    (SELECT COUNT(*) 
+     FROM EMPLOYEE E
+     LEFT JOIN EMP_RESIGNATION R ON E.EMP_ID = R.EMP_ID
+     WHERE 1=1
+     <if test="payYear != null and payYear != ''">
+       AND E.HIRE_DATE &lt; LAST_DAY(TO_DATE(#{dateSelect}, 'YYYY-MM-DD'))
+       AND (R.RESIGN_DATE IS NULL OR R.RESIGN_DATE &gt;= TRUNC(TO_DATE(#{dateSelect}, 'YYYY-MM-DD'), 'MM'))
+     </if>
+     AND EMP_STATUS = '재직'
+    ) AS totalemp
+    ,
+    
+        (SELECT COUNT(*) 
+     FROM EMPLOYEE E
+     WHERE EMP_STATUS = '재직') as totalempNow
+     ,
+   
+
+<!--      기간별 급여확정인원 -->
+    (SELECT COUNT(*) 
+     FROM SALARY_MANAGEMENT 
+     WHERE PAY_STATUS = '확정'
+     <if test="payYear != null and payYear !=''">
+       AND PAY_YEAR = #{payYear} 
+       AND PAY_MONTH = #{payMonth}
+     </if>
+    ) AS confirmedCount,
+    
+<!--     기간별 급여요청완료 인원  -->
+    (SELECT COUNT(*)
+    FROM SALARY_MANAGEMENT
+    WHERE PAYMENT_REQUEST='승인'
+    <if test="payYear != null and payYear !=''">
+    AND PAY_YEAR= #{payYear} AND PAY_MONTH = #{payMonth}
+    </if>
+      ) AS paymentRequestCount,
+
+<!--    기간별 실 지급액 -->
+    (SELECT SUM(NET_SALARY) 
+     FROM SALARY_MANAGEMENT 
+     WHERE 1=1
+     <if test="payYear != null and payYear !=''">  
+       AND PAY_YEAR = #{payYear} 
+       AND PAY_MONTH = #{payMonth}
+     </if>
+    ) AS totalNetSalary
+    ,
+
+<!--    기간별 급여등록인원수 -->
+    (SELECT COUNT(*) 
+     FROM SALARY_MANAGEMENT 
+     WHERE 1=1
+     <if test="payYear != null and payYear !=''">  
+       AND PAY_YEAR = #{payYear} 
+       AND PAY_MONTH = #{payMonth}
+     </if>
+    ) AS totalSalaryCount
+    ,
+    
+    
+<!--   기간별 급여등록 대상자수 -->
+(SELECT COUNT(*) 
+ FROM EMP_CONTRACT
+ WHERE 1=1
+ <if test="dateSelect != null and dateSelect != ''">
+   <![CDATA[
+   AND TRUNC(START_DATE) <= LAST_DAY(TO_DATE(#{dateSelect}, 'YYYY-MM-DD'))
+   AND (END_DATE IS NULL OR TRUNC(END_DATE) >= TRUNC(TO_DATE(#{dateSelect}, 'YYYY-MM-DD'), 'MM'))
+   ]]>
+ </if>
+) AS totalTargetCount
+,
+
+
+<!--   기간별 급여미등록자 -->
+    (SELECT COUNT(*) 
+     FROM EMPLOYEE E
+     LEFT JOIN EMP_RESIGNATION R ON E.EMP_ID = R.EMP_ID
+   <if test="payYear != null and payYear !=''">
+     WHERE 1=1 
+       AND E.HIRE_DATE &lt; TO_DATE(#{dateSelect}, 'YYYY-MM-DD')
+       AND (R.RESIGN_DATE IS NULL OR R.RESIGN_DATE >= TO_DATE(#{dateSelect}, 'YYYY-MM-DD'))
+     </if>
+       AND E.EMP_ID NOT IN (
+           SELECT EMP_ID 
+           FROM SALARY_MANAGEMENT 
+           WHERE 1=1
+           <if test="payYear != null and payYear !=''">  
+             AND PAY_YEAR = #{payYear} 
+             AND PAY_MONTH = #{payMonth}
+           </if>
+       )
+    ) AS notSalaryInsert,
+
+<!-- 총 계정수 -->
+    (SELECT COUNT(*) FROM ACCOUNT WHERE ACCOUNT_STATUS='Y' ) AS totalAccount,
+
+<!--    계정미등록자 -->
+    (SELECT COUNT(*) 
+     FROM EMPLOYEE E
+     WHERE E.EMP_ID NOT IN (SELECT A.EMP_ID FROM ACCOUNT A)
+    ) AS unRegisterAccount
+    ,
+    
+    (
+	SELECT COUNT(*) FROM SALARY_MANAGEMENT WHERE 1=1
+	<if test="payYear != null and payYear !=''">  
+		 AND PAID = '지급완료' 
+		 AND PAY_YEAR= #{payYear} AND PAY_MONTH= #{payMonth}) AS paidCount
+	 </if>
+
+FROM DUAL
+</select>
+
+
+<update id="deducationTotalUpdate">
+UPDATE SALARY_MANAGEMENT SM
+SET TOTAL_DEDUCTION = (
+    SELECT NVL(SUM(DEDUCTION_AMOUNT), 0)
+    FROM DEDUCTION D
+    WHERE D.SALARY_ID = SM.SALARY_ID
+)
+WHERE PAY_YEAR = #{payYear} AND PAY_MONTH = #{payMonth}
+</update>
+
+<update id="allowanceTotalUpdate">
+UPDATE SALARY_MANAGEMENT SM
+SET TOTAL_ALLOWANCE = (
+    SELECT NVL(SUM(ALLOWANCE_AMOUNT), 0)
+    FROM ALLOWANCE A
+    WHERE A.SALARY_ID = SM.SALARY_ID
+)
+WHERE PAY_YEAR = #{payYear} AND PAY_MONTH = #{payMonth}
+</update>
+
+<update id="salaryTotalAmountUpdate">
+UPDATE SALARY_MANAGEMENT
+SET TOTAL_PAY = BASE_SALARY + TOTAL_ALLOWANCE,
+    NET_SALARY = (BASE_SALARY + TOTAL_ALLOWANCE) - TOTAL_DEDUCTION
+WHERE PAY_YEAR = #{payYear} AND PAY_MONTH = #{payMonth}
+</update>
+
+<!-- 년,월별 전 임직원수, 총지급, 수당, 공제, 실지급액 조회 -->
+<select id="SalarySummaryByMonth" resultMap="salaryMap">
+SELECT
+    SM.PAY_YEAR,
+    SM.PAY_MONTH,
+    COUNT(E.EMP_ID) AS totalemp,
+    SUM(SM.TOTAL_PAY) AS totalPaySum,
+    SUM(SM.TOTAL_ALLOWANCE) AS totalAllowanceSum,
+    SUM(SM.TOTAL_DEDUCTION) AS totalDeductionSum,
+    SUM(SM.NET_SALARY) AS totalNetSalary
+FROM SALARY_MANAGEMENT SM
+JOIN EMPLOYEE E ON E.EMP_ID = SM.EMP_ID
+GROUP BY SM.PAY_YEAR, SM.PAY_MONTH
+ORDER BY SM.PAY_YEAR DESC, SM.PAY_MONTH DESC
+</select>
+
+<select id="salarySelectedSummaryMonth" resultMap="salaryMap">
+    SELECT  
+    COUNT(E.EMP_ID)AS totalemp,
+     COUNT(SM.EMP_ID)AS totalSalaryCount,
+     COUNT(E.EMP_ID)-COUNT(SM.EMP_ID) AS notSalaryInsert,
+    SUM(SM.TOTAL_PAY)AS totalPaySum,
+    SUM(SM.TOTAL_ALLOWANCE)AS totalAllowanceSum,
+    SUM(SM.TOTAL_DEDUCTION)AS totalDeductionSum,
+    SUM(SM.NET_SALARY)AS totalNetSalary,
+    COUNT(CASE WHEN SM.PAY_STATUS = '확정' THEN 1 END)AS confirmedCount 
+    FROM SALARY_MANAGEMENT SM 
+    JOIN EMPLOYEE E ON E.EMP_ID = SM.EMP_ID 
+    WHERE SM.PAY_YEAR = #{payYear}
+    AND SM.PAY_MONTH = #{payMonth}
+</select>
+
+<!-- 급여등록전 미리보기 -->
+<select id="salaryInsertEx">
+
+SELECT 
+    COUNT(EMP_ID) AS totalemp,
+    SUM(BASE_SALARY + NVL(TOTAL_ALLOWANCE, 0)) AS totalPaySum,
+    SUM(NVL(TOTAL_ALLOWANCE, 0)) AS totalAllowanceSum,
+    SUM(NVL(TOTAL_DEDUCTION, 0)) AS totalDeductionSum,
+    SUM(NET_SALARY) AS totalNetSalary
+FROM SALARY_MANAGEMENT
+WHERE PAY_YEAR = #{payYear}
+  AND PAY_MONTH = #{payMonth}
+  
+<!--    SELECT -->
+<!--     SM.PAY_YEAR, -->
+<!--     SM.PAY_MONTH, -->
+<!--     COUNT(E.EMP_ID) AS totalemp, -->
+<!--     SUM(SM.TOTAL_PAY) AS totalPaySum, -->
+<!--     SUM(SM.TOTAL_ALLOWANCE) AS totalAllowanceSum, -->
+<!--     SUM(SM.TOTAL_DEDUCTION) AS totalDeductionSum, -->
+<!--     SUM(SM.NET_SALARY) AS totalNetSalary -->
+<!-- FROM SALARY_MANAGEMENT SM -->
+<!-- JOIN EMPLOYEE E ON E.EMP_ID = SM.EMP_ID -->
+<!-- WHERE SM.PAY_YEAR = #{payYear} AND SM.PAY_MONTH = #{payMonth} -->
+<!-- GROUP BY SM.PAY_YEAR, SM.PAY_MONTH -->
+</select>
+
+<!-- 부서 평균급여 -->
+<select id="departMentAvgSalry" resultMap="salaryMap">
+  SELECT D.DEPARTMENT_NAME AS name,
+         D.DEPARTMENT_ID,
+ FLOOR(AVG(SM.NET_SALARY))AS avgSalary 
+ FROM SALARY_MANAGEMENT SM 
+    JOIN EMPLOYEE E ON E.EMP_ID = SM.EMP_ID 
+    JOIN DEPARTMENT D ON E.DEPARTMENT_ID = D.DEPARTMENT_ID
+ WHERE SM.PAY_YEAR = #{payYear}
+ AND SM.PAY_MONTH = #{payMonth}
+ GROUP BY D.DEPARTMENT_NAME , D.DEPARTMENT_ID
+<!-- SELECT  -->
+<!--     D.DEPARTMENT_NAME, -->
+<!--     D.DEPARTMENT_ID, -->
+<!--     ROUND(AVG(S.NET_SALARY)) AS AVG_SALARY -->
+<!-- FROM  -->
+<!--     SALARY_MANAGEMENT S -->
+<!-- JOIN  -->
+<!--     EMPLOYEE E ON S.EMP_ID = E.EMP_ID -->
+<!-- JOIN  -->
+<!--     DEPARTMENT D ON E.DEPARTMENT_ID = D.DEPARTMENT_ID -->
+<!-- WHERE  -->
+<!--     D.DEPARTMENT_ID IN ('300','301','302','303') -->
+<!-- GROUP BY  -->
+<!--     D.DEPARTMENT_NAME, D.DEPARTMENT_ID -->
+<!-- ORDER BY  -->
+<!--     D.DEPARTMENT_ID -->
+</select>
+
+<!-- 직급별 평균급여 -->
+<select id="rankAvgSalary" resultMap="salaryMap">
+SELECT R.RANK_NAME AS name
+, FLOOR(AVG(SM.NET_SALARY)) AS avgSalary 
+FROM SALARY_MANAGEMENT SM 
+JOIN EMPLOYEE E ON E.EMP_ID = SM.EMP_ID JOIN RANK R ON E.RANK_ID = R.RANK_ID 
+WHERE SM.PAY_YEAR = #{payYear} AND SM.PAY_MONTH = #{payMonth} 
+GROUP BY R.RANK_NAME
+</select>
+
+<select id="getPayStatus" resultType="map">
+  SELECT 
+     PAY_STATUS,
+    TO_CHAR(CONFIRM_DATE, 'YYYY-MM-DD') AS confirmDate,
+    PAYMENT_REQUEST,
+    TO_CHAR(TRANSFER_REQUEST_DATE, 'YYYY-MM-DD') AS transferRequestDate
+  FROM 
+     SALARY_MANAGEMENT
+  WHERE 
+     SALARY_ID = #{salaryId}
+       AND EMP_ID = #{empId}
+</select>
+
+<!-- 일괄 확정값 토글(확정,확정대기) -->
+<update id="togglePayStatusAll">
+ UPDATE SALARY_MANAGEMENT
+  SET 
+    PAY_STATUS = 
+      CASE 
+        WHEN PAY_STATUS = '확정대기' THEN '확정'
+        ELSE '확정대기'
+      END,
+    CONFIRM_DATE = 
+      CASE 
+        WHEN PAY_STATUS = '확정대기' THEN SYSDATE
+        ELSE NULL
+      END
+  WHERE SALARY_ID IN
+    <foreach item="id" collection="salaryIdList" open="(" separator="," close=")">
+      #{id}
+    </foreach>
+  AND PAY_YEAR = #{payYear}
+  AND PAY_MONTH = #{payMonth}
+  AND (
+    PAY_STATUS = '확정'
+    OR (PAY_STATUS = '확정대기' AND PAYMENT_REQUEST = '승인대기')
+  )
+</update>
+
+<!-- 단건확정 토글 -->
+<update id="togglePayStatus">
+UPDATE SALARY_MANAGEMENT
+SET 
+  PAY_STATUS = 
+    CASE 
+      WHEN PAY_STATUS = '확정대기' THEN '확정'
+      ELSE '확정대기'
+    END,
+  CONFIRM_DATE = 
+    CASE 
+      WHEN PAY_STATUS = '확정대기' THEN SYSDATE
+      ELSE NULL
+    END
+WHERE SALARY_ID = #{salaryId}
+  AND EMP_ID = #{empId}
+  AND (
+    PAY_STATUS = '확정'
+    OR
+    (PAY_STATUS = '확정대기' AND PAYMENT_REQUEST = '승인대기')
+  )
+</update>
+
+<!-- 이체요청 토글 (요청대기,요청완료) -->
+<update id="togglePayRequest">
+   UPDATE
+    SALARY_MANAGEMENT
+SET
+    PAYMENT_REQUEST =
+    CASE
+    WHEN PAYMENT_REQUEST ='승인대기' THEN '승인'
+    ELSE '승인대기'
+  END,
+  TRANSFER_REQUEST_DATE =
+  CASE
+  WHEN PAYMENT_REQUEST ='승인대기' THEN SYSDATE
+  ELSE NULL
+  END
+  WHERE SALARY_ID=#{salaryId} AND EMP_ID=#{empId}
+  AND PAY_STATUS='확정'
+</update>
+
+<!-- 일괄 이체요청 토글 (승인대기 <-> 승인) -->
+<update id="togglePayRequestAll">
+  UPDATE SALARY_MANAGEMENT
+  SET 
+    PAYMENT_REQUEST = 
+      CASE 
+        WHEN PAYMENT_REQUEST = '승인대기' THEN '승인'
+        ELSE '승인대기'
+      END,
+    TRANSFER_REQUEST_DATE = 
+      CASE 
+        WHEN PAYMENT_REQUEST = '승인대기' THEN SYSDATE
+        ELSE NULL
+      END
+  WHERE (EMP_ID, SALARY_ID) IN
+    <foreach collection="salaryIdList" item="item" separator="," open="(" close=")">
+      (#{item.empId}, #{item.salaryId})
+    </foreach>
+  AND PAY_STATUS = '확정'
+  AND PAY_YEAR = #{payYear}
+  AND PAY_MONTH = #{payMonth}
+</update>
+
+<!-- 이메일 단체발송 조회 년월에 따른 확정인원들만  -->
+<select id="salarySendEmailConfirm" resultMap="salaryMap">
+	SELECT 
+    COUNT(*) OVER() AS confirmedCount,
+    E.EMP_ID,
+    E.NAME,
+    E.EMAIL,
+    S.PAY_STATUS
+FROM SALARY_MANAGEMENT S
+LEFT JOIN EMPLOYEE E ON E.EMP_ID = S.EMP_ID
+WHERE S.PAY_STATUS = '확정'
+  AND S.PAY_YEAR = #{payYear}
+  AND S.PAY_MONTH = #{payMonth}
+	
+</select>
+
+
+<select id="MinMaxSalaryByDept" resultType="map">
+   SELECT
+	    e.department_id
+	  , d.department_name
+	  , MIN(sm.net_salary) AS min_net_salary
+	  , MAX(sm.net_salary) AS max_net_salary
+	FROM
+         salary_management sm
+    JOIN employee   e ON sm.emp_id = e.emp_id
+    JOIN department d ON e.department_id = d.department_id
+	GROUP BY
+	    e.department_id
+	  , d.department_name
+	ORDER BY
+	    e.department_id
+</select>
+
+<!-- 단건승인처리 단건승인요청시 연계사용 -->
+<update id="salaryPaid">
+	    UPDATE SALARY_MANAGEMENT
+    SET PAID = '지급완료',
+        PAY_DATE = SYSDATE
+    WHERE EMP_ID = #{empId}
+      AND SALARY_ID = #{salaryId}
+      AND PAYMENT_REQUEST = '승인'
+</update>
+
+<!-- 일괄승인처리 쿼리 (다건 성능향상) -->
+<update id="updateSalaryPaidBatch">
+  UPDATE SALARY_MANAGEMENT
+  SET 
+    PAID = '지급완료',
+    PAY_DATE = SYSDATE
+  WHERE (EMP_ID, SALARY_ID) IN
+    <foreach collection="salaryIdList" item="item" separator="," open="(" close=")">
+      (#{item.empId}, #{item.salaryId})
+    </foreach>
+  AND PAYMENT_REQUEST = '승인'
+</update>
+
+
+
+
+</mapper>

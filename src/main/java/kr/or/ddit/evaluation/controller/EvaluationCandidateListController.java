@@ -1,0 +1,108 @@
+package kr.or.ddit.evaluation.controller;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import kr.or.ddit.evaluation.exception.DuplicateEvaluationCandidateException;
+import kr.or.ddit.evaluation.service.EvaluationCandidateService;
+import kr.or.ddit.evaluation.vo.EvaluationCandidateVO;
+import kr.or.ddit.evaluation.vo.EvaluationCandidateWrapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Controller
+@RequestMapping("/evaluation")
+@RequiredArgsConstructor
+public class EvaluationCandidateListController {
+
+    private final EvaluationCandidateService service;
+
+    @GetMapping("/evaluationCandidateList")
+    public String readList(@RequestParam(required = false) String rank,
+                           @RequestParam(required = false) String year,
+                           @RequestParam(required = false) String half,
+                           Model model) {
+
+        // 현재 시점 기준
+        LocalDate now = LocalDate.now();
+        String currentYear = String.valueOf(now.getYear());
+        String currentHalf = (now.getMonthValue() <= 6) ? "1" : "2";
+
+        String selectedYear = (year != null) ? year : currentYear;
+        String selectedHalf = (half != null) ? half : currentHalf;
+
+        boolean isCurrent = selectedYear.equals(currentYear) && selectedHalf.equals(currentHalf);
+
+        // 등록용(LEFT JOIN) vs 과거용(INNER JOIN) 분기
+        List<EvaluationCandidateVO> candidateList = isCurrent
+            ? service.selectAllForInsert(rank, selectedYear, selectedHalf)
+            : service.selectAllForHistory(rank, selectedYear, selectedHalf);
+
+        EvaluationCandidateWrapper wrapper = new EvaluationCandidateWrapper();
+        wrapper.setCandidateList(candidateList);
+
+        model.addAttribute("wrapper", wrapper);
+        model.addAttribute("rankList", service.getAllRanks());
+        model.addAttribute("rank", rank);
+        model.addAttribute("year", selectedYear);
+        model.addAttribute("half", selectedHalf);
+        model.addAttribute("currentYear", currentYear);
+        model.addAttribute("currentHalf", currentHalf);
+        model.addAttribute("isCurrent", isCurrent);
+        return "tiles:evaluation/evaluationCandidateList";
+    }
+
+    @PostMapping("/evaluationCandidateUpdate")
+    public String updateCandidates(@Validated @ModelAttribute("wrapper") EvaluationCandidateWrapper wrapper,
+            BindingResult bindingResult,
+            RedirectAttributes redirectAttributes) {
+    	
+    	// 활성화 시키면 체크 선택 안한 대상도 검증을 하기 때문에 인서트 실행 안됨.
+//		if (bindingResult.hasErrors()) {
+//			redirectAttributes.addFlashAttribute("error", "입력값에 오류가 있습니다.");
+//			return "redirect:/evaluation/evaluationCandidateList";
+//		
+//		}
+		
+        List<EvaluationCandidateVO> selectedList = wrapper.getCandidateList().stream()
+                .filter(EvaluationCandidateVO::isSelected)
+                .collect(Collectors.toList());
+        
+        
+        if (selectedList.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "선택된 대상자가 없습니다.");
+            return "redirect:/evaluation/evaluationCandidateList";
+        }
+
+	        for (EvaluationCandidateVO candidate : selectedList) {
+	            if (candidate.getEvaluationYear() == null || candidate.getEvaluationYear().isBlank()
+	             || candidate.getHalfYear() == null || candidate.getHalfYear().isBlank()
+	             || candidate.getIsTarget() == null || candidate.getIsTarget().isBlank()) {
+	                redirectAttributes.addFlashAttribute("error", "입력값이 누락된 대상자가 있습니다.");
+	                return "redirect:/evaluation/evaluationCandidateList";
+	            }
+	        }
+
+        try {
+            service.updateAll(selectedList);
+            redirectAttributes.addFlashAttribute("success", "등록이 완료되었습니다.");
+        } catch (DuplicateEvaluationCandidateException e) {
+            redirectAttributes.addFlashAttribute("error", "중복된 대상자가 존재합니다.");
+        }
+
+        return "redirect:/evaluation/evaluationCandidateList";
+    }
+}

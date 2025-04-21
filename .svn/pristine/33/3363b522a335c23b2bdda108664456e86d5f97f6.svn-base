@@ -1,0 +1,237 @@
+/**
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *   수정일          수정자     수정내용
+ *  -----------    -------------    ---------------------------
+ * 2025. 4.  1.    CHOI           결재문서 탭별 필터링 & 렌더링 통합
+ * 2025. 4. 10.    CHOI           짝수 행 폰트 확대 이슈 해결 (stripeClasses 비활성화 및 CSS 적용)
+ * </pre>
+ */
+import {formatKoreanDateTime} from '../common/koreanDateType.js'
+$(document).ready(function () {
+  fetchApproverId();
+  $('#statusFilter').on('change', fetchAndRenderDocuments);
+  $('#rowsPerPage').on('change', function(){
+    if(window.dataTableInstance){
+      window.dataTableInstance.page.len(parseInt($(this).val(),10)).draw();
+    }
+  });
+  $('#searchBtn').on('click', function(){
+    if(window.dataTableInstance){
+      window.dataTableInstance.search($('#searchInput').val()).draw();
+    }
+  });
+  $('#searchInput').on('keypress', function(e){
+    if(e.which === 13) $('#searchBtn').click();
+  });
+});
+
+window.approverId = null;
+window.dataTableInstance = null;
+
+// 1) 결재자 ID 조회
+function fetchApproverId() {
+  $.ajax({
+    url: ctx + '/approvalProcess/getApproverId',
+    type: "GET",
+    dataType: "text"
+  }).done(function(empId) {
+    window.approverId = empId;
+    fetchAndRenderDocuments();
+  }).fail(function() {
+    showErrorRow('결재자 정보를 가져올 수 없습니다.');
+  });
+}
+
+// 2) 상태별 API 호출 & 테이블 렌더링
+function fetchAndRenderDocuments() {
+  var status = $('#statusFilter').val();
+  if (!window.approverId) {
+    return showErrorRow('결재자 ID가 없습니다.');
+  }
+
+  if (status === 'all') {
+    // all: 대기 + 진행중 + 종결함 합치기
+    $.when(
+      $.getJSON(ctx + '/approvalProcess/approverDrafts', { aprId: window.approverId }),
+      $.getJSON(ctx + '/approval/approver/processList', { approverId: window.approverId }),
+      $.getJSON(ctx + '/approval/approver/complitedList', { approverId: window.approverId })
+    ).done(function(dRes, pRes, cRes) {
+      var draftsData = dRes[0] || [];
+      var processData = pRes[0] || [];
+      var completedData = cRes[0] || [];
+
+      // 대기 문서
+      var drafts = draftsData.map(function(doc) {
+        return {
+          draftId: doc.draftId,
+          draftTitle: doc.draftTitle,
+          draftDate: doc.draftDate,
+          draftEmpName: doc.draftEmpName,
+          approverDepartmentName: doc.approverDepartmentName || doc.draftDepartmentName,
+          approverName: doc.approverName,
+          userStatus: '대기',
+          draftFile: doc.draftFile
+        };
+      });
+      // 진행중 문서
+      var process = processData.map(function(doc) {
+        doc.userStatus = '진행중';
+        return doc;
+      });
+      // 종결함 (승인·반려)
+      var completed = completedData; // 필터링 없이 그대로 사용
+
+      // 합치고 날짜 내림차순 정렬
+      var combined = drafts.concat(process, completed);
+      combined.sort(function(a, b){
+        return new Date(b.draftDate) - new Date(a.draftDate);
+      });
+      renderTable(combined);
+    }).fail(function() {
+      showErrorRow('전체 문서 로드 중 오류가 발생했습니다.');
+    });
+  }
+  else if (status === 'draft') {
+    $.getJSON(ctx + '/approvalProcess/approverDrafts', { aprId: window.approverId })
+     .done(function(data) {
+       var list = data || [];
+       var drafts = list.map(function(doc) {
+         doc.userStatus = '대기';
+         return doc;
+       });
+       renderTable(drafts);
+     }).fail(function() {
+       showErrorRow('대기 문서 조회 실패');
+     });
+  }
+  else if (status === 'process') {
+    $.getJSON(ctx + '/approval/approver/processList', { approverId: window.approverId })
+     .done(function(data) {
+       var list = data || [];
+       var proc = list.map(function(doc) {
+         doc.userStatus = '진행중';
+         return doc;
+       });
+       renderTable(proc);
+     }).fail(function() {
+       showErrorRow('진행중 문서 조회 실패');
+     });
+  }
+  else if (status === 'approved') {
+    $.getJSON(ctx + '/approval/approver/complitedList', { approverId: window.approverId })
+     .done(function(data) {
+       var list = data || [];
+       renderTable(list.filter(function(d){ return d.userStatus === '승인'; }));
+     }).fail(function() {
+       showErrorRow('승인 문서 조회 실패');
+     });
+  }
+  else if (status === 'rejected') {
+    $.getJSON(ctx + '/approval/approver/complitedList', { approverId: window.approverId })
+     .done(function(data) {
+       var list = data || [];
+       renderTable(list.filter(function(d){ return d.userStatus === '반려'; }));
+     }).fail(function() {
+       showErrorRow('반려 문서 조회 실패');
+     });
+  }
+}
+
+// 3) DataTable 렌더링
+function renderTable(data) {
+  var rows = [];
+  if (!data || data.length === 0) {
+    // 7개 컬럼에 맞춰 7개 요소
+    rows.push(['등록된 문서가 없습니다.', '', '', '', '', '', '']);
+  } else {
+    rows = data.map(function(doc) {
+      var label;
+      switch (doc.userStatus) {
+        case '승인':
+          label = `<span class="badge badge-status bg-success">승인</span>`;
+          break;
+        case '진행중':
+          label = `<span class="badge badge-status bg-info">진행중</span>`;
+          break;
+        case '대기':
+          label = `<span class="badge badge-status bg-secondary">대기</span>`;
+          break;
+        case '반려':
+          label = `<span class="badge badge-status bg-danger">반려</span>`;
+          break;
+        default:
+          label = '-';
+      }
+      return [
+        doc.draftId || '-',
+        '<a href="' + ctx + '/approval/draft/detailView?draftId=' + doc.draftId + '">' + (doc.draftTitle || '-') + '</a>',
+        formatKoreanDateTime(doc.draftDate),
+        doc.draftEmpName || '-',
+        doc.approverDepartmentName || '-',
+        doc.approverName || '-',
+        label
+      ];
+    });
+  }
+
+  if (window.dataTableInstance) {
+    window.dataTableInstance.clear();
+    window.dataTableInstance.rows.add(rows).draw();
+  } else {
+    window.dataTableInstance = $('#approverTable').DataTable({
+      data: rows,
+      columns: [
+        { title: "문서ID" },
+        { title: "제목" },
+        { title: "기안일" },
+        { title: "기안자" },
+        { title: "부서" },
+        { title: "결재자" },
+        { title: "상태" }
+      ],
+      responsive: true,
+      autoWidth: false,
+      stripeClasses: [],  // 짝수/홀수 클래스 적용 안함
+      order: [[2, 'desc']],
+      dom: 'rtip',
+      paging: true,
+      lengthChange: false,
+      pageLength: parseInt($('#rowsPerPage').val(), 10),
+      searching: true,
+      ordering: true,
+      info: true,
+      language: {
+        search: "검색:",
+        lengthMenu: "표시 _MENU_ 건",
+        info: "총 _TOTAL_ 건 중 _START_ - _END_ 건 표시",
+        infoEmpty: "표시할 데이터 없음",
+        infoFiltered: "(전체 _MAX_ 건 중)",
+        zeroRecords: "일치하는 데이터가 없습니다.",
+        paginate: { first: "처음", last: "마지막", next: "다음", previous: "이전" }
+      }
+    });
+  }
+}
+
+// 4) 에러 처리
+function showErrorRow(msg) {
+  if (window.dataTableInstance) {
+    window.dataTableInstance.clear().draw();
+    window.dataTableInstance.row.add([msg, '', '', '', '', '', '']).draw();
+  } else {
+    $('#approverTable tbody').html(
+      '<tr><td colspan="7" class="text-center text-danger">' + msg + '</td></tr>'
+    );
+  }
+}
+
+// 5) 날짜 포맷
+function formatDate(s) {
+  if (!s) return '-';
+  var d = new Date(s);
+  if (isNaN(d)) return '-';
+  var z = n => ('0' + n).slice(-2);
+  return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) +
+         ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
+}

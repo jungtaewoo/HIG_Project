@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.mybatis.mappers.evaluation.evaluationTypeMapper">
+
+	<resultMap type="EvaluationTypeVO" id="evaluationResultMap" autoMapping="true">
+		<id property="evaluaTypeId" column="evaluatype_id" />
+	
+		<association property="rank" javaType="RankVO" autoMapping="true"/>
+	
+	</resultMap>
+	
+	<!-- 평가 기준 설정 화면 / 리스트 출력 -->
+	<select id="evaluTypeList" resultMap="evaluationResultMap">
+
+		SELECT
+			  E.evaluatype_id
+			, E.rank_id
+			, E.evalua_name
+			, E.evalua_type
+			, E.evalua_criteria
+			, E.evalua_comment
+			, E.evalua_weight
+			, E.evaluation_year
+       		, E.half_year
+			, R.rank_name
+		FROM 
+			evaluation_type E
+		LEFT JOIN 	
+			rank R ON E.rank_id = R.rank_id
+		WHERE 
+    		E.evaluation_year = #{evaluationYear}
+        	AND E.half_year = #{halfYear}  
+		ORDER BY 
+		    E.rank_id DESC,
+		    E.evalua_name ASC,
+		    E.evalua_weight DESC
+
+	</select>
+
+    <!-- 직급별 평가기준 리스트 출력 -->
+	<select id="evaluationRank" resultMap="evaluationResultMap">
+		SELECT
+			E.evaluatype_id
+			, R.rank_id
+			, E.evalua_name
+			, E.evalua_type
+			, E.evalua_criteria
+			, E.evalua_comment
+			, E.evalua_weight
+			, E.evaluation_year
+			, E.half_year
+			, R.rank_name
+		FROM
+			rank R
+		inner JOIN evaluation_type E ON R.rank_id = E.rank_id
+		where 
+			E.evaluation_year = #{evaluationYear}
+	    and 
+	    	E.half_year = #{halfYear}
+		ORDER BY
+			E.evalua_name ASC,
+		    E.evalua_weight DESC
+	</select>
+
+	<insert id="insertEvaluType" useGeneratedKeys="false">
+	    <selectKey keyProperty="evaluaTypeId" order="BEFORE" resultType="long">
+	        SELECT SEQ_EVALUATION_TYPE.NEXTVAL FROM DUAL
+	    </selectKey>
+
+		INSERT INTO evaluation_type (
+			  evaluatype_id
+			, rank_id
+			, evalua_name
+			, evalua_type
+			, evalua_criteria
+			, evalua_comment
+			, evalua_weight
+			, evaluation_year
+        	, half_year
+		) VALUES (
+			#{evaluaTypeId }
+			, #{rankId }
+			, #{evaluaName }
+			, #{evaluaType }
+			, #{evaluaCriteria }
+			, #{evaluaComment }
+			, #{evaluaWeight }
+			, #{evaluationYear}
+ 	        , #{halfYear}
+		)
+
+	</insert>
+	<!-- 과거 평가 항목 삭제 방어 -->
+<!-- 	<select id="selectEvaluTypeById" resultMap="evaluationResultMap" parameterType="String"> -->
+<!-- 	    SELECT -->
+<!-- 	          E.evaluatype_id -->
+<!-- 	        , E.rank_id -->
+<!-- 	        , E.evalua_name -->
+<!-- 	        , E.evalua_type -->
+<!-- 	        , E.evalua_criteria -->
+<!-- 	        , E.evalua_comment -->
+<!-- 	        , E.evalua_weight -->
+<!-- 	        , E.evaluation_year -->
+<!-- 	        , E.half_year -->
+<!-- 	        , R.rank_name -->
+<!-- 	    FROM  -->
+<!-- 	        evaluation_type E -->
+<!-- 	    LEFT JOIN  -->
+<!-- 	        rank R ON E.rank_id = R.rank_id -->
+<!-- 	    WHERE  -->
+<!-- 	        E.evaluatype_id = #{evaluaTypeId} -->
+<!-- 	</select> -->
+	
+	<delete id="deleteEvaluType" parameterType="String">
+		DELETE 
+			FROM evaluation_type 
+		WHERE 
+			evaluatype_Id = #{evaluaTypeId}
+	</delete>
+
+</mapper>

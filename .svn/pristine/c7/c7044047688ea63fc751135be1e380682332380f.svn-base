@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.evaluation.EvaluationResultDashboardMapper">
+	
+	<select id="getEvaluationSummary" resultType="EvaluationSummaryVO">
+	    SELECT
+	        COUNT(*) AS total,
+	        SUM(CASE WHEN EC.EVALUATION_STATUS = 'Y' THEN 1 ELSE 0 END) AS completed,
+	        SUM(CASE WHEN EC.EVALUATION_STATUS = 'N' THEN 1 ELSE 0 END) AS notCompleted,
+	        ROUND(AVG(E.EVALUATION_FINAL_SCORE), 1) AS avgScore
+	    FROM EVALUATION_CANDIDATE EC
+	    LEFT JOIN EVALUATION E ON EC.EMP_ID = E.EMP_ID
+	    WHERE EC.EVALUATION_YEAR = #{year}
+	      AND EC.HALF_YEAR = #{half}
+	</select>
+	
+	<!-- 직급별 평균 점수 -->
+	<select id="getAverageScoreByRank" resultType="RankScoreVO">
+	    SELECT
+	        R.RANK_NAME AS rankName,
+	        ROUND(AVG(E.EVALUATION_FINAL_SCORE), 1) AS averageScore
+	    FROM EVALUATION E
+	    JOIN EMPLOYEE EMP ON E.EMP_ID = EMP.EMP_ID
+	    JOIN RANK R ON EMP.RANK_ID = R.RANK_ID
+	    WHERE E.EVALUATION_YEAR = #{year}
+	      AND E.HALF_YEAR = #{half}
+	    GROUP BY R.RANK_NAME
+	</select>
+	
+</mapper>

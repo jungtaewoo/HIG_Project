@@ -1,0 +1,398 @@
+/**
+ * << 개정이력(Modification Information)>>
+ *   수정일            수정자         수정내용
+ * -----------    -------------    ---------------------------
+ * 2025. 4.  5.      CHOI          임시 저장 기능 모듈화 및 기안 회수/재요청 처리 (연차 필드 선택사항으로 수정)
+ */
+
+$(document).ready(async function(){
+    // 페이지 로드시 임시저장 리스트를 가져옴
+    await listAllDrafts();
+
+    // 모달 열릴 때 draftId 미설정이면 임시 ID 생성
+    $('#approvalFormModal').on('shown.bs.modal', function () {
+        let currentDraftId = $("#draftId").val().trim();
+        if (!currentDraftId) {
+            currentDraftId = "TMP_" + new Date().getTime();
+            $("#draftId").val(currentDraftId);
+            console.log("새로운 draftId 생성: " + currentDraftId);
+        }
+        const currentTitle = $("input[name='draftTitle']").val().trim();
+        if (currentTitle === "" || currentTitle === "draftTitle") {
+            $("input[name='draftTitle']").val("연차신청서");
+        }
+        loadTempDraft();
+    });
+    
+    // 임시저장 버튼
+    $("#tempSaveDraftBtn").on("click", function() {
+        saveTempDraft();
+    });
+});
+
+// ----------------------------------------------------
+// 1) 임시저장 로직
+export function saveTempDraft() {
+    let rawDraftId = $("#draftId").val();
+    let finalDraftId = rawDraftId ? rawDraftId : generateUniqueDraftId();
+    if (!finalDraftId.startsWith("TMP_")) {
+        const numericVal = parseInt(finalDraftId, 10);
+        if (!isNaN(numericVal)) {
+            finalDraftId = numericVal;
+        }
+    }
+    const draftData = {
+        draftId: finalDraftId,
+        templateId: $("#templateId").val() || "",
+        empId: $("#empId").val() || "",
+        departmentId: $("#departmentId").val() || "",
+        draftTitle: $("input[name='draftTitle']").val() || "",
+        draftContent: $("#draftContent").val() || "",
+        draftUrgent: $("#draftUrgent").prop("checked") ? "Y" : "N",
+        timestamp: new Date().toISOString()
+    };
+
+    // 결재자 목록 수집
+    draftData.draftapproverList = [];
+    $(".approverRow").each(function() {
+        const approver = {
+            approverId: $(this).find(".approverId").val() || "",
+            approverName: $(this).find(".approverName").val() || "",
+            departmentName: $(this).find(".departmentName").val() || "",
+            rankName: $(this).find(".rankName").val() || "",
+            aprSeq: $(this).find(".aprSeq").val() || "",
+            // ★ 기존에 aprStatus: $(this).find(".aprStatus").val() || "대기" 였다면 수정
+            // ★ 결재자 상태가 비어 있어도 "반려"인 경우를 덮어쓰지 않도록 주의해야 함
+            //   하지만 임시저장 시점에는 보통 새 결재일테니 "대기"로 두어도 되긴 함
+            aprStatus: $(this).find(".aprStatus").val() || "대기",
+            aprReason: $(this).find(".aprReason").val() || ""
+        };
+        draftData.draftapproverList.push(approver);
+    });
+
+    // 연차 필드 (임시저장 시 값이 비어있어도 그대로 저장)
+    const leaveDate = $("#leaveDate").val() || "";
+    const leaveEndDate = $("#leaveEndDate").val() || "";
+    const annualCode = $("#annualCode").val() || "";
+    const reason = (window.CKEDITOR && CKEDITOR.instances.reason)
+                    ? CKEDITOR.instances.reason.getData()
+                    : "";
+    draftData.annualHistory = {
+        leaveDate: leaveDate.trim(),
+        leaveEndDate: leaveEndDate.trim(),
+        annualCode: annualCode.trim(),
+        reason: reason
+    };
+
+    const empId = $("#empId").val() || "UNKNOWN";
+    const key = `tempDraft_${empId}_${draftData.draftId}`;
+    sessionStorage.setItem(key, JSON.stringify(draftData));
+    alert("임시저장되었습니다.");
+    listAllDrafts();
+
+    // 모달 닫기
+    const modalElement = document.getElementById("approvalFormModal");
+    const modalInstance = bootstrap.Modal.getInstance(modalElement);
+    if (modalInstance) modalInstance.hide();
+}
+
+// ----------------------------------------------------
+// 2) 임시저장 로드 로직
+export function loadTempDraft() {
+    const draftId = $("#draftId").val();
+    const empId = $("#empId").val() || "UNKNOWN";
+    if (draftId) {
+        const key = `tempDraft_${empId}_${draftId}`;
+        const draftData = sessionStorage.getItem(key);
+        if (draftData) {
+            try {
+                const parsedData = JSON.parse(draftData);
+                fillDraftForm(parsedData);
+            } catch(e) {
+                console.error("임시저장 데이터 파싱 오류 (draftId: " + draftId + "):", e);
+            }
+        } else {
+            console.log("해당 draftId(" + draftId + ")에 대한 임시저장 데이터가 없습니다.");
+        }
+    } else {
+        console.log("현재 DRAFT_ID가 없습니다.");
+    }
+}
+
+// ----------------------------------------------------
+// 3) 임시저장 데이터 목록 + 열기/삭제
+export async function getLoggedInUserIdSomehow() {
+    try {
+        const response = await axios.get(window.contextPath + "/approvalProcess/getApproverId");
+        return response.data;
+    } catch (error) {
+        console.error("로그인 사용자 ID 조회 실패:", error);
+        return "UNKNOWN";
+    }
+}
+
+export async function listAllDrafts() {
+    const empId = await getLoggedInUserIdSomehow();
+    const container = document.getElementById("draftListContainer");
+    if (!container) {
+        console.warn("draftListContainer 요소가 없습니다. listAllDrafts() 스킵");
+        return;
+    }
+    container.innerHTML = "";
+    const keys = Object.keys(sessionStorage);
+    const draftKeys = keys.filter(key => key.startsWith(`tempDraft_${empId}_`));
+    if (draftKeys.length === 0) {
+        container.innerHTML = "<p>임시저장된 문서가 없습니다.</p>";
+        return;
+    }
+    let html = "<ul class='list-group' id='draftUl'>";
+    draftKeys.forEach(key => {
+        const dataStr = sessionStorage.getItem(key);
+        try {
+            const draft = JSON.parse(dataStr);
+            const title = draft.draftTitle || "제목 없음";
+            const formattedTime = formatTimestampToLocal(draft.timestamp);
+            const displayLabel = `[임시저장] ${title} (${formattedTime})`;
+            html += `
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <span>${displayLabel}</span>
+                  <div>
+                    <button class="btn btn-primary btn-sm openDraftBtn" data-key="${key}">열기</button>
+                    <button class="btn btn-danger btn-sm removeDraftBtn" data-key="${key}">삭제</button>
+                  </div>
+                </li>
+            `;
+        } catch(e) {
+            console.error("Parsing error for key:", key, e);
+        }
+    });
+    html += "</ul>";
+    container.innerHTML = html;
+    const draftUl = container.querySelector("#draftUl");
+    draftUl.addEventListener("click", function(e) {
+        if (e.target.matches(".openDraftBtn")) {
+            const key = e.target.dataset.key;
+            openSavedDraft(key);
+        } else if (e.target.matches(".removeDraftBtn")) {
+            const key = e.target.dataset.key;
+            removeDraft(key);
+        }
+    });
+}
+
+export async function openSavedDraft(key) {
+    const dataStr = sessionStorage.getItem(key);
+    if (!dataStr) {
+        alert("해당 임시저장 데이터를 찾을 수 없습니다.");
+        return;
+    }
+    try {
+        const draftData = JSON.parse(dataStr);
+        // 모달을 띄우는 함수 (프로젝트 환경에 맞춰 구현)
+        await openApprovalForm(draftData.templateId, draftData.draftTitle || "임시저장 문서");
+        fillDraftForm(draftData);
+    } catch(e) {
+        console.error(e);
+        alert("임시저장 데이터를 불러오는 중 오류 발생");
+    }
+}
+
+export function removeDraft(key) {
+    if (confirm("정말 이 임시저장 문서를 삭제하시겠습니까?")) {
+        sessionStorage.removeItem(key);
+        listAllDrafts();
+    }
+}
+
+// ----------------------------------------------------
+// 유니크 ID, 시간 포맷, 폼 채우기, 재상신 등
+export function generateUniqueDraftId() {
+    return "TMP_" + new Date().getTime();
+}
+
+export function formatTimestampToLocal(isoString) {
+    if (!isoString) return "";
+    const dateObj = new Date(isoString);
+    if (isNaN(dateObj.getTime())) return "";
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const day = String(dateObj.getDate()).padStart(2, "0");
+    const hours = String(dateObj.getHours()).padStart(2, "0");
+    const minutes = String(dateObj.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+export function fillDraftForm(draftData) {
+    $("#draftId").val(draftData.draftId);
+    $("#templateId").val(draftData.templateId);
+    $("#empId").val(draftData.empId);
+    $("#departmentId").val(draftData.departmentId || draftData.draftDepartmentId || "");
+    $("input[name='draftTitle']").val(draftData.draftTitle);
+    $("#draftContent").val(draftData.draftContent);
+    $("#draftUrgent").prop("checked", draftData.draftUrgent === "Y");
+
+    // 결재자 목록 렌더링
+    $("#approverTableBody").empty();
+    if (draftData.draftapproverList && draftData.draftapproverList.length > 0) {
+        draftData.draftapproverList.forEach(function(approver) {
+            // --- 여기서 조건부 로직 ---
+            // 만약 회수된 문서라면 aprStatus가 빈 값일 때 "대기"로 설정
+            // 반려 상태는 그대로 유지
+            let displayStatus = approver.aprStatus;
+
+            if (draftData.draftStatus === "회수" && (!displayStatus || displayStatus.trim() === "")) {
+            	displayStatus = "대기";
+            }
+
+            const rowHtml = `
+                <tr class="approverRow">
+                    <td>
+                        <input type="hidden" class="approverId" value="${approver.approverId}" />
+                        <input type="text" class="form-control approverName" value="${approver.approverName}" placeholder="승인자명" />
+                    </td>
+                    <td style="min-width: 100px;">
+                        <input type="text" class="form-control departmentName" value="${approver.departmentName || approver.approverDepartmentName || ""}" placeholder="부서명" />
+                    </td>
+                    <td>
+                        <input type="text" class="form-control rankName" value="${approver.rankName || approver.approverRankName || ""}" placeholder="직급명" />
+                    </td>
+                    <td>
+                        <input type="number" class="form-control aprSeq" value="${approver.aprSeq}" readonly />
+                    </td>
+                    <td style="min-width: 60px;">
+                        <select class="form-control aprStatus" disabled>
+                            <option value="대기" ${displayStatus === "대기" ? "selected" : ""}>대기</option>
+                            <option value="반려" ${displayStatus === "반려" ? "selected" : ""}>반려</option>
+                            <option value="승인중" ${displayStatus === "승인중" ? "selected" : ""}>승인중</option>
+                        </select>
+                        <input type="hidden" class="aprStatusHidden" value="${displayStatus}" />
+                    </td>
+                </tr>
+            `;
+            $("#approverTableBody").append(rowHtml);
+        });
+    }
+
+    // 연차(annualHistory)
+    const annualHistory = draftData.annualHistory || { leaveDate: "", leaveEndDate: "", annualCode: "", reason: "" };
+    const leaveDateValue = annualHistory.leaveDate ? annualHistory.leaveDate.split(" ")[0] : "";
+    $("#leaveDate").val(leaveDateValue);
+    const leaveEndDateValue = annualHistory.leaveEndDate ? annualHistory.leaveEndDate.split(" ")[0] : "";
+    $("#leaveEndDate").val(leaveEndDateValue);
+    $("#annualCode").val(annualHistory.annualCode || "");
+
+    if (CKEDITOR.instances && CKEDITOR.instances.reason) {
+        CKEDITOR.instances.reason.setData(annualHistory.reason || "");
+    }
+
+    // "회수" / "반려" / 임시문서(TMP_) → 재상신 버튼(#resubmitBtn)을 보여주고, 결재 버튼(#submitApprovalBtn)은 숨김
+    if (
+      (typeof draftData.draftId === "string" && draftData.draftId.startsWith("TMP_")) ||
+      draftData.draftStatus === "회수" ||
+      draftData.draftStatus === "반려"
+    ) {
+      $("#submitApprovalBtn").hide();
+      $("#resubmitBtn").show();
+    } else {
+      $("#submitApprovalBtn").show();
+      $("#resubmitBtn").hide();
+    }
+}
+
+export function storeRecalledDocInSession(docData, empId) {
+    const recalledDraft = {
+        draftId: docData.draftId,
+        templateId: docData.templateId || "",
+        empId: empId,
+        departmentId: docData.draftDepartmentId || docData.departmentId || $("#departmentId").val() || "",
+        draftTitle: docData.draftTitle || "",
+        draftContent: docData.draftContent || "",
+        draftUrgent: docData.draftUrgent === "Y" ? "Y" : "N",
+        timestamp: new Date().toISOString(),
+        draftStatus: docData.draftStatus || "",
+        draftapproverList: [],
+        annualHistory: {
+            leaveDate:  (docData.annualHistory && docData.annualHistory.leaveDate) || docData.leaveDate || "",
+            leaveEndDate: (docData.annualHistory && docData.annualHistory.leaveEndDate) || docData.leaveEndDate || "",
+            annualCode: (docData.annualHistory && docData.annualHistory.annualCode) || docData.annualCode || "",
+            reason: (docData.annualHistory && docData.annualHistory.reason) || docData.reason || ""
+        }
+    };
+
+    // ★ 여기서도 "ap.aprStatus || '대기'" 부분을 조건부로 수정
+    if (docData.draftapproverList && Array.isArray(docData.draftapproverList)) {
+        recalledDraft.draftapproverList = docData.draftapproverList.map(ap => {
+            let finalStatus = ap.aprStatus;
+             if (docData.draftStatus === "회수" && (!finalStatus || finalStatus.trim() === "")) {
+            	finalStatus = "대기";
+              }
+            return {
+                approverId: ap.approverId,
+                approverName: ap.approverName,
+                approverDepartmentName: ap.approverDepartmentName,
+                approverRankName: ap.approverRankName,
+                aprSeq: ap.aprSeq,
+                aprStatus: finalStatus,   // 조건부로 처리
+                aprReason: ap.aprReason || ""
+            };
+        });
+    }
+
+    const key = `tempDraft_${empId}_${recalledDraft.draftId}`;
+    sessionStorage.setItem(key, JSON.stringify(recalledDraft));
+}
+
+/**
+ * 재상신 요청 함수
+ */
+export async function submitReDraft(draftData) {
+    if (!draftData.draftContent || draftData.draftContent.trim() === "") {
+        draftData.draftContent = "기안상신합니다.";
+    }
+
+    // CKEDITOR에서 최신 연차 필드 가져오기
+    const updatedLeaveDate = $("#leaveDate").val().trim();
+    const updatedLeaveEndDate = $("#leaveEndDate").val().trim();
+    const updatedAnnualCode = $("#annualCode").val().trim();
+    const updatedReason = (window.CKEDITOR && CKEDITOR.instances.reason)
+                          ? CKEDITOR.instances.reason.getData()
+                          : ($("#reason").val() || "");
+    draftData.annualHistory = {
+        leaveDate: updatedLeaveDate,
+        leaveEndDate: updatedLeaveEndDate,
+        annualCode: updatedAnnualCode,
+        reason: updatedReason
+    };
+
+    // 연차 필드가 비어있으면 제거
+    if (!updatedLeaveDate || !updatedLeaveEndDate || !updatedAnnualCode) {
+        const empId = $("#empId").val() || "UNKNOWN";
+        const key = `tempDraft_${empId}_${draftData.draftId}`;
+        sessionStorage.removeItem(key);
+        delete draftData.annualHistory;
+    } else {
+        draftData.annualHistory.leaveDate = updatedLeaveDate.split(" ")[0];
+        draftData.annualHistory.leaveEndDate = updatedLeaveEndDate.split(" ")[0];
+    }
+
+    // draftId가 "TMP_"로 시작하면 새 문서 취급
+    if (typeof draftData.draftId === "string" && draftData.draftId.startsWith("TMP_")) {
+        draftData.draftId = null;
+    } else if (typeof draftData.draftId === "string") {
+        const numericVal = parseInt(draftData.draftId, 10);
+        if (!isNaN(numericVal)) {
+            draftData.draftId = numericVal;
+        }
+    }
+    
+    try {
+        const resp = await axios.post(window.contextPath + "/approval/draft/submit", draftData);
+        alert(resp.data);
+        const empId = $("#empId").val() || "UNKNOWN";
+        const key = `tempDraft_${empId}_${draftData.draftId}`;
+        sessionStorage.removeItem(key);
+    } catch (error) {
+        console.error("재상신 실패:", error);
+        alert("재상신 중 오류가 발생했습니다. (서버 로그 참고)");
+    }
+}

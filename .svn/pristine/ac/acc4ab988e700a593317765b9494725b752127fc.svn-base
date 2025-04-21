@@ -1,0 +1,40 @@
+package kr.or.ddit.attendance.service;
+
+import java.util.List;
+
+import kr.or.ddit.annual.vo.AnnualManageVO;
+import kr.or.ddit.annual.vo.AnnualVO;
+import kr.or.ddit.attendance.vo.AttendanceVO;
+import kr.or.ddit.department.vo.DepartmentVO;
+import kr.or.ddit.employee.vo.EmployeeVO;
+import kr.or.ddit.team.vo.TeamVO;
+import kr.or.ddit.workstatus.vo.WorkstautsVO;
+
+public interface AttendanceService {
+	public List<AttendanceVO> attendanceList();
+	public List<AttendanceVO> attendanceList(String departmentId, String teamId, String date);
+	public List<AttendanceVO> attendanceDetail(String empId, String startDate, String endDate);
+	
+	public List<AttendanceVO> myAttendance(String empId, String workDate);
+	
+	public void attendanceInsert(AttendanceVO attendance);
+	
+	public AttendanceVO findTodayAttendance(String empId);
+	
+	public void updateWorkEnd(AttendanceVO attendance);
+	
+	public List<DepartmentVO> departmentList();
+	public List<TeamVO> teamList();
+	public List<WorkstautsVO> workStatusList();
+	
+	// 직원의 업무 상태 조회
+	public AttendanceVO workStatusEmployee(String empId);
+	public EmployeeVO Employee(String empId);
+	public AttendanceVO updateAttendance(String empId);
+	public List<AttendanceVO> findTodayAttendanceList();
+	
+	public void insertAbsentStatus(AttendanceVO attendance);
+	
+	public AttendanceVO getMax();
+}
+

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>연차 신청서</title>
+  <!-- 의존성 라이브러리 로드 -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.13.1/underscore-min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.4.0/backbone-min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.ckeditor.com/4.20.0/standard/ckeditor.js"></script>
+  <style type="text/css">
+	#draftContent {
+	    display: none !important;
+	}
+  
+  </style>  	
+</head>
+<body>
+  
+<form id="approvalForm">
+  <div id="editor">
+    <table style="width: 800px; border-collapse: collapse; font-size: 12px;">
+      <tbody>
+        <tr>
+          <td colspan="2" style="padding: 20px; height: 90px; font-size: 22px; font-weight: bold; text-align: center;">
+            연차신청서
+          </td>
+        </tr>
+        <!-- 기안 정보 -->
+        <tr>
+          <td style="width:400px; padding: 20px;">
+            <table style="margin: 20px 0; border: 1px solid black; border-collapse: collapse;">
+              <tbody>
+                <!-- 공통 Hidden 필드 -->
+                <input type="hidden" id="draftId" name="draftId" value="" />
+                <input type="hidden" id="templateId" name="templateId" value=""/>
+                <input type="hidden" id="empId" name="empId" value="empId"/>
+                <input type="hidden" id="departmentId" name="departmentId" value="" />
+                <input type="hidden" id="draftTitle" name="draftTitle" value="draftTitle"/>
+                
+
+                <tr>
+                  <td style="padding: 8px; text-align: center;">기안자</td>
+                  <td style="padding: 8px;">
+                    <input type="text" name="draftUser" class="form-control" readonly />
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; text-align: center;">기안부서</td>
+                  <td style="padding: 8px;">
+                    <input type="text" name="draftDept" class="form-control" readonly />
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px; text-align: center;">기안일</td>
+                  <td style="padding: 8px;">
+                    <input type="date" name="draftDate" class="form-control" readonly />
+                  </td>
+                </tr>
+                <tr class="docNoRow" style="display: none;">
+                  <td style="padding: 8px; text-align: center;">문서번호</td>
+                  <td style="padding: 8px;">
+                    <input type="text" name="docNo" class="form-control" readonly />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+
+        <!-- 승인자 정보 영역 -->
+          <td style="width:500px; padding: 20px; vertical-align: top;">
+            <table id="approverTable" style="width: 100%; border: 1px solid #ccc; border-collapse: collapse; font-size: 12px;">
+              <thead>
+                <tr>
+                  <th style="padding: 5px; text-align: center;">승인자명</th>
+                  <th style="padding: 5px; text-align: center;">부서</th>
+                  <th style="padding: 5px; text-align: center;">직급</th>
+			      <th style="padding: 5px; text-align: center;">승인순번</th>
+			      <th style="padding: 5px; text-align: center;">상태</th>
+                </tr>
+              </thead>
+              <tbody id="approverTableBody">
+                <!-- 동적으로 추가될 승인자들 -->
+              </tbody>
+            </table>
+            <!-- 동적 생성 -> draft.js -->
+<!--             승인자 추가/삭제 버튼 -->
+<!--             <div style="margin-top: 10px;"> -->
+<!--               <button type="button" id="plus1" class="btn btn-primary btn-sm">승인자 추가</button> -->
+<!--               <button type="button" id="minus1" class="btn btn-danger btn-sm">승인자 삭제</button> -->
+<!--             </div> -->
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  
+    <br><br>
+  
+    <!-- 연차 신청서 전용 항목 (휴가 정보) -->
+    <table style="width: 800px; border: 1px solid black; border-collapse: collapse; font-size: 12px;">
+      <tbody>
+        <tr>
+          <td style="padding: 5px; text-align: center;">휴가 종류</td>
+          <td style="padding: 5px;">
+            <select id="annualCode" name="annualCode" class="form-control">
+<!--               옵션은 JS로 채워짐 -->
+<!--               <option value="annualName"></option> 동적으로 추가됨 -->
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 5px; text-align: center;">기간 및 일시</td>
+          <td style="padding: 5px;">
+            <input type="date" id="leaveDate" name="leaveDate" class="form-control" style="display:inline-block; width:48%;" />
+            ~
+            <input type="date" id="leaveEndDate" name="leaveEndDate" class="form-control" style="display:inline-block; width:49%;" />
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 5px; text-align: center;">
+            <b style="color:red;"></b> 휴가 사유
+          </td>
+          <td style="padding: 5px;">
+            <!-- 휴가 사유는 CKEditor 적용 -->
+            <textarea name="reason" id="reason" class="form-control" style="width: 100%; height: 80px;"></textarea>
+          	<!-- 기안 사유는 hidden 처리 -->
+            <input type="hidden" id="draftContent" name="draftContent" class="no-ckeditor"  value="기안상신합니다." style="display: none;"/>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  
+  </div>
+</form>
+  
+<!-- JS 로드 -->
+<script src="/resources/js/approval/approvalTemplate.js"></script>
+<script src="/resources/js/approval4.js"></script>
+<script src="/resources/js/approval/approvalDraft.js"></script>
+<script>
+  // CKEditor 4 적용: 편집 대상인 textarea만 처리
+  window.onload = function() {
+    document.querySelectorAll("textarea:not(.no-ckeditor)").forEach((textarea) => {
+      // 여기서는 "reason" 필드만 CKEditor 적용됨
+      CKEDITOR.replace(textarea.id, { versionCheck: false });
+    });
+  }
+</script>
+  
+</body>
+</html>

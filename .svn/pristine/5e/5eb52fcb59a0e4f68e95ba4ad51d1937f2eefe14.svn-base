@@ -1,0 +1,95 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ page import="java.util.Date" %>
+<h4>채용공고 상세페이지</h4>
+${recruitBoardDetail}
+<div class="card">
+	<div class="card-header">Simple Datatable.DB연동 O</div>
+	<div class="card-body">
+		<table class="table">
+			<tr>
+				<th>제목</th>
+				<td>${recruitBoardDetail.recruitTitle }</td>
+			</tr>
+			<tr>
+				<th>근무지</th>
+				<td>${recruitBoardDetail.recruitWorkplace }</td>
+			</tr>
+			<tr>
+				<th>고용형태</th>
+				<td>${recruitBoardDetail.recruitHiretype }</td>
+			</tr>
+			<tr>
+				<th>급여</th>
+				<td>월 ${recruitBoardDetail.recruitSalary }만원</td>
+			</tr>
+			<tr>
+				<th>모집부서</th>
+				<td>${recruitBoardDetail.recruitPosition }</td>
+			</tr>
+			<tr>
+				<th>업무내용</th>
+				<td>${recruitBoardDetail.recruitWorkdetail }</td>
+			</tr>
+			<tr>
+				<th>우대사항</th>
+				<td>${recruitBoardDetail.recruitPq }</td>
+			</tr>
+			<tr>
+				<th>시작일</th>
+				<td>
+					<fmt:formatDate value="${recruitBoardDetail.recruitStartdate }" pattern="yyyy년 MM월 dd일" />
+				</td>
+			</tr>
+			<tr>
+				<th>마감일</th>
+				<td>
+					<fmt:formatDate value="${recruitBoardDetail.recruitEnddate }" pattern="yyyy년 MM월 dd일" />
+				</td>
+			</tr>
+			<tr>
+				<th>문의처</th>
+				<td>${recruitBoardDetail.recruitContact }</td>
+			</tr>
+		</table>
+
+		<!-- 버튼 컨테이너 -->
+		<div style="display: flex;">
+			<a href="${pageContext.request.contextPath}/recruit/board/updateUI?recruitId=${recruitBoardDetail.recruitId}">
+			    <button class="btn btn-primary" style="margin-right: 5px;">수정</button>
+			</a>
+			<button type="button" class="btn btn-secondary" style="width:100px;" onclick="history.go(-1);">뒤로가기</button>
+		</div>
+	</div>
+</div>
+<br>
+<br>
+나중에 홈페이지에서 연결시켜야 함
+<c:set var="today" value="<%= new java.util.Date() %>" />
+<c:set var="todayFormatted">
+	<fmt:formatDate value="${today}" pattern="yyyy-MM-dd"/>
+</c:set>
+<c:set var="endDateFormatted">
+	<fmt:formatDate value="${recruitBoardDetail.recruitEnddate}" pattern="yyyy-MM-dd"/>
+</c:set>
+
+<form action="${pageContext.request.contextPath }/recruit/applicant/registerUI" method="get" style="display:block;" >
+    recruitId: ${recruitBoardDetail.recruitId}
+    <input type="hidden" name="recruitId" value="${recruitBoardDetail.recruitId}">
+	
+	<!-- 마감일 지나면 지원서 버튼 비활성화 -->
+ 	<%-- 
+    <c:choose>
+        <c:when test="${endDateFormatted < todayFormatted}">
+            <button type="button" class="btn btn-secondary" disabled>지원서 작성불가</button>
+        </c:when>
+        <c:otherwise>
+          --%>
+            <button type="submit" class="btn btn-primary">지원서 작성하기</button>
+            <%-- 
+        </c:otherwise>
+    </c:choose>
+      --%>
+</form>

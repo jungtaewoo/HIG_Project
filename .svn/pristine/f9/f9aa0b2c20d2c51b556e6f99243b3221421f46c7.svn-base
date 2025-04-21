@@ -1,0 +1,47 @@
+package kr.or.ddit.mybatis.mappers.employee;
+
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import kr.or.ddit.employee.vo.EmployeeVO;
+
+@Mapper
+public interface EmployeeMapper {
+
+	public List<EmployeeVO> selectEmpList();
+	public EmployeeVO selectEmp(String empId);
+	public int insertEmp(EmployeeVO emp);
+	public int updateEmp(EmployeeVO emp);
+	
+	// 직원 상태 변경 시 근로계약서 상태도 변경, 계졍 비활성화로 변경
+    public int updateEmpStatus(@Param("empId") String empId, @Param("empStatus") String empStatus);
+    
+	//전체 직원 수 조회
+	public int empCount();
+	
+	//올해 퇴사자 수 조회
+	public int resignCount();
+	
+	//올해 입사자 수 조회
+	public int  hireCount();
+	
+	// 직급별 인원수 비율
+	public List<Map<String, Object>> rankPercent(); 
+	
+	//근속년수별 인원수 비율
+	public List<Map<String, Object>> tunurePercent(); 
+	
+	//퇴사,휴직 관련
+	
+	public int updateRetireInfo(EmployeeVO employeeVO);
+	
+	public int updateLeaveInfo(EmployeeVO employeeVO);
+	
+	public List<EmployeeVO> selectEmpListList();
+	//퇴사자 리스트
+	public List<EmployeeVO> selectRetireLeaveList();
+}
+

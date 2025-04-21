@@ -1,0 +1,1304 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<style>
+thead th {
+    text-align: center !important;
+}
+
+.modal-title {
+    color: white !important;
+    flex-grow: 1; /* 제목이 가운데 정렬될 수 있도록 설정 */
+    text-align: center;
+}
+.modal-header .btn-close {
+    filter: invert(1); /* 아이콘 색 반전 (검정 → 흰색) */
+    opacity: 1; /* 기본 부트스트랩 스타일보다 더 뚜렷하게 표시 */
+}
+.modal-body .list-group-item {
+    border: none;  /* 테두리 제거 */
+    padding: 10px 15px;
+    background-color: #f9f9f9; /* 연한 배경색 */
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+.modal-body strong {
+    display: inline-block;
+    width: 120px; /* 라벨 너비 통일 */
+    font-weight: bold;
+    color: #333;
+}
+
+.radio-label {
+        margin-right: 20px; /* 라디오 버튼 간격 조정 */
+}
+
+.select-result {
+    border: none;
+    padding: 10px 15px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+.select-result label {
+    font-weight: bold;
+    color: #333;
+    display: inline-block;
+    width: 120px;
+}
+.select-result strong {
+    color: #0d6efd;
+}
+.select-result input[type="radio"] {
+    margin-left: 10px;
+    margin-right: 5px;
+}
+
+ /* 비활성화 라디오버튼 좀 더 뚜렷하게 */
+ input[type="radio"]:disabled {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #555;  
+  border-radius: 50%;
+  background-color: #eee;  
+  position: relative;
+}
+input[type="radio"]:disabled:checked::before {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 8px;
+  background-color: #555; 
+  border-radius: 50%;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+}
+ 
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out;
+    transform: translateY(-10px);
+}
+.modal.show .modal-dialog {
+    transform: translateY(0);
+}
+
+input[type="checkbox"].selectOne {
+    transform: scale(1.5); /* 1.5배 확대 */
+    margin: 5px;
+    cursor: pointer;
+}
+
+/* th 정렬 숨김 */
+th a.dataTable-sorter::after {
+	display: none !important; 
+}
+th a.dataTable-sorter::before {
+	display: none !important; 
+}
+th a.dataTable-sorter {
+	pointer-events: none; 
+}
+/* 
+th.excel a.dataTable-sorter::after {
+	display: none !important; 
+}
+th.excel a.dataTable-sorter::before {
+	display: none !important; 
+}
+th.excel a.dataTable-sorter {
+	pointer-events: none; 
+}
+*/
+
+/* === .dataTable-top css 테스트 === */
+.dataTable-top {
+ 	display: none; 
+}
+.dataTable-bottom {
+ 	display: none; 
+}
+.dataTable-dropdown {
+ 	display: none !important; 
+}
+#table1.table.table-striped.text-center tbody tr td,
+#table1.table.table-striped.text-center tbody tr td * {
+  font-size: 15px !important;
+}
+
+
+/* applicationModal 전용 스타일 - 개별 모달에만 적용 */
+[id^="applicationModal-"] .modal-title {
+    color: white !important;
+    font-weight: bold;
+    text-align: center;
+    flex: 1;
+}
+
+[id^="applicationModal-"] .modal-header {
+    background-color: var(--bs-primary);
+    border-bottom: none;
+    color: white;
+}
+
+[id^="applicationModal-"] .btn-close {
+    filter: invert(1);
+    opacity: 1;
+}
+
+[id^="applicationModal-"] .modal-body {
+    padding: 1.5rem 2rem;
+    background-color: #f8f9fa;
+}
+
+[id^="applicationModal-"] .card {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+[id^="applicationModal-"] .list-group-item {
+    border: none;
+    border-bottom: 1px solid #eee;
+    padding: 12px 10px;
+    background-color: transparent;
+    font-size: 15px;
+}
+
+[id^="applicationModal-"] .list-group-item:last-child {
+    border-bottom: none;
+}
+
+[id^="applicationModal-"] .list-group-item strong {
+    width: 100px;
+    display: inline-block;
+    color: #555;
+}
+
+[id^="applicationModal-"] .status-container {
+    margin: 1rem 0 1.5rem;
+    padding: 1rem;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #ccc;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[id^="applicationModal-"] .status-container h6 {
+    font-size: 16px;
+    font-weight: bold;
+    color: #0d6efd;
+    margin-bottom: 1rem;
+}
+
+[id^="applicationModal-"] .radio-label input[type="radio"] {
+    margin-right: 5px;
+}
+
+[id^="applicationModal-"] .btn {
+    min-width: 100px;
+}
+
+[id^="applicationModal-"] .modal-footer {
+    border-top: none;
+}
+
+
+</style>
+
+<!-- chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+<!-- 뒤로가기, Breadcrumb 통일 -->
+<div class="page-container container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <!-- 좌측: 버튼 그룹 -->
+    <div>
+      <button type="button" class="btn btn-outline-secondary" onclick="history.back();">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+    </div>
+    <!-- 우측: Breadcrumb -->
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item fw-bold text-primary"><a href="${pageContext.request.contextPath }/account/login/home"> 📌 Main</a></li>
+        <li class="breadcrumb-item">
+          <a href="${pageContext.request.contextPath }/recruit/board/list">채용공고 관리</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">면접자 관리</li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<section class="section">
+	<div class="card">
+		<div class="card-header">
+			<h3>면접자 관리</h3><hr>
+			<h5 id="cardHeader" style="display: none;" >동적제목</h5>
+		</div>
+		<div class="card-body">
+<!-- 		ORDER BY RECRUIT_ID(지원공고) DESC, INTERVIEW_DATE(면접날짜) DESC. -->
+
+			<!-- 합격자 수  -->
+			<c:set var="passedCount" value="0" />
+			<c:forEach var="interview" items="${interviewList}">
+			    <c:if test="${interview.applicationStatus.currentStatus eq '합격'}">
+			        <c:set var="year" value="${fn:substring(interview.applicationStatus.interviewDate, 0, 4)}" />
+			        <c:set var="month" value="${fn:substring(interview.applicationStatus.interviewDate, 5, 7)}" />
+			        <c:if test="${year eq '2025' and month le '06'}">
+			            <c:set var="passedCount" value="${passedCount + 1}" />
+			        </c:if>
+			    </c:if>
+			</c:forEach>
+			<h5 id="passedCountDisplay" style="font-weight:bold; color:green;">✅ 2025 상반기 합격자: ${passedCount}명</h5>
+			
+			<div style="color: black; font-weight: bold;">⚠️평가하기 버튼 → 면접자 평가 (평가 저장 시 자동 메일 전송)</div>
+<!-- 			<div style="text-dark; font-weight: bold;">⚠️합격자 정보 엑셀 다운로드 가능</div> -->
+			<br>
+			<!-- chart -->
+			<div style="display: flex; justify-content: center; align-items: center; gap: 60px; width: 100%;">
+			    <%-- 
+			    <div style="width: 250px; height: 250px;">
+			        <canvas id="interviewStatusChart"></canvas>
+			    </div>
+			    <div style="width: 250px; height: 250px;">
+			        <canvas id="totalGenderChart"></canvas>
+			    </div>
+			    <div style="width: 250px; height: 250px;">
+			        <canvas id="passedGenderChart"></canvas>
+			    </div> --%>
+			    
+			    <div style="display: flex; justify-content: center; align-items: center; width: 31%; height: 300px;">
+			        <canvas id="interviewStatusChart"></canvas>
+			    </div>
+			    <div style="display: flex; justify-content: center; align-items: center; width: 31%; height: 300px;">
+			        <canvas id="totalGenderChart"></canvas>
+			    </div>
+			    <div style="display: flex; justify-content: center; align-items: center; width: 31%; height: 300px;">
+			        <canvas id="passedGenderChart"></canvas>
+			    </div>
+			</div>
+			<!-- 성별 비율 확인용 -->
+			<%-- <div>
+				<c:forEach var="genderRatio" items="${totalGenderRatio}">
+				    <p>총 ${genderRatio.APP_GENDER}: ${genderRatio.GENDER_COUNT}명</p>
+				</c:forEach>
+				<c:forEach var="genderRatio" items="${passedGenderRatio}">
+				    <p>합격 ${genderRatio.APP_GENDER}: ${genderRatio.GENDER_COUNT}명</p>
+				</c:forEach>
+			</div> --%>
+			<hr><br>
+			<form id="excelDownloadForm" method="post" action="/recruit/interview/excelDownload">
+				<!-- 테이블 상단 버튼 영역 ****************************************** -->
+				<div class="d-flex justify-content-between align-items-center mb-2">
+				    <div>
+				        <button type="button" id="showCurrentBtn" class="btn btn-outline-primary">현재 공고</button>
+				        <button type="button" id="showPastBtn" class="btn btn-outline-secondary">지난 공고</button>
+				    </div>
+				    <div class="d-flex gap-2"><strong style="font-size:22px; color:green">Excel</strong>
+				        <button type="submit" class="btn btn-outline-success ">선택 출력</button>
+				        <button type="button" class="btn btn-outline-success " id="downloadAllBtn">전체 출력</button>
+				    </div>
+				</div>
+				<!-- 면접자 테이블 -->
+				<table class="table table-striped text-center" id="table1">
+					<thead class="text-center">
+						<tr>
+							<th>지원공고</th><!-- td:nth-child(1) 사용중 -->
+							<th>지원자</th>
+							<th>면접날짜</th>
+							<th>지원서</th>
+							<th>평가</th>
+							<th>결과</th>
+							<th class="excel">Excel</th> 
+						</tr>
+					</thead>
+					<tbody>
+						<c:choose>
+							<c:when test="${not empty interviewList }">
+								<c:forEach items="${interviewList }" var="interview">
+									<tr>
+										<td class="text-start">
+											<a href="#" data-bs-toggle="modal" data-bs-target="#recruitModal-${interview.recruitment.recruitId}">
+										        ${interview.recruitment.recruitTitle}
+										    </a>
+										</td>
+										<td>
+											<%-- appId:${interview.appId}, --%>
+											${interview.appName}
+										</td>
+										<td>${fn:substringBefore(interview.applicationStatus.interviewDate, ' ')}</td>
+										<td>
+											<button class="btn btn-outline-primary" data-bs-toggle="modal"
+											 data-bs-target="#applicationModal-${interview.appId}" type="button">
+												열람
+											</button>
+										</td>
+										<td>
+	                                        <button class="btn ${interview.applicationStatus.currentStatus == '면접예정' ? 'btn-success' : 'btn-secondary'} btn-sm"
+											    data-bs-toggle="modal" data-bs-target="#evaluationModal-${interview.appId}"
+											    data-status="${interview.applicationStatus.currentStatus}" type="button">
+											    <!-- data-status 속성 추가 -->
+											    ${interview.applicationStatus.currentStatus == '면접예정' ? '평가하기' : '평가완료'}
+											</button>
+										</td>
+										<td id="status-${interview.appId}">
+											${interview.applicationStatus.currentStatus }
+										</td>
+										<td>
+											<!-- 체크박스: 합격인 경우만 활성화 -->
+											<input type="checkbox" name="appIds" value="${interview.appId}" class="selectOne"
+												${interview.applicationStatus.currentStatus == '합격' ? '' : 'disabled'} />
+										</td>
+									</tr>
+								</c:forEach>
+							</c:when>
+							<c:otherwise>
+								<tr>
+									<td colspan="7" class="text-center">면접예정자가 존재하지 않습니다.</td>
+								</tr>
+							</c:otherwise>
+						</c:choose>
+					</tbody>
+				</table>
+			</form> 
+		</div>
+	</div>
+</section>
+<%-- ${interviewList } --%>
+<%-- 누적지원자 성별비율: ${totalGenderRatio } --%>
+<%-- 합격자 성별비율: ${passedGenderRatio } --%>
+<!-- 지원서 상세 모달창 -->
+<c:forEach items="${interviewList}" var="interview">
+    <div class="modal fade" id="applicationModal-${interview.appId}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary">
+                    <h5 class="modal-title">지원서 상세 정보</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                <div class="container">
+                <div class="card">
+                <div class="card-body">
+                    <ul class="list-group">
+					    <li class="list-group-item"><strong>이름</strong> ${interview.appName}</li>
+					    <li class="list-group-item"><strong>성별</strong> ${interview.appGender}</li>
+					    <li class="list-group-item"><strong>생년월일</strong>
+					        ${fn:substring(interview.appYeardate, 0, 4)}-${fn:substring(interview.appYeardate, 4, 6)}-${fn:substring(interview.appYeardate, 6, 8)}
+					    </li>
+					    <li class="list-group-item"><strong>이메일</strong> ${interview.appEmail}</li>
+					    <li class="list-group-item"><strong>학력</strong> ${interview.appGrade}</li>
+					    <li class="list-group-item"><strong>경력</strong>
+						    <span style="white-space: pre-line; display: block;">${interview.appCareer}</span>
+						</li>
+					    <li class="list-group-item"><strong>자기소개서</strong>
+						    <span style="white-space: pre-line; display: block;">${interview.appPl}</span>
+						</li>
+					</ul>
+                </div>
+                </div>
+                <div class="d-flex justify-content-center">
+					<button type="button" class="btn btn-secondary " data-bs-dismiss="modal" id="closeRecruitModal" >
+						닫기
+					</button>
+				</div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</c:forEach>
+<!-- 채용 공고 상세 모달창 -->
+<c:forEach items="${interviewList}" var="interview">
+    <div class="modal fade" id="recruitModal-${interview.recruitment.recruitId}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content rounded-3 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">채용공고 상세 정보</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <table class="table table-borderless align-middle mb-0">
+                        <tbody>
+                            <tr>
+                                <th class="fw-bold text-dark">제목</th>
+                                <td>${interview.recruitment.recruitTitle}</td>
+                            </tr>
+                            <tr>
+                                <th class="fw-bold text-dark">근무지</th>
+                                <td>${interview.recruitment.recruitWorkplace}</td>
+                            </tr>
+                            <tr>
+                                <th class="fw-bold text-dark">고용형태</th>
+                                <td>${interview.recruitment.recruitHiretype}</td>
+                            </tr>
+                            <tr>
+                                <th class="fw-bold text-dark">급여</th>
+                                <td>월 ${interview.recruitment.recruitSalary}만원</td>
+                            </tr>
+                            <tr>
+                                <th class="fw-bold text-dark">모집부서</th>
+                                <td>${interview.recruitment.recruitPosition}</td>
+                            </tr>
+                            <tr>
+                                <th class="fw-bold text-dark">업무내용</th>
+                                <td>${interview.recruitment.recruitWorkdetail}</td>
+                            </tr>
+                            <tr>
+                                <th class="fw-bold text-dark">우대사항</th>
+                                <td>${interview.recruitment.recruitPq}</td>
+                            </tr>
+                            <tr>
+                                <th class="fw-bold text-dark">시작일</th>
+                                <td><fmt:formatDate value="${interview.recruitment.recruitStartdate}" pattern="yyyy-MM-dd" /></td>
+                            </tr>
+                            <tr>
+                                <th class="fw-bold text-dark">마감일</th>
+                                <td><fmt:formatDate value="${interview.recruitment.recruitEnddate}" pattern="yyyy-MM-dd" /></td>
+                            </tr>
+                            <tr>
+                                <th class="fw-bold text-dark">문의처</th>
+                                <td>${interview.recruitment.recruitContact}</td>
+                            </tr>
+                            <tr>
+                                <th class="fw-bold text-dark">모집인원</th>
+                                <td>${interview.recruitment.recruitHirenum}명</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        닫기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</c:forEach>
+
+<%-- 
+<c:forEach items="${interviewList}" var="interview">
+    <div class="modal fade" id="recruitModal-${interview.recruitment.recruitId}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary">
+                    <h5 class="modal-title">채용 공고 상세 정보</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                <div class="container">
+                <div class="card">
+                <div class="card-body">
+                    <ul class="list-group">
+					    <li class="list-group-item"><strong>공고제목</strong> ${interview.recruitment.recruitTitle}</li>
+					    <li class="list-group-item"><strong>근무지</strong> ${interview.recruitment.recruitWorkplace}</li>
+					    <li class="list-group-item"><strong>고용형태</strong> ${interview.recruitment.recruitHiretype}</li>
+					    <li class="list-group-item"><strong>급여</strong> 월 ${interview.recruitment.recruitSalary}만원</li>
+					    <li class="list-group-item"><strong>모집부서</strong> ${interview.recruitment.recruitPosition}</li>
+					    <li class="list-group-item"><strong>업무내용</strong> ${interview.recruitment.recruitWorkdetail}</li>
+					    <li class="list-group-item"><strong>우대사항</strong> ${interview.recruitment.recruitPq}</li>
+					    <li class="list-group-item"><strong>모집기간</strong>
+					        <fmt:formatDate value="${interview.recruitment.recruitStartdate}" pattern="yyyy-MM-dd" />
+					        ~ <fmt:formatDate value="${interview.recruitment.recruitEnddate}" pattern="yyyy-MM-dd" />
+					    </li>
+					    <li class="list-group-item"><strong>문의처</strong> ${interview.recruitment.recruitContact}</li>
+					    <li class="list-group-item"><strong>모집인원</strong> ${interview.recruitment.recruitHirenum}명</li>
+					</ul>
+                </div>
+                <div class="d-flex justify-content-center">
+					<button type="button" class="btn btn-secondary " data-bs-dismiss="modal" id="closeRecruitModal">
+						닫기
+					</button>
+				</div>
+                </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</c:forEach>
+ --%>
+<!-- 평가 모달창 -->
+<c:forEach items="${interviewList}" var="interview">
+    <div class="modal fade" id="evaluationModal-${interview.appId}" 
+    tabindex="-1" aria-hidden="true" data-interview-date="${interview.applicationStatus.interviewDate}">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">면접 평가 - ${interview.appName}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="evaluationForm-${interview.appId}">
+<%-- App ID: ${interview.appId} --%>
+<%-- Status ID: ${interview.applicationStatus.statusId} --%>
+                        <ul class="list-group">
+						    <li class="list-group-item">
+							    <label class="form-label"><strong>전문지식</strong></label>
+							    <div>
+							        <label><input type="radio" id="know-low-${interview.appId}" name="evalKnow" value="미흡"
+					                    ${interview.applicationStatus.evalKnow == '미흡' ? 'checked' : ''}> 미흡</label>&nbsp;&nbsp;&nbsp;
+					                <label><input type="radio" id="know-mid-${interview.appId}" name="evalKnow" value="보통"
+					                    ${interview.applicationStatus.evalKnow == '보통' ? 'checked' : ''}> 보통</label>&nbsp;&nbsp;&nbsp;
+					                <label><input type="radio" id="know-high-${interview.appId}" name="evalKnow" value="우수"
+					                    ${interview.applicationStatus.evalKnow == '우수' ? 'checked' : ''}> 우수</label>
+							    </div>
+							</li>
+						    <li class="list-group-item">
+							    <label class="form-label"><strong>기술역량</strong></label>
+							    <div>
+							        <label><input type="radio" id="skill-low-${interview.appId}" name="evalSkill" value="미흡"
+					                    ${interview.applicationStatus.evalSkill == '미흡' ? 'checked' : ''}> 미흡</label>&nbsp;&nbsp;&nbsp;
+					                <label><input type="radio" id="skill-mid-${interview.appId}" name="evalSkill" value="보통"
+					                    ${interview.applicationStatus.evalSkill == '보통' ? 'checked' : ''}> 보통</label>&nbsp;&nbsp;&nbsp;
+					                <label><input type="radio" id="skill-high-${interview.appId}" name="evalSkill" value="우수"
+					                    ${interview.applicationStatus.evalSkill == '우수' ? 'checked' : ''}> 우수</label>
+							    </div>
+							</li>
+						    <li class="list-group-item">
+							    <label class="form-label"><strong>태도</strong></label>
+							    <div>
+							        <label><input type="radio" id="atti-low-${interview.appId}" name="evalAtti" value="미흡"
+					                    ${interview.applicationStatus.evalAtti == '미흡' ? 'checked' : ''}> 미흡</label>&nbsp;&nbsp;&nbsp;
+					                <label><input type="radio" id="atti-mid-${interview.appId}" name="evalAtti" value="보통"
+					                    ${interview.applicationStatus.evalAtti == '보통' ? 'checked' : ''}> 보통</label>&nbsp;&nbsp;&nbsp;
+					                <label><input type="radio" id="atti-high-${interview.appId}" name="evalAtti" value="우수"
+					                    ${interview.applicationStatus.evalAtti == '우수' ? 'checked' : ''}> 우수</label>
+							    </div>
+							</li>
+						    <li class="list-group-item">
+							    <label class="form-label"><strong>커뮤니케이션</strong></label>
+							    <div>
+							        <label><input type="radio" id="commu-low-${interview.appId}" name="evalCommu" value="미흡"
+					                    ${interview.applicationStatus.evalCommu == '미흡' ? 'checked' : ''}> 미흡</label>&nbsp;&nbsp;&nbsp;
+					                <label><input type="radio" id="commu-mid-${interview.appId}" name="evalCommu" value="보통"
+					                    ${interview.applicationStatus.evalCommu == '보통' ? 'checked' : ''}> 보통</label>&nbsp;&nbsp;&nbsp;
+					                <label><input type="radio" id="commu-high-${interview.appId}" name="evalCommu" value="우수"
+					                    ${interview.applicationStatus.evalCommu == '우수' ? 'checked' : ''}> 우수</label>
+							    </div>
+							</li>
+						    <li class="list-group-item">
+							    <label class="form-label"><strong>경험</strong></label>
+							    <div>
+							        <label><input type="radio" id="experi-low-${interview.appId}" name="evalExperi" value="미흡"
+					                    ${interview.applicationStatus.evalExperi == '미흡' ? 'checked' : ''}> 미흡</label>&nbsp;&nbsp;&nbsp;
+					                <label><input type="radio" id="experi-mid-${interview.appId}" name="evalExperi" value="보통"
+					                    ${interview.applicationStatus.evalExperi == '보통' ? 'checked' : ''}> 보통</label>&nbsp;&nbsp;&nbsp;
+					                <label><input type="radio" id="experi-high-${interview.appId}" name="evalExperi" value="우수"
+					                    ${interview.applicationStatus.evalExperi == '우수' ? 'checked' : ''}> 우수</label>
+							    </div>
+							</li>
+						</ul>
+                        <div class="select-result">
+						    <label class="form-label"><strong>면접 결과:</strong></label>
+						    <div>
+						    	<label><input type="radio" id="status-pass-${interview.appId}" name="currentStatus" value="합격"
+					                ${interview.applicationStatus.currentStatus == '합격' ? 'checked' : ''}> 합격</label>&nbsp;&nbsp;&nbsp;
+					            <label><input type="radio" id="status-fail-${interview.appId}" name="currentStatus" value="불합격"
+					                ${interview.applicationStatus.currentStatus == '불합격' ? 'checked' : ''}> 불합격</label>
+						    </div>
+						</div>
+						<!-- 이메일 정보 -->
+						<li class="list-group-item d-none" data-email="${interview.appEmail}">${interview.appEmail}</li>
+						
+                        <div class="d-flex justify-content-center">
+	                        <button type="button" class="btn btn-primary ms-2 submit-eval-btn"
+	                        	id="submitEvaluation-${interview.appId}"
+	                        	data-app-id="${interview.appId}"
+	                        	data-status-id="${interview.applicationStatus.statusId}"
+							    ${interview.applicationStatus.currentStatus == '합격' || interview.applicationStatus.currentStatus == '불합격' ? 'disabled' : ''}>
+							    <c:choose>
+							        <c:when test="${interview.applicationStatus.currentStatus == '합격' || interview.applicationStatus.currentStatus == '불합격'}">
+							            평가 완료
+							        </c:when>
+							        <c:otherwise>
+							            평가 저장
+							        </c:otherwise>
+							    </c:choose>
+							</button>
+	                        <button type="button" class="btn btn-secondary ms-2" data-bs-dismiss="modal" aria-label="Close">
+	                            닫기
+	                        </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</c:forEach>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+	
+	
+//table1 셀렉트박스 설정하기 ========================================
+    const tableEl = document.querySelector('#table1');
+    // 초기화
+    const dataTable = new simpleDatatables.DataTable(tableEl);
+
+    // perPage 값을 강제로 30으로 설정
+//     dataTable.options.perPage = 25;
+    dataTable.options.perPage = 30;
+    dataTable.page(1); // 페이지 다시 로딩
+
+    // 셀렉트 박스에 30 option이 없으면 추가하고 선택
+    const selector = dataTable.wrapper.querySelector('.dataTable-selector');
+    if (selector) {
+    	// 30 option이 없을 경우 동적으로 추가 ******
+        if (![...selector.options].some(opt => opt.value === '30')) {
+            const option = new Option('30', '30');
+            selector.add(option);
+        }
+     	// 30으로 선택 설정
+        selector.value = '30';
+        selector.dispatchEvent(new Event('change'));
+    }
+    // 셀렉트, 페이지네이션 스타일 그대로 유지
+    function adaptPageDropdown() {
+        const selector = dataTable.wrapper.querySelector(".dataTable-selector");
+        selector.parentNode.parentNode.insertBefore(selector, selector.parentNode);
+        selector.classList.add("form-select");
+    }
+    function adaptPagination() {
+        const paginations = dataTable.wrapper.querySelectorAll("ul.dataTable-pagination-list");
+        paginations.forEach(p => p.classList.add("pagination", "pagination-primary"));
+
+        const paginationLis = dataTable.wrapper.querySelectorAll("ul.dataTable-pagination-list li");
+        paginationLis.forEach(li => li.classList.add("page-item"));
+
+        const paginationLinks = dataTable.wrapper.querySelectorAll("ul.dataTable-pagination-list li a");
+        paginationLinks.forEach(link => link.classList.add("page-link"));
+    }
+    const refreshPagination = () => {
+        adaptPagination();
+    }
+    dataTable.on("datatable.init", () => {
+        adaptPageDropdown();
+        refreshPagination();
+    });
+    dataTable.on("datatable.update", refreshPagination);
+    dataTable.on("datatable.sort", refreshPagination);
+    dataTable.on("datatable.page", adaptPagination);
+
+
+	
+// 합격자 정보 엑셀 다운로드
+
+	// 선택 다운로드 시 아무 항목도 선택 안 되어 있을 경우 Swal 경고
+	document.getElementById("excelDownloadForm").addEventListener("submit", function (e) {
+		const selected = document.querySelectorAll(".selectOne:checked");
+		if (selected.length === 0) {
+			Swal.fire({
+				icon: 'warning',
+				title: '다운로드 항목 없음',
+				text: '엑셀로 다운로드할 합격자를 선택해주세요.'
+			});
+			e.preventDefault();
+		}
+	});
+	
+	 
+	document.getElementById("downloadAllBtn").addEventListener("click", function () {
+		
+		Swal.fire({
+			title: '전체 다운로드',
+			text: '전체 합격자정보를 다운로드하시겠습니까?',
+			icon: 'question',
+			showCancelButton: true,
+			confirmButtonText: '다운로드',
+			cancelButtonText: '취소'
+		}).then((result) => {
+			if (result.isConfirmed) {
+				// 모든 행 선택
+				const visibleRows = document.querySelectorAll("#table1 tbody tr");
+				visibleRows.forEach(row => {
+					// display none이 아닌 경우 = 화면에 출력된 행
+					if (row.style.display !== "none") {
+						// 현재 행(row)에서 selectOne이라는 클래스를 가지고 disabled이 아닌 input 태그
+						// ==> 활성화된 체크박스
+						const checkbox = row.querySelector("input.selectOne:not([disabled])");
+						if (checkbox) {
+							checkbox.checked = true; // 체크 처리
+						}
+					}
+				});
+	
+				document.getElementById("excelDownloadForm").submit();
+			}
+		});
+	});
+	
+	// 기존 체크박스 해제 함수
+	function resetAllCheckboxes() {
+	    document.querySelectorAll("input.selectOne").forEach(cb => cb.checked = false);
+	}
+	
+/////////////////////////////// Title에 현재 연도 반기 출력 (2025년 상반기 면접자 현황)   ///////////////////
+
+	const today = new Date();
+	const currentYear = today.getFullYear();
+	const currentMonth = today.getMonth() + 1; // 월은 0부터 시작하므로 +1 해줘야함
+	
+	// 현재 연도와 반기를 계산합니다.
+	const currentHalf = currentMonth <= 6 ? "상반기" : "하반기";
+	
+	// card-header의 제목을 동적으로 설정합니다.
+	const cardHeader = document.getElementById("cardHeader");
+	cardHeader.innerText = currentYear + "년 " + currentHalf + " 면접자 현황";
+	
+	
+
+/////////////////////////////// 현재기간(연도&반기)에 해당하는 공고 목록만 필터   //////////////////////////
+
+	// 기본으로 보이게 실행
+	filterCurrentPeriodByRecruitTitle();
+	
+	// 현재기간 공고 목록
+	function filterCurrentPeriodByRecruitTitle() {
+	    // 오늘 날짜를 기준으로 현재 연도 및 반기 결정
+	    const today = new Date();
+	    const currentYear = today.getFullYear();
+	    const currentHalf = today.getMonth() < 6 ? "상반기" : "하반기";
+	    
+// 	    console.log("현재: " + currentYear + " " + currentHalf);
+	
+	    // 테이블의 각 행을 순회하며 채용공고 제목에서 연도 및 반기 추출
+	    const rows = document.querySelectorAll('#table1 tbody tr');
+	    rows.forEach(row => {
+	        const firstTd = row.querySelector('td:nth-child(1)');
+	        if (firstTd) {
+	            const anchor = firstTd.querySelector('a');
+	            if (anchor) {
+	                const titleText = anchor.innerText.trim();
+	                // 예시: "2025 상반기 물류팀 신입직원 채용"
+	                const match = titleText.match(/^(\d{4})\s*(상반기|하반기)/);
+	                if (match) {
+	                    const titleYear = parseInt(match[1]);
+	                    const titleHalf = match[2];
+// 	                    console.log("추출된 제목 정보:", titleYear, titleHalf);
+	                    // 현재 연도와 반기에 해당하면 표시, 아니면 숨김
+	                    if (titleYear === currentYear && titleHalf === currentHalf) {
+	                        row.style.display = '';
+	                    } else {
+	                        row.style.display = 'none';
+	                    }
+	                } else {
+// 	                    console.error("채용공고 제목 형식이 예상과 다름:", titleText);
+	                }
+	            }
+	        }
+	    });
+	}
+
+	//지난 공고 목록
+	function filterPastPeriodByRecruitTitle() {
+	    // 오늘 날짜를 기준으로 현재 연도 및 반기 결정
+	    const today = new Date();
+	    const currentYear = today.getFullYear();
+	    const currentHalf = today.getMonth() < 6 ? "상반기" : "하반기";
+	    
+// 	    console.log("현재: " + currentYear + " " + currentHalf);
+	
+	    // 테이블의 각 행을 순회하며 채용공고 제목에서 연도 및 반기 추출
+	    const rows = document.querySelectorAll('#table1 tbody tr');
+	    rows.forEach(row => {
+	        const firstTd = row.querySelector('td:nth-child(1)');
+	        if (firstTd) {
+	            const anchor = firstTd.querySelector('a');
+	            if (anchor) {
+	                const titleText = anchor.innerText.trim();
+	                // 예시: "2025 상반기 물류팀 신입직원 채용"
+	                const match = titleText.match(/^(\d{4})\s*(상반기|하반기)/);
+	                if (match) {
+	                    const titleYear = parseInt(match[1]);
+	                    const titleHalf = match[2];
+// 	                    console.log("추출된 제목 정보:", titleYear, titleHalf);
+	                    // 현재 연도와 반기와 일치하면 숨기고, 그 외는 표시
+	                    if (titleYear === currentYear && titleHalf === currentHalf) {
+	                        row.style.display = 'none';
+	                    } else {
+	                        row.style.display = '';
+	                    }
+	                } else {
+// 	                    console.error("채용공고 제목 형식이 예상과 다름:", titleText);
+	                }
+	            }
+	        }
+	    });
+	}
+	//기간 버튼
+	document.getElementById("showCurrentBtn").addEventListener("click", () => {
+		resetAllCheckboxes(); // 체크박스 해제 함수 추가
+		filterCurrentPeriodByRecruitTitle();
+	});
+	document.getElementById("showPastBtn").addEventListener("click", () => {
+		resetAllCheckboxes(); // 체크박스 해제 함수 추가
+	    filterPastPeriodByRecruitTitle();
+	});
+
+	
+	
+/////////////////////////////// 평가완료 모달 라디오버튼 비활성화 스크립트  //////////////////////////////////
+
+	document.body.addEventListener("click", function(event) {
+	    // 클릭된 요소가 데이터 속성 data-bs-target이 '#evaluationModal'로 시작하는 버튼인지 확인
+	    if (event.target.matches("[data-bs-target^='#evaluationModal']")) {
+	
+	        let button = event.target;
+	        let appId = button.getAttribute("data-bs-target").replace("#evaluationModal-", ""); // appId 추출
+	        let status = button.getAttribute("data-status"); // 면접 상태 가져오기
+// 			console.log("Status: " + status); // status = 합격/불합격/면접예정
+	
+	        let modal = document.querySelector("#evaluationModal-" + appId);
+	        if (!modal) return;
+	
+	        let radioButtons = modal.querySelectorAll("input[type='radio']");
+	
+	        if (status === "합격" || status === "불합격" || status === "평가완료") {
+	            radioButtons.forEach(radio => radio.disabled = true);
+	        } else {
+	            radioButtons.forEach(radio => radio.disabled = false);
+	        }
+	    }
+	});
+
+
+
+/////////////////////////////////////////// 성별 비율 파이차트 스크립트   ///////////////////////////////////////////
+
+	let passedGenderChart = null;
+
+//총 지원자 성별 파이차트
+	//JSP 데이터를 JavaScript 배열로 변환
+	const totGenderLabels = [];
+	const totGenderData = [];
+	const backgroundColors = [];
+
+	
+	<c:forEach var="genderRatio" items="${totalGenderRatio}">
+		totGenderLabels.push("${genderRatio.APP_GENDER}");		// 문자열 "남자/여자"사용
+		totGenderData.push(${genderRatio.GENDER_COUNT});		// 숫자 "" 사용x
+
+		// 성별에 따라 색상 지정
+	    if ("${genderRatio.APP_GENDER}" === "남자") {
+	        backgroundColors.push("#36A2EB"); // 파란색 (남자)
+	    } else {
+	        backgroundColors.push("#FF6384"); // 빨간색 (여자)
+	    }
+	</c:forEach>
+	 
+
+	// 총 지원자 수 계산
+	const totalApplicants = totGenderData.reduce((sum, count) => sum + count, 0);
+
+	const ctx1 = document.getElementById('totalGenderChart').getContext('2d');
+	new Chart(ctx1, {
+		type: 'pie',
+		data: {
+		    labels: totGenderLabels,
+		    datasets: [{
+		        label: '누적 지원자',
+		        data: totGenderData,
+		        backgroundColor: backgroundColors,
+		        hoverOffset: 4
+		    }]
+		},
+		options: {
+		    responsive: true,
+		    plugins: {
+		        legend: {
+		            position: 'top',
+		        },
+		        title: {
+		            display: true,
+		            text: '누적 지원자',
+		            font: {
+		                size: 18 
+		            }
+		        },
+		        tooltip: {
+	                callbacks: {
+	                    label: function(tooltipItem) {
+	                    	const total = totGenderData.reduce((a, b) => a + b, 0);
+	                    	const value = tooltipItem.raw; // 해당 조각의 지원자 수
+	                    	const percentage = ((value / total) * 100).toFixed(1); // 백분율 계산
+	                    	return `\${tooltipItem.label}: \${percentage}% (\${value}명)`;
+	                    }
+	                }
+	            },
+	            datalabels: {
+					formatter: (value, context) => {
+						const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+						const percentage = ((value / total) * 100).toFixed(1);
+						return percentage + '%';
+					},
+					color: '#fff',
+					font: {
+						weight: 'bold',
+						size: 14
+					}
+				}
+		    }
+		},
+		plugins: [ChartDataLabels]
+	});
+	
+//////////////////////////////////////합격자 파이차트 비동기 갱신 스크립트////////////////////////////////////////
+
+	// 합격자 성별 비율 차트 갱신 함수
+		fetchPassedGenderRatio();
+		async function fetchPassedGenderRatio() {
+		    try {
+		        const response = await axios.get('/recruit/interview/passedGenderRatio');
+		        updatePassedGenderChart(response.data); // 서버에서 받은 데이터를 차트 갱신에 사용
+		    } catch (error) {
+		        console.error("Error fetching passed gender ratio:", error);
+		    }
+		}
+
+	// 차트 갱신 함수
+		function updatePassedGenderChart(passedGenderRatio) {
+		    const passGenderLabels = [];
+		    const passGenderData = [];
+		    const pbackgroundColors = [];
+		
+		    passedGenderRatio.forEach(genderRatio => {
+		        passGenderLabels.push(genderRatio.APP_GENDER);
+		        passGenderData.push(genderRatio.GENDER_COUNT);
+		        
+		        // 성별에 따라 색상 지정
+		        if (genderRatio.APP_GENDER === "남자") {
+		            pbackgroundColors.push("#36A2EB"); // 파란색 (남자)
+		        } else {
+		            pbackgroundColors.push("#FF6384"); // 빨간색 (여자)
+		        }
+		    });
+		
+		    const passApplicants = passGenderData.reduce((sum, count) => sum + count, 0);
+		    
+		    const canvas = document.getElementById('passedGenderChart');
+		    
+		    // 기존 차트가 있으면 제거
+		    if (Chart.getChart(canvas)) {
+		        Chart.getChart(canvas).destroy();
+		    }
+		    
+		    // 캔버스 컨텍스트 다시 가져오기
+		    const ctx2 = canvas.getContext('2d');
+		    
+		 	// 새 차트 생성
+		    passedGenderChart = new Chart(ctx2, {
+		        type: 'pie',
+		        data: {
+		            labels: passGenderLabels,
+		            datasets: [{
+		                label: '누적 합격자',
+		                data: passGenderData,
+		                backgroundColor: pbackgroundColors,
+		                hoverOffset: 4
+		            }]
+		        },
+		        options: {
+		            responsive: true,
+		            plugins: {
+		                legend: {
+		                    position: 'top',
+		                },
+		                title: {
+		                    display: true,
+		                    text: '누적 합격자',
+		                    font: {
+		                        size: 18 // 원하는 폰트 크기로 설정
+		                    }
+		                },
+		                tooltip: {
+		                    callbacks: {
+		                        label: function(tooltipItem) {
+		                            let value = tooltipItem.raw; // 해당 조각의 합격자 수
+		                            let percentage = ((value / passApplicants) * 100).toFixed(1); // 백분율 계산
+		                            return `\${tooltipItem.label}: \${percentage}% (\${value}명)`;
+		                        }
+		                    }
+		                },
+		                datalabels: {
+		                    formatter: (value, context) => {
+		                        const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+		                        const percentage = ((value / total) * 100).toFixed(1);
+		                        return percentage + '%';
+		                    },
+		                    color: '#fff',
+		                    font: {
+		                        weight: 'bold',
+		                        size: 14
+		                    }
+		                }
+		            }
+		        },
+		        plugins: [ChartDataLabels]
+		    });
+		}
+			 
+//////////////////////////////////////// 현재공고 면접 현황 파이차트 /////////////////////////////////////
+
+     fetchInterviewStatus();
+     async function fetchInterviewStatus() {
+    	    try {
+    	        const today2 = new Date();
+    	        const year = today2.getFullYear();
+    	        const half = (today2.getMonth() < 6) ? 1 : 2; // 1~6월: 상반기, 7~12월: 하반기
+
+    	        const response = await axios.get('/recruit/interview/interviewStatusCount', {
+    	            params: { year: year, half: half }
+    	        });
+
+    	        var interviewStatusCount = response.data;
+    	        
+    	        // 면접 상태가 '합격' 또는 '불합격'인 경우 '면접완료'로 변경하고 합산
+    	        let interviewCompletedCount = 0;
+    	        interviewStatusCount.forEach(item => {
+    	            if (item.CURRENT_STATUS === '합격' || item.CURRENT_STATUS === '불합격') {
+    	                interviewCompletedCount += item.COUNT;
+    	            }
+    	        });
+
+    	        var labels = ['평가예정', '평가완료'];
+    	        var data = [
+    	            interviewStatusCount.find(item => item.CURRENT_STATUS === '면접예정')?.COUNT || 0,  // 면접예정의 개수
+    	            interviewCompletedCount // 합격 + 불합격을 합친 면접완료의 개수
+    	        ];
+
+    	        var ctx3 = document.getElementById("interviewStatusChart").getContext("2d");
+    	        
+    	        // 기존 차트가 있으면 제거
+    	        if (Chart.getChart(ctx3)) {
+    	            Chart.getChart(ctx3).destroy();
+    	        }
+
+    	        // 새 차트 생성
+    	        new Chart(ctx3, {
+    	            type: 'pie',
+    	            data: {
+    	                labels: labels,
+    	                datasets: [{
+    	                    label: '',
+    	                    data: data ,
+    	                    backgroundColor: ['#28A745', '#808080'],
+    	                    hoverOffset: 4
+    	                }]
+    	            },
+    	            options: {
+    	                responsive: true,
+    	                plugins: {
+    	                	tooltip: {
+    	                        callbacks: {
+    	                            label: function(context) {
+    	                                var value = context.raw; // 데이터 값
+    	                                return ': ' + value + '건';
+    	                            }
+    	                        }
+    	                    },
+    	                    title: {
+    	                        display: true,
+    	                        text: year + '년 ' + (half === 1 ? '상반기' : '하반기') + ' 면접자 현황',
+    	                        font: {
+    	                            size: 18 
+    	                        }
+    	                    },
+    	                    legend: {
+    	                        position: 'top'
+    	                    },
+    	                    datalabels: {
+    	                        formatter: (value) => `\${value}건`,
+    	                        color: '#fff',
+    	                        font: {
+    	                            weight: 'bold',
+    	                            size: 14
+    	                        }
+    	                    }
+    	                }
+    	            },
+    	            plugins: [ChartDataLabels] 
+    	            
+    	        });
+
+    	    } catch (error) {
+    	        console.error('Error fetching interview status data:', error);
+    	    }
+    	}
+
+
+////////////////////////////////////// 평가 저장 스크립트 ///////////////////////////////////////////////
+	async function submitEvaluation(event) {
+	    try {
+	    	// 클릭된 버튼에서 appId, statusId 가져오기
+	    	const button = event.target;
+            const appId = button.dataset.appId;
+            const statusId = button.dataset.statusId;
+	    	
+	    	// 현재 모달 내에서만 라디오 버튼 값 찾기
+	        const modal = document.querySelector("#evaluationModal-" + appId);
+
+	    	// 선택된 라디오 버튼의 값 가져오기(선택하지 않으면 null)
+	        const getCheckedValue = (name) => {
+	            return modal.querySelector("input[name='" + name + "']:checked")?.value || null;
+	        };
+
+	     	// 필수 평가 항목 목록
+	        const requiredFields = ["evalKnow", "evalSkill", "evalAtti", "evalCommu", "evalExperi", "currentStatus"];
+	        // 모든 항목이 선택되었는지 Swal 확인
+	        for (let field of requiredFields) {
+	            if (!getCheckedValue(field)) {
+	            	Swal.fire({
+	                    icon: 'warning',
+	                    title: '선택 항목 누락',
+	                    text: '모든 항목을 선택해야 저장 가능합니다.'
+	                });
+	                return; // 저장 중단
+	            }
+	        }
+
+	    	// 사용자에게 저장 확인 Swal 메시지 표시
+	    	const emailElement = modal.querySelector("li[data-email]");
+	    	const applicantEmail = emailElement.dataset.email
+	    	const message = `저장한 평가는 수정할 수 없습니다.<br><small>(\${applicantEmail} 로 결과 메일 발송)</small>`;
+	        const result = await Swal.fire({
+	             title: '저장하시겠습니까?',
+	             html: message,
+	             icon: 'question',
+	             showCancelButton: true,
+	             confirmButtonText: '저장',
+	             cancelButtonText: '취소'
+	         });
+	         if (!result.isConfirmed) {
+	             return;
+	         }
+
+	        // 평가 데이터
+	        const evaluationData = {
+	                appId: appId,
+	                statusId: statusId,
+	                evalKnow: getCheckedValue("evalKnow"),
+	                evalSkill: getCheckedValue("evalSkill"),
+	                evalAtti: getCheckedValue("evalAtti"),
+	                evalCommu: getCheckedValue("evalCommu"),
+	                evalExperi: getCheckedValue("evalExperi"),
+	                currentStatus: getCheckedValue("currentStatus")
+	            };
+	        //console.log("Evaluation Data: ", evaluationData);
+
+
+	        // 서버에 평가 데이터 전송
+	        let response = await axios.post('/recruit/interview/update', evaluationData);
+			//console.log("Server Response: ", response.data);
+
+	        if (response.data.success) {
+
+	            // 모달 요소 찾기
+	            let modalElement = document.getElementById("evaluationModal-" + appId);
+
+	            // 결과 td 갱신
+			    let statusElement = document.getElementById("status-" + appId);
+			    if (statusElement) {
+			        statusElement.innerText = evaluationData.currentStatus;
+			    } 
+
+				// 체크 박스 갱신 
+				if (evaluationData.currentStatus === '합격') {
+				    let checkbox = document.querySelector(`input[type="checkbox"][name="appIds"][value="\${appId}"]`);
+				    if (checkbox) {
+				    	checkbox.removeAttribute("disabled");
+				    }
+				}
+
+				// 평가 버튼 갱신
+				let evalButton = document.querySelector("#table1 button[data-bs-target='#evaluationModal-" + appId + "']");
+				if (evalButton) {
+				    evalButton.innerText = "평가완료";
+				    evalButton.classList.remove("btn-success");
+				    evalButton.classList.add("btn-secondary");
+				 	// data-status 속성을 실제 평가 상태로 업데이트
+			        evalButton.setAttribute("data-status", evaluationData.currentStatus);	
+				} else {
+				    console.error("Evaluation button not found for appId: " + appId);
+				}
+
+				// 저장 버튼 비활성화
+				button.innerText = "평가 완료";
+                button.disabled = true;
+
+				// 라디오 버튼 비활성화
+				let radioButtons = modal.querySelectorAll("input[type='radio']");
+            	radioButtons.forEach(radio => radio.disabled = true);
+
+	         	// 차트 갱신
+	            fetchPassedGenderRatio();
+	         	fetchInterviewStatus();
+	         	
+	         	// ✅ 2025 상반기 합격자 카운트 업데이트 ========================================================
+	         	if (evaluationData.currentStatus === '합격') {
+	         	    // interviewDate를 data 속성으로부터 가져오기
+	         	    const interviewDateStr = modal.dataset.interviewDate; 
+
+	         	    if (interviewDateStr) {
+	         	        const interviewDate = new Date(interviewDateStr);
+	         	        const year = interviewDate.getFullYear();
+	         	        const month = interviewDate.getMonth() + 1; 
+
+	         	        if (year === 2025 && month <= 6) {
+	         	            const passedCountElem = document.getElementById("passedCountDisplay");
+	         	           const match = passedCountElem?.innerText.match(/(\d+)명$/);
+	         	            if (match) {
+	         	                const currentCount = parseInt(match[1], 10);
+	         	                passedCountElem.innerText = "✅ 2025 상반기 합격자: " + (currentCount + 1) + "명";
+	         	            }
+	         	        }
+	         	    }
+	         	}
+
+	         	// 저장 완료 Swal 메시지
+	            Swal.fire({
+	                icon: 'success',
+	                title: '평가 완료',
+	                text: '평가 저장 및 메일 발송이 완료되었습니다.'
+	            });
+	            
+	        } else {
+	        	Swal.fire({
+	                icon: 'error',
+	                title: '저장 실패',
+	                text: response.data.message || '저장 중 문제가 발생했습니다.'
+	            });
+	        }
+
+	    } catch (error) {
+	    	Swal.fire({
+	            icon: 'error',
+	            title: '오류 발생',
+	            text: '알 수 없는 오류가 발생했습니다.'
+	        });
+	    }
+	}
+	
+	// 버튼에 이벤트 바인딩
+	document.querySelectorAll(".submit-eval-btn").forEach(button => {
+        button.addEventListener("click", submitEvaluation);
+    });
+	
+	
+
+});
+</script>
+

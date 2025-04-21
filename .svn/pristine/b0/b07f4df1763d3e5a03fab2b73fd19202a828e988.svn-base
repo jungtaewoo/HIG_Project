@@ -1,0 +1,262 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="security"%>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>제출 문서 상세보기</title>
+
+    <!-- 폰트 및 아이콘 -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <!-- 여기서는 “Noto Sans KR” 예시 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome (아이콘) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        /* 전역 설정 */
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        
+        /* 상단 헤더(회사 로고 / 상단 바) */
+        .header {
+            background-color: #33428b; /* 예: 짙은 파란 계열 */
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        .header .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        /* 상단 Quick Menu + Breadcrumb: 기존 top-bar를 확장 */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            background-color: transparent; 
+            box-shadow: none;
+            border: none;
+        }
+
+        /* 가운데 정렬 컨테이너 */
+        .container-center {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 문서 전체 섹션 박스 */
+        .section {
+            background-color: #fff;
+            border-radius: 8px;
+            /* 가로 패딩을 늘려 왼쪽·오른쪽 여백을 확보 */
+            padding: 20px 30px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        /* 제목 영역 */
+        .section h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 700;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+        }
+        .section h2 i {
+            margin-right: 8px;
+            color: #33428b; /* 아이콘 색상 */
+        }
+
+        /* 문서 정보: 작성자 / 작성일 / 문서 상태 */
+        .document-info {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            border: 3px solid #eee;
+            margin-bottom: 20px;
+            /* 기존 border-bottom 중복 표기 제거 권장 
+               (이미 border: 3px solid #eee; 있으므로 생략 가능)
+               border-bottom: 3px solid #eee; */
+            padding-bottom: 15px;
+            /* 왼쪽 패딩 추가로 글자와 테두리 사이 여백 확보 */
+            padding-left: 15px; 
+        }
+        .document-info-left,
+        .document-info-right {
+            flex: 1;
+            min-width: 250px; /* 화면이 줄어들어도 한 줄에 강제로 붙지 않도록 */
+        }
+        .document-info p {
+            margin: 6px 0;
+            font-size: 0.95rem;
+        }
+        .document-info p strong {
+            color: #666;
+        }
+        /* 문서 상태 강조 */
+        #draftStatus {
+            font-weight: 700;
+            color: #d9534f; /* 붉은색 계열 - 필요시 변경 */
+        }
+
+        /* 폼 내용 영역 */
+        #annualFormContainer {
+            margin-top: 10px;
+            border: 5px solid #eee;
+            border-radius: 4px;
+            /* padding을 좀 더 키워서 내부 글자에 여유 공간 부여 */
+            padding: 25px; 
+            min-height: 150px;
+            background-color: #fff;
+        }
+        #annualFormContainer p {
+            margin: 0;
+            color: #999;
+        }
+
+        /* 버튼 영역 */
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        /* 반응형: 모바일에서 상단, 버튼 등 간격 조정 */
+        @media (max-width: 576px) {
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .top-bar .breadcrumb {
+                margin-top: 10px;
+            }
+            .document-info {
+                flex-direction: column;
+            }
+            .document-info-left,
+            .document-info-right {
+                min-width: auto;
+                margin-bottom: 10px;
+            }
+            .btn-container {
+                flex-direction: column;
+                align-items: flex-end;
+            }
+            .btn-container div:last-child {
+                margin-top: 10px;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    
+
+    <!-- 상단 Quick Menu + Breadcrumb -->
+    <div class="top-bar">
+        <!-- 좌측: 뒤로가기 버튼 -->
+        <div>
+            <button type="button" class="btn btn-outline-secondary" onclick="history.back();">
+                <i class="fas fa-arrow-left"></i> 
+            </button>
+        </div>
+        <!-- 우측: Breadcrumb -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item fw-bold text-primary"><a href="${pageContext.request.contextPath}/account/login/home">📌 Main</a> </li>
+                <li class="breadcrumb-item">
+                    <a href="/approval/templateList">문서작성</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">제출문서</li>
+                <li class="breadcrumb-item">
+                    <a href="/approval/approverDrafts">결재현황</a>
+                </li>
+                <security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+                    <li class="breadcrumb-item">
+                        <a href="/approval/list">결재양식</a>
+                    </li>
+                </security:authorize>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- 가운데 정렬 컨테이너 -->
+    <div class="container-center">
+        <!-- 문서 상세보기 섹션 -->
+        <div class="section">
+            <h2><i class="fas fa-file-signature"></i>제출 문서 상세보기</h2>
+            <form id="approvalForm">
+                <!-- 숨긴 필드들 -->
+                <input type="hidden" id="draftId" name="draftId" value="${param.draftId}">
+                <input type="hidden" id="approverId" name="approverId" value=""/>
+                <input type="hidden" id="aprStatus" name="aprStatus" value=""/>
+                <input type="hidden" id="departmentId" name="departmentId" value="${departmentId}">
+
+                <!-- 문서 기본 정보 -->
+                <div class="document-info">
+                    <div class="document-info-left">
+                        <p><strong>작성자:</strong> <span id="draftEmpName">로딩 중...</span></p>
+                        <p><strong>작성일:</strong> <span id="draftDate">로딩 중...</span></p>
+                    </div>
+                    <div class="document-info-right">
+                        <p><strong>문서 상태:</strong> <span id="draftStatus">로딩 중...</span></p>
+                    </div>
+                </div>
+
+                <!-- 폼 로드 영역 (연차 신청서 HTML이 ajax 등으로 로드되는 곳) -->
+                <div id="annualFormContainer">
+                    <p>연차 신청서 폼 로딩 중...</p>
+                </div>
+
+                <!-- 버튼 영역 -->
+                <div class="btn-container">
+                    <div>
+                        <!-- 목록으로 이동 -->
+                        <a href="${pageContext.request.contextPath}/approval/mydrafts" class="btn btn-default">목록</a>
+                    </div>
+                    <div>
+                        <!-- 상황에 따라 노출 여부가 달라지는 버튼들 -->
+                        <button class="btn btn-primary" type="button" id="retrieveBtn" style="display:none;">
+                            기안회수
+                        </button>
+                        <button class="btn btn-primary" type="button" id="resubmitDetailBtn" style="display:none;">
+                            재요청
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 자바스크립트 -->
+    <script>
+        window.contextPath = "${pageContext.request.contextPath}";
+    </script>
+    <script type="module" src="${pageContext.request.contextPath}/resources/js/approval/approvalTempDraftSave.js"></script>
+    <script type="module" src="${pageContext.request.contextPath}/resources/js/approval/approvalMyDraftDetail.js"></script>
+</body>
+</html>

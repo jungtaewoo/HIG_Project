@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+   namespace="kr.or.ddit.mybatis.mappers.workstatus.WorkStatusMapper">
+   
+   <!-- 업무상태 목록 가져오기 -->
+    <select id="workStatusManageList" >
+        SELECT
+            STATUS_ID,
+            STATUS_NAME, 
+            STATUS_INFO, 
+            STATUS_POS 
+       from EMP_STATUS
+    </select>
+
+    <!-- 업무상태 항목 추가 -->
+    <insert id="insertWorkStatusItem" >
+    	<selectKey order="BEFORE" keyProperty="statusId" resultType="string">
+	    	SELECT 
+			    'STAT_' || LPAD(NVL(MAX(TO_NUMBER(SUBSTR(STATUS_ID, 6, 2))), 0) + 1, 2, '0')
+			FROM EMP_STATUS
+    	</selectKey>
+        INSERT INTO 
+        	EMP_STATUS (
+	        	   STATUS_ID
+	        	 , STATUS_NAME
+	        	 , STATUS_INFO
+	        	 , STATUS_POS 
+        )
+        VALUES (
+	          #{statusId}
+	        , #{statusName}
+	        , #{statusInfo}
+	        , #{statusPos}
+        )
+    </insert>
+
+    <!-- 업무상태 항목 수정 -->
+    <update id="updateWorkStatusItemStatus" >
+        UPDATE 
+        	EMP_STATUS
+        SET 
+        	 STATUS_NAME = #{statusName}
+        	,STATUS_INFO = #{statusInfo},
+            STATUS_POS = #{statusPos}
+        WHERE 
+        	STATUS_ID = #{statusId}
+    </update>
+   <delete id="deleteWorkStatusItem">
+      DELETE FROM  EMP_STATUS
+       WHERE STATUS_ID = #{statusId}
+   </delete>
+   
+   <update id="updateWorkStatus">
+      update attendance
+      set status_id = #{statusId}
+      where emp_id = #{empId}
+      	and
+       WORK_DATE = #{workDate}
+   </update>
+   
+   
+   
+</mapper>

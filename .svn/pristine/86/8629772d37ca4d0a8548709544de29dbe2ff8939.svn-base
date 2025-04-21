@@ -1,0 +1,314 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib uri="http://www.springframework.org/security/tags"
+	prefix="security"%>
+<%@ taglib uri="http://java.sun.com/jstl/core" prefix="c"%>
+<!--
+ * == 개정이력(Modification Information) ==
+ *
+ *   수정일               수정자           수정내용
+ *  ============      ============== =======================
+ *  2025. 3. 10.        정태우            최초 생성
+ *  2025. 3. 17.        이영준            사이드바 뎁스 추가
+ *  2025. 3. 20.        정태우            상단 이미지 경로 변경
+ *  2025. 3. 21.        이영준            급여등록 추가
+ *  2025. 3. 22.        이인구            사이드바 메뉴 클릭 시 유지 이벤트
+ *  2025. 3. 25.        김현수            사이드바 메뉴 클릭 시 유지 이벤트 성공, 다크모드 버튼 위치 변경
+ *  2025. 3. 27.        김현수            사이드바 메뉴 순서 변경
+ *  2025. 3. 28.        이영준            메뉴권한설정
+ *  2025. 3. 28.        김현수            메뉴로고 변경, 3뎁스 기능추가
+ *  2025. 3. 28.        최윤식			상신함 추가
+-->
+<link id="theme-css1" rel="stylesheet" crossorigin href="${pageContext.request.contextPath}/resources/template/dist/assets/compiled/css/app.css">
+<style>
+#logo {
+	margin-top: -66px;
+    width: 467px;
+    height: 284px;
+    margin-left: -106px;
+}
+a{
+text-decoration: none !importent;
+}
+</style>
+
+<%
+Object account = session.getAttribute("sessionAccount");
+if (account == null) {
+	response.sendRedirect(request.getContextPath() + "/?expired=true");
+	return;
+}
+%>
+
+
+<security:authentication property="principal" var="principal" />
+
+<div id="sidebar">
+	<div class="sidebar-wrapper active">
+		<div class="sidebar-header position-relative">
+			<!-- 2.로고밑 버튼 -->
+			<div class="d-flex flex-column align-items-start">
+				<div class="logo">
+					<a href="${pageContext.request.contextPath}/account/login/home">
+						<img src="${pageContext.request.contextPath}/resources/template/dist/assets/static/images/logo/ddit.png"
+						alt="Logo" srcset="" id="logo">
+					</a>
+				</div>
+				<div class="w-100"></div>
+				<div class="sidebar-toggler  x">
+					<a href="#" class="sidebar-hide d-xl-none d-block"><i
+						class="bi bi-x bi-middle"></i></a>
+				</div>
+			</div>
+		</div>
+
+		<!-- 사이드바 시작 -->
+		<div class="sidebar-menu">
+			<ul class="menu">
+				<!-- 일정 관리 -->
+				<li class="sidebar-item  " id="menu-calinder">
+					<a href="${pageContext.request.contextPath }/schedule/list" class='sidebar-link'>
+						<i class="bi bi-calendar"></i>
+						<span>일정관리</span>
+					</a>
+				</li>
+				<!-- 급여 관리 -->
+				<security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+					<li class="sidebar-item has-sub">
+						<a href="table.html" class='sidebar-link'>
+							<i class="bi bi-credit-card"></i>
+							<span>급여관리</span>
+						</a>
+						<ul class="submenu ">
+							<li class="submenu-item">
+								<a href="${pageContext.request.contextPath }/salary/list">사원급여관리</a>
+							</li>
+<!-- 							<li class="submenu-item"> -->
+<%-- 								<a href="${pageContext.request.contextPath }/salary/transfer/list">급여이체현황</a> --%>
+<!-- 							</li> -->
+							<li class="submenu-item">
+								<a href="${pageContext.request.contextPath}/Allowance/list" class="submenu-link">
+									공제/수당 설정
+								</a>
+							</li>
+						</ul>
+				</security:authorize>
+				
+	         <!-- 성과 관리 -->
+            <security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN','TEAM_LEADER')">
+               <li class="sidebar-item  has-sub" id="menu-check">
+                  <a href="#" class='sidebar-link'>
+                     <i class="bi bi-reception-4"></i>
+                     <span>성과관리</span>
+                  </a>
+            </security:authorize>
+
+            	<ul class="submenu ">
+            <security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+                     <li class="submenu-item " id="menu-checkgi">
+                        <a href="${pageContext.request.contextPath }/evaluation/evaluationDashboard">평가 현황판</a>
+                     </li>
+                     <li class="submenu-item " id="menu-perkpi">
+                        <a href="${pageContext.request.contextPath }/evaluation/evaluationCandidateList">평가 대상자 등록</a>
+                     </li>
+                     <li class="submenu-item " id="menu-perkpi">
+                        <a href="${pageContext.request.contextPath }/evaluation/evaluationTypeList">평가 기준 설정</a>
+                     </li>
+         	</security:authorize>
+
+            <security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN','TEAM_LEADER')">
+                     <li class="submenu-item " id="menu-perkpi">
+                        <a href="${pageContext.request.contextPath }/evaluation/evaluationDetail_Rank">평가하기</a>
+                     </li>
+            </security:authorize>
+
+         <security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+                     <li class="submenu-item " id="menu-perkpi">
+                        <a href="${pageContext.request.contextPath }/evaluation/resultDashboard">평가결과</a>
+                     </li>
+         </security:authorize>
+                  </ul>
+               </li>
+			
+				<!-- 근태 관리 -->
+				<li class="sidebar-item  has-sub" id="menu-attendance">
+					<a href="#" class='sidebar-link'>
+						<i class="bi bi-pen-fill"></i>
+						<span>근태관리</span>
+					</a>
+					<ul class="submenu ">
+						<li class="submenu-item ">
+							<a href="${pageContext.request.contextPath }/myAttendance?empId=${principal.realUser.empId}">내 근태 현황</a>
+						</li>
+						<li class="submenu-item ">
+							<a href="${pageContext.request.contextPath }/MyAnnual?empId=${principal.realUser.empId}">내 연차 내역</a>
+						</li>
+						<security:authorize access="hasAnyRole('ROLE_TEAM_LEADER')">
+							<li class="submenu-item ">
+								<a href="${pageContext.request.contextPath }/attendance/list?teamId=${principal.realUser.employee.teamId}">팀 근태현황</a>
+							</li>
+							<li class="submenu-item ">
+								<a href="${pageContext.request.contextPath }/annualList?teamId=${principal.realUser.employee.teamId}">팀 연차 보유현황</a>
+							</li>
+						</security:authorize>
+						<security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+							<li class="submenu-item ">
+								<a href="${pageContext.request.contextPath }/attendance/list">전직원 근태현황</a>
+							</li>
+							<li class="submenu-item ">
+								<a href="${pageContext.request.contextPath }/annualList">연차 보유현황</a>
+							</li>
+							<li class="submenu-item ">
+								<a href="${pageContext.request.contextPath }/workstauts/list">업무 항목 관리</a>
+							</li>
+							<li class="submenu-item ">
+								<a href="${pageContext.request.contextPath }/annual/list">휴가 항목 관리</a>
+							</li>
+						</security:authorize>
+					</ul>
+				</li>
+
+				<!-- 전자 결재 -->
+				<li class="sidebar-item  has-sub" id="menu-approval">
+					<a href="#" class='sidebar-link'>
+						<i class="bi bi-file-earmark-spreadsheet-fill"></i>
+						<span>전자결재</span>
+					</a>
+					<ul class="submenu">
+
+						<li class="submenu-item">
+							<a class="submenu-link" href="${pageContext.request.contextPath }/approval/templateList">기안작성</a>
+						</li>
+						<li class="submenu-item">
+							<a class="submenu-link" href="${pageContext.request.contextPath }/approval/mydrafts">제출문서</a>
+						</li>
+
+						<li class="submenu-item">
+							<a class="submenu-link" href="${pageContext.request.contextPath }/approval/approverDrafts">결재현황</a>
+						</li>
+						<security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+							<li class="submenu-item">
+								<a href="${pageContext.request.contextPath }/approval/list">결재양식</a>
+							</li>
+						</security:authorize>
+					</ul>
+				</li>
+
+				<!-- 채용 관리 -->	
+				<security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+					<li class="sidebar-item has-sub" id="menu-recruitman">
+						<a href="#" class='sidebar-link'>
+							 <i class="bi bi-people-fill"></i>
+							 <span>채용관리</span>
+						</a>
+						<ul class="submenu ">
+							<li class="submenu-item" id="menu-reclist">
+								<a href="${pageContext.request.contextPath }/recruit/board/list">채용공고 관리</a>
+							</li>
+							<li class="submenu-item" id="menu-recinterlist">
+								<a href="${pageContext.request.contextPath }/recruit/interview/list">면접자 관리</a>
+							</li>
+						</ul>
+					</li>
+				</security:authorize>
+
+
+				<!-- 인사 관리 -->
+				<security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+					<li class="sidebar-item  has-sub" id="menu-hrman">
+						<a href="#" class='sidebar-link'>
+							<i class="bi bi-file-earmark-person"></i>
+							<span>인사관리</span>
+						</a>
+						<ul class="submenu ">
+							<li class="submenu-item " id="menu-empman">
+								<a href="${pageContext.request.contextPath }/employee/empList">직원관리</a>
+							</li>
+							<li class="submenu-item " id="menu-hrapp">
+								<a href="${pageContext.request.contextPath }/employee/appointList">인사발령</a>
+							</li>
+							<li class="submenu-item" id="menu-account">
+								<a href="${pageContext.request.contextPath }/account/read"> 계정관리</a>
+							</li>
+							<li class="submenu-item " id="menu-resign">
+								<a href="${pageContext.request.contextPath }/employee/empUpdate/retireList">퇴사관리 |<br> 휴직자관리</a>
+
+							</li>
+						</ul>
+					</li>
+				</security:authorize>
+
+				<!-- 전자 근로계약서 -->
+				<li class="sidebar-item has-sub" id="menu-datadraft">
+					<a href="table-datatable.html" class='sidebar-link'>
+						<i class="bi bi-clipboard-fill"></i>
+						<span>전자 근로계약서</span>
+					</a>
+					<ul class="submenu ">
+						<security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')">
+							<li class="submenu-item " id="menu-regform">
+								<a href="${pageContext.request.contextPath }/contract/registerForm">근로계약서 작성</a>
+							</li>
+							<li class="submenu-item " id="menu-regformlist">
+								<a href="${pageContext.request.contextPath }/contract/List">근로계약서 목록</a>
+							</li>
+						</security:authorize>
+						<li class="submenu-item " id="menu-reginsert">
+							<a href="${pageContext.request.contextPath }/signature/registerForm">서명등록</a>
+						</li>
+						<li class="submenu-item " id="menu-regformlist">
+							<a href="${pageContext.request.contextPath }/contract/myContract">내 근로계약서</a>
+						</li>
+					</ul>
+				</li>
+			
+
+				<!-- 조직도-->
+				<li class="sidebar-item  " id="menu-orgview">
+					<a href="${pageContext.request.contextPath }/employee/organization" class='sidebar-link'>
+						<i class="bi bi-diagram-3-fill"></i>
+						<span>조직도</span>
+					</a>
+				</li>
+
+<%-- 				<security:authorize access="hasAnyRole('HR_MANAGER', 'HR_ADMIN')"> --%>
+<!-- 					<li class="sidebar-item has-sub " id="menu-org"> -->
+<%-- 						<a href="${pageContext.request.contextPath}/org" class="sidebar-link"> --%>
+<!-- 							<i class="bi bi-microsoft-teams"></i> <span>조직관리</span> -->
+<!-- 						</a> -->
+<!-- 						<ul class="submenu "> -->
+<!-- 							<li class="submenu-item " id="menu-deptman"> -->
+<%-- 								<a href="${pageContext.request.contextPath}/department/list">부서관리</a> --%>
+<!-- 							</li> -->
+<!-- 							<li class="submenu-item" id="menu-teamMan"> -->
+<%-- 								<a href="${pageContext.request.contextPath}/team/list">팀 관리</a> --%>
+<!-- 							</li> -->
+<!-- 						</ul> -->
+<!-- 					</li> -->
+<%-- 				</security:authorize> --%>
+
+				<!-- 공지 사항 -->
+				<li class="sidebar-item  " id="menu-board">
+					<a href="${pageContext.request.contextPath }/board/list" class='sidebar-link'>
+						 <i class="bi bi-clipboard-check-fill"></i>
+					     <span>공지사항</span>
+					</a>
+				</li>
+
+				<!-- 부서 게시판 -->
+				<li class="sidebar-item  " id="menu-deptboard">
+					<a href="${pageContext.request.contextPath }/departmentboard/list" class='sidebar-link'>
+						<i class="bi bi-clipboard2-fill"></i>
+						<span>부서게시판</span>
+					</a>
+				</li>
+
+			</ul>
+		</div>
+	</div>
+</div>
+
+<script src="${pageContext.request.contextPath}/resources/js/sidebar/sidebarMaintain.js"></script>
+
+
+

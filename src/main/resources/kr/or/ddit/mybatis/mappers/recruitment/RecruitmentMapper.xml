@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.recruitment.RecruitmentMapper">
+
+<resultMap type="RecruitmentVO" id="recruitmentMap">
+	<id property="recruitId" column="RECRUIT_ID"/>
+	<result property="recruitTitle" column="RECRUIT_TITLE"/>
+	<result property="recruitWorkplace" column="RECRUIT_WORKPLACE"/>
+	<result property="recruitHiretype" column="RECRUIT_HIRETYPE"/>
+	<result property="recruitSalary" column="RECRUIT_SALARY"/>
+	<result property="recruitWorkdetail" column="RECRUIT_WORKDETAIL"/>
+	<result property="recruitPq" column="RECRUIT_PQ"/>
+	<result property="recruitEnddate" column="RECRUIT_ENDDATE" jdbcType="DATE"/>
+	<result property="recruitContact" column="RECRUIT_CONTACT"/>
+	<result property="recruitStartdate" column="RECRUIT_STARTDATE" jdbcType="DATE"/>
+	<result property="recruitPosition" column="RECRUIT_POSITION"/> <!-- 모집부서 추가 -->
+	<result property="applicantCount" column="APPLICANT_COUNT"/> <!-- 지원서 수 추가 -->
+	<result property="waitingCount" column="WAITING_COUNT"/> <!-- 미평가지원서 수 추가 -->
+	<result property="recruitHirenum" column="RECRUIT_HIRENUM"/> <!-- 모집인원 추가 -->
+</resultMap>
+
+<select id="selectRecruitBoardList" resultMap="recruitmentMap">
+	SELECT
+	    r.recruit_id
+	  , r.recruit_title
+	  , r.recruit_workplace
+	  , r.recruit_hiretype
+	  , r.recruit_salary
+	  , r.recruit_workdetail
+	  , r.recruit_pq
+	  , r.recruit_contact
+	  , r.recruit_startdate
+	  , r.recruit_enddate
+	  , r.recruit_position
+	  , r.recruit_hirenum
+	  ,
+		-- 지원자 수
+	   (
+	        SELECT
+	            COUNT(*)
+	        FROM
+	            application a
+	        WHERE
+	            a.recruit_id = r.recruit_id
+	    ) AS applicant_count
+	  ,
+	
+		-- 상태 NULL인 대기자 수
+	   (
+	        SELECT
+	            COUNT(*)
+	        FROM
+	            application        a
+	            LEFT JOIN application_status s ON a.app_id = s.app_id
+	        WHERE
+	                a.recruit_id = r.recruit_id
+	            AND s.current_status IS NULL
+	    ) AS waiting_count
+	  ,
+	
+		-- 합격자 수
+	   (
+	        SELECT
+	            COUNT(*)
+	        FROM
+	            application        a
+	            LEFT JOIN application_status s ON a.app_id = s.app_id
+	        WHERE
+	                a.recruit_id = r.recruit_id
+	            AND s.current_status = '합격'
+	    ) AS pass_count
+	FROM
+	    recruit r
+	WHERE 1 = 1
+		<if test="date != null and date != ''">
+			AND TO_CHAR(R.RECRUIT_STARTDATE, 'YYYY') = #{date}
+		</if>
+	ORDER BY 
+<!-- 		R.RECRUIT_ID DESC -->
+		R.RECRUIT_STARTDATE DESC
+</select>
+
+	<select id="selectRecruitBoardDetail" resultMap="recruitmentMap" parameterType="Long">
+		SELECT 
+			R.RECRUIT_ID
+		   , R.RECRUIT_TITLE
+	       , R.RECRUIT_WORKPLACE
+	       , R.RECRUIT_HIRETYPE
+	       , R.RECRUIT_SALARY
+	       , R.RECRUIT_WORKDETAIL
+	       , R.RECRUIT_PQ
+	       , R.RECRUIT_ENDDATE
+	       , R.RECRUIT_CONTACT
+	       , R.RECRUIT_STARTDATE
+	       , R.RECRUIT_POSITION
+	       , R.RECRUIT_HIRENUM
+	       , (	SELECT 
+	       			COUNT(*) 
+	      		  FROM APPLICATION A 
+	      		  WHERE A.RECRUIT_ID = R.RECRUIT_ID
+	      	 ) AS APPLICANT_COUNT
+		FROM 
+			RECRUIT R
+		WHERE
+			 R.RECRUIT_ID = #{recruitId}
+	</select>
+
+	<insert id="insertRecruitBoard" parameterType="RecruitmentVO">
+		INSERT INTO RECRUIT (    
+			 RECRUIT_ID
+	       , RECRUIT_TITLE
+	       , RECRUIT_WORKPLACE
+	       , RECRUIT_HIRETYPE
+	       , RECRUIT_SALARY
+	       , RECRUIT_WORKDETAIL
+	       , RECRUIT_PQ
+	       , RECRUIT_ENDDATE
+	       , RECRUIT_CONTACT
+	       , RECRUIT_STARTDATE
+	       , RECRUIT_POSITION 
+	       , RECRUIT_HIRENUM
+		) VALUES (   
+			  recruit_seq.NEXTVAL     
+			, #{recruitTitle}
+			, #{recruitWorkplace}
+			, #{recruitHiretype}
+			, #{recruitSalary}
+			, #{recruitWorkdetail}
+			, #{recruitPq}
+			, #{recruitEnddate}
+			, #{recruitContact}     
+			, #{recruitStartdate}
+			, #{recruitPosition}
+			, #{recruitHirenum}
+		)
+	</insert>
+
+	<update id="updateRecruitBoard" parameterType="RecruitmentVO">
+		UPDATE 
+			  RECRUIT
+		SET	
+			  RECRUIT_TITLE = #{recruitTitle}
+			, RECRUIT_WORKPLACE = #{recruitWorkplace}
+			, RECRUIT_HIRETYPE = #{recruitHiretype}
+			, RECRUIT_SALARY = #{recruitSalary}
+			, RECRUIT_WORKDETAIL = #{recruitWorkdetail}
+			, RECRUIT_PQ = #{recruitPq}
+			, RECRUIT_ENDDATE = #{recruitEnddate}
+			, RECRUIT_CONTACT = #{recruitContact}
+			, RECRUIT_STARTDATE = #{recruitStartdate}
+			, RECRUIT_POSITION = #{recruitPosition}
+			, RECRUIT_HIRENUM = #{recruitHirenum}
+        WHERE 
+        	RECRUIT_ID = #{recruitId}
+	</update>
+	
+</mapper>

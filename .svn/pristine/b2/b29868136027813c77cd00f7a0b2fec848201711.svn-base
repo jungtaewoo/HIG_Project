@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.mybatis.mappers.evaluation.EvaluationMapper">
+	
+<!-- 	평가하기 -> 내가 평가할 대상 리스트 : 팀장 기준으로 소속 팀원 조회 -->
+	<select id="selectEvaluationTargets" parameterType="String" resultType="EvaluationCandidateVO">
+	    SELECT EC.EMP_ID
+	           ,E.NAME AS name
+	           ,D.DEPARTMENT_NAME AS departmentName
+	           ,R.RANK_NAME AS rankName
+	           ,T.TEAM_NAME AS teamName
+	           ,EC.EVALUATION_YEAR
+	           ,EC.HALF_YEAR
+	           ,EC.EVALUATION_STATUS
+	    FROM EVALUATION_CANDIDATE EC
+	    JOIN EMPLOYEE E ON EC.EMP_ID = E.EMP_ID
+	    JOIN DEPARTMENT D ON E.DEPARTMENT_ID = D.DEPARTMENT_ID
+	    JOIN TEAM T ON E.TEAM_ID = T.TEAM_ID                 
+	    JOIN RANK R ON E.RANK_ID = R.RANK_ID
+	    WHERE EC.EVALUATOR_ID = #{evaluatorId}
+	    <if test="evaluationYear != null and evaluationYear != ''">
+	        AND EC.EVALUATION_YEAR = #{evaluationYear}
+	    </if>
+	    <if test="halfYear != null and halfYear != ''">
+	        AND EC.HALF_YEAR = #{halfYear}
+	    </if>
+	    
+	</select>
+	
+<!-- 	피평가자의 직급 조회 -->
+	<select id="selectRankIdByEmpId" parameterType="String" resultType="String">
+		SELECT RANK_ID FROM EMPLOYEE WHERE EMP_ID = #{empId}
+	</select>
+	
+<!--	직급 기준 평가 항목 조회 -->	
+	<select id="selectEvaluationByRank" parameterType="String" resultType="EvaluationTypeVO">
+		SELECT 
+			EVALUATYPE_ID
+			,EVALUA_NAME
+			,EVALUA_TYPE
+			,EVALUA_CRITERIA
+			,EVALUA_COMMENT
+			,EVALUA_WEIGHT
+			,RANK_ID
+		FROM EVALUATION_TYPE
+		WHERE RANK_ID = #{rankId}
+		AND EVALUATION_YEAR = #{year}
+		AND HALF_YEAR = #{half}
+	</select>
+
+<!--	평가 결과 저장 -->
+	<insert id="insertEvaluation" parameterType="EvaluationVO">
+	    <selectKey keyProperty="evaluationId" resultType="long" order="BEFORE">
+	     	SELECT EVALUATION_SEQ.NEXTVAL FROM DUAL
+	    </selectKey>
+	    
+	    INSERT INTO EVALUATION (
+	        EVALUATION_ID,
+	        EMP_ID,
+	        EVALUATYPE_ID,
+	        EVALUATION_DATE,
+	        EVALUATION_SCORE,
+	        EVALUATION_COMMENTS,
+	        EVALUATION_FINAL_COMMENTS,
+	        EVALUATOR_EMP_ID,
+	        EVALUATION_YEAR,
+	        HALF_YEAR,
+	        EVALUATION_FINAL_SCORE
+	    ) VALUES (
+	        #{evaluationId},
+	        #{empId},
+	        #{evaluatypeId},
+	        SYSDATE,
+	        #{evaluationScore},
+	        #{evaluationComments},
+	        #{evaluationFinalComments},
+	        #{evaluatorEmpId},
+	        #{evaluationYear},
+	        #{halfYear},
+	        #{evaluationFinalScore}
+	    )
+	</insert>
+
+	<update id="updateEvaluationStatus">
+	    UPDATE EVALUATION_CANDIDATE
+	    SET EVALUATION_STATUS = 'Y'
+	    WHERE EMP_ID = #{empId}
+	    AND EVALUATION_YEAR = #{evaluationYear}
+	    AND HALF_YEAR = #{halfYear}
+	</update>
+
+</mapper>

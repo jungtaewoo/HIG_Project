@@ -1,0 +1,86 @@
+package kr.or.ddit.annual.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import kr.or.ddit.annual.service.AnnualHistoryService;
+import kr.or.ddit.annual.service.AnnualService;
+import kr.or.ddit.annual.vo.AnnualHistoryVO;
+import kr.or.ddit.annual.vo.AnnualVO;
+import kr.or.ddit.attendance.service.AttendanceService;
+import kr.or.ddit.attendance.vo.AttendanceVO;
+import kr.or.ddit.department.vo.DepartmentVO;
+import kr.or.ddit.employee.service.EmployeeService;
+
+@Controller
+public class AnnualReadController {
+
+	@Autowired
+	private AnnualService service;
+	@Autowired
+	private AnnualHistoryService AHservice;
+	@Autowired
+	private EmployeeService Eservice;
+	@Autowired
+	AttendanceService Aservice;
+	
+	/**
+	 * 연차 보유 현황 / 연차 사용 내역 전체 목록 조회
+	 * @param model
+	 * @return
+	 */
+	@GetMapping("/annualList")
+	public String annualList(Model model,
+		@RequestParam(value = "departmentId", required = false) String departmentId,
+        @RequestParam(value = "teamId", required = false) String teamId,
+        @RequestParam(value = "date", required = false) String date
+	){
+		model.addAttribute("annualList",service.annualList(teamId));
+		model.addAttribute("historyList",AHservice.TotalHisrotyList(teamId));
+		model.addAttribute("departmentList",Aservice.departmentList(teamId));
+		model.addAttribute("teamList",Aservice.teamList(teamId));
+		return "tiles:annual/annualList";
+	}
+	
+	/**
+	 * 한명의 연차 보유 현황 / 연차 사용 내역 조회
+	 * @param model
+	 * @param empId
+	 * @param date
+	 * @return
+	 */
+	@GetMapping("/MyAnnual")
+	public String MyAnnual(Model model 
+		, @RequestParam("empId") String empId
+		, @RequestParam(value="date",required = false) String date
+	) {
+		model.addAttribute("annualDetail",service.annualDetail(empId,date));
+		model.addAttribute("employee",Eservice.readEmp(empId)); 
+		model.addAttribute("annualCount",service.annaulCount(empId));
+		return "tiles:annual/myAnnualHistory";
+	}
+	
+	@GetMapping("/Annual/filter")
+    @ResponseBody
+    public  Map<String, Object> filterAttendance(
+        @RequestParam(value = "departmentId", required = false) String departmentId,
+        @RequestParam(value = "teamId", required = false) String teamId,
+        @RequestParam(value = "date", required = false) String date
+    ) {
+		Map<String, Object> result = new HashMap<>();
+//		List<AnnualHistoryVO> annualHistoryList = AHservice.annualHistoryList(departmentId, teamId, date);
+		
+//	    result.put("annualHistoryList", annualHistoryList);
+        return result;
+    }
+	
+	
+}

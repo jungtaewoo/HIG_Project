@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.annual.AnnualHistroyMapper">
+	<resultMap type="AnnualHistoryVO" id="AnnualHistoryListMap" autoMapping="true">
+		<association property="annualType" javaType="AnnualManageVO" autoMapping="true"/>
+		<collection property="employee" ofType="EmployeeVO">
+			<result property="name" column="Name" />
+			<association property="department" javaType="DepartmentVO" autoMapping="true"/>
+			<association property="team" javaType="TeamVO" autoMapping="true" />
+			<association property="rank" javaType="RankVO" autoMapping="true" />
+		</collection>
+
+	</resultMap>
+
+	<select id="TotalHisrotyList" resultMap="AnnualHistoryListMap">
+	SELECT
+	    ah.history_id
+	  , ah.emp_id
+	  , ah.leave_date
+	  , ah.leave_end_date
+	  ,  CASE
+	        WHEN ah.annual_code IN ('AC_10', 'AC_11') THEN 0.5
+	        ELSE (TRUNC(TO_DATE(ah.leave_end_date, 'YYYY-MM-DD')) - TRUNC(TO_DATE(ah.leave_date, 'YYYY-MM-DD')) + 1)
+   		 END AS leave_day
+	  , ah.annual_code
+	  , ah.status
+	  , ah.reason
+	  , ah.reject_reason
+	  , ah.request_date
+	  , e.name
+	  , d.department_name
+      , t.team_id
+	  , t.team_name
+	  , at.annual_name
+	  , r.rank_name
+	FROM
+	    annual_history ah
+	    join employee e on ah.emp_id = e.emp_id
+	    join department d on e.department_id = d.department_id
+	    join team t on e.team_id = t.team_id
+	    join rank r on e.rank_id = r.rank_id
+	    join annual_type at on at.ANNUAL_CODE = ah.ANNUAL_CODE
+	    where 
+	    	ah.status = '승인'
+    	 <if test="teamId != null and teamId != ''">
+       		and t.team_id = #{teamId}
+ 		 </if>
+	    ORDER BY leave_date DESC
+	</select>
+
+	<select id="EmpHisrotyDetail">
+	SELECT
+	    ah.history_id
+	  , ah.emp_id
+	  , ah.leave_date
+	  , ah.leave_end_date
+	  , ah.STATUS
+	  , ah.reason
+	  , ah.reject_reason
+	  , ah.request_date
+      , a.annual_code
+	FROM
+	    annual_history ah
+	    join ANNUAL_TYPE a on ah.ANNUAL_CODE = a.ANNUAL_CODE
+	 WHERE
+	  	ah.emp_id = #{empId}
+	  AND
+	  	ah.status = '승인'
+	   ORDER BY ah.leave_date DESC
+	</select>
+
+	<select id="TodayAnnualHistory" resultMap="AnnualHistoryListMap">
+
+	SELECT
+	    ah.history_id
+	  , ah.emp_id
+	  , ah.leave_date
+	  , ah.leave_end_date
+	  , (TRUNC(TO_DATE(ah.leave_end_date, 'YYYY-MM-DD')) - TRUNC(TO_DATE(ah.leave_date, 'YYYY-MM-DD')) + 1) AS leave_day
+	  , ah.annual_code
+	  , ah.status
+	  , ah.reason
+	  , ah.reject_reason
+	  , ah.request_date
+	  , e.name
+	  , d.department_name
+	  , t.team_name
+	  , at.annual_name
+	  , r.rank_name
+	FROM
+	    annual_history ah
+	    join employee e on ah.emp_id = e.emp_id
+	    join department d on e.department_id=d.department_id
+	    join team t on e.team_id = t.team_id
+	    join rank r on e.rank_id = r.rank_id
+	    join annual_type at on at.ANNUAL_CODE = ah.ANNUAL_CODE
+	    where ah.status = '승인'
+         AND TRUNC(SYSDATE) BETWEEN TRUNC(ah.leave_date) AND TRUNC(ah.leave_end_date)
+	    ORDER BY leave_date DESC
+	</select>
+
+	<select id="TodayAnnualCount">
+		SELECT
+		    COUNT(*) AS todayAnnualCount
+		FROM
+		    annual_history ah
+		WHERE
+		        ah.status = '승인'
+		    AND trunc(sysdate) BETWEEN ah.leave_date AND ah.leave_end_date
+	</select>
+
+	<select id="ThisMonthAnnualHistory" resultType="int">
+	    SELECT COUNT(*)
+	    FROM annual_history ah
+	    WHERE ah.status = '승인'
+	      AND ah.leave_end_date &gt;= TRUNC(SYSDATE, 'MM')
+	      AND ah.leave_date &lt;= LAST_DAY(SYSDATE)
+	</select>
+	
+	<select id="existsAttendance" resultType="int">
+    SELECT 
+    	COUNT(*) 
+    FROM 
+    	attendance 
+    WHERE 
+    	emp_id = #{empId}
+    AND 
+    	work_date = #{workDate}
+</select>
+</mapper>

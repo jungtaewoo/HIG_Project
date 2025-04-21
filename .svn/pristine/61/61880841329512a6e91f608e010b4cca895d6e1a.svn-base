@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.application.ApplicationMapper">
+
+	<resultMap type="ApplicationVO" id="applicationMap">
+		<id property="appId" column="APP_ID"/>
+		<result property="recruitId" column="RECRUIT_ID"/>
+		<result property="appName" column="APP_NAME"/>
+		<result property="appYeardate" column="APP_YEARDATE"/>
+		<result property="appEmail" column="APP_EMAIL"/>
+		<result property="appGrade" column="APP_GRADE"/>
+		<result property="appCareer" column="APP_CAREER"/>
+		<result property="appPl" column="APP_PL"/>
+		<result property="appFile" column="APP_FILE"/>
+		<result property="appGender" column="APP_GENDER"/>
+<!-- 		<result property="applicantCount" column="APPLICANT_COUNT"/> -->
+		
+		<!-- ApplicationStatusVO 매핑 -->
+        <association property="applicationStatus" javaType="kr.or.ddit.application.vo.ApplicationStatusVO">
+            <id property="statusId" column="STATUS_ID"/>
+            <result property="appId" column="APP_ID"/>
+            <result property="currentStatus" column="CURRENT_STATUS"/>
+            <result property="interviewDate" column="INTERVIEW_DATE"/>
+            <result property="updateAt" column="UPDATE_AT"/>
+            <result property="evalKnow" column="EVAL_KNOW"/>
+	        <result property="evalSkill" column="EVAL_SKILL"/>
+	        <result property="evalAtti" column="EVAL_ATTI"/>
+	        <result property="evalCommu" column="EVAL_COMMU"/>
+	        <result property="evalExperi" column="EVAL_EXPERI"/>
+        </association>
+        
+        <!-- RecruitmentVO 매핑 추가 -->
+        <association property="recruitment" javaType="kr.or.ddit.recruitment.vo.RecruitmentVO">
+            <id property="recruitId" column="RECRUIT_ID"/>
+            <result property="recruitTitle" column="RECRUIT_TITLE"/>
+            <result property="recruitWorkplace" column="RECRUIT_WORKPLACE"/>
+            <result property="recruitHiretype" column="RECRUIT_HIRETYPE"/>
+            <result property="recruitSalary" column="RECRUIT_SALARY"/>
+            <result property="recruitWorkdetail" column="RECRUIT_WORKDETAIL"/>
+            <result property="recruitPq" column="RECRUIT_PQ"/>
+            <result property="recruitEnddate" column="RECRUIT_ENDDATE"/>
+            <result property="recruitContact" column="RECRUIT_CONTACT"/>
+            <result property="recruitStartdate" column="RECRUIT_STARTDATE"/>
+            <result property="recruitPosition" column="RECRUIT_POSITION"/>
+            <result property="applicantCount" column="APPLICANT_COUNT"/>
+            <result property="recruitHirenum" column="RECRUIT_HIRENUM"/>
+        </association>
+	</resultMap>
+	
+	
+<!-- 하나의 채용공고에 해당하는 지원서 목록 조회 -->
+	<select id="selectApplicationList" resultMap="applicationMap" parameterType="Long">
+		SELECT 
+		    A.APP_ID 
+		    , A.RECRUIT_ID
+		    , A.APP_NAME
+		    , A.APP_YEARDATE
+		    , A.APP_EMAIL
+		    , A.APP_GRADE
+		    , A.APP_CAREER
+		    , A.APP_PL
+		    , A.APP_FILE
+		    , A.APP_GENDER
+		    , AST.STATUS_ID
+		    , AST.APP_ID AS STATUS_APP_ID
+		    , NVL(AST.CURRENT_STATUS, '평가필요') AS CURRENT_STATUS
+		    , AST.INTERVIEW_DATE
+		    , AST.UPDATE_AT
+		    , R.RECRUIT_TITLE
+		    , R.RECRUIT_WORKPLACE
+	        , R.RECRUIT_HIRETYPE
+	        , R.RECRUIT_SALARY
+	        , R.RECRUIT_WORKDETAIL
+	        , R.RECRUIT_PQ
+	        , R.RECRUIT_ENDDATE
+	        , R.RECRUIT_CONTACT
+	        , R.RECRUIT_STARTDATE
+	        , R.RECRUIT_POSITION
+	        , R.RECRUIT_HIRENUM
+	        , (	SELECT COUNT(*) 
+	        		  FROM APPLICATION A 
+	        		  WHERE A.RECRUIT_ID = R.RECRUIT_ID) AS APPLICANT_COUNT
+		FROM 
+		    APPLICATION A
+		LEFT JOIN 
+		    APPLICATION_STATUS AST ON A.APP_ID = AST.APP_ID
+		LEFT JOIN 
+		    RECRUIT R ON R.RECRUIT_ID = A.RECRUIT_ID
+		WHERE 
+			A.RECRUIT_ID = #{recruitId}
+		ORDER BY 
+			A.APP_ID DESC
+	</select>
+
+<!-- 지원서 하나 상세 조회  -->
+	<select id="selectApplicationDetail" resultMap="applicationMap" parameterType="Long">
+		SELECT A.APP_ID 
+		        , A.RECRUIT_ID
+		        , A.APP_NAME
+		        , A.APP_YEARDATE
+		        , A.APP_EMAIL
+		        , A.APP_GRADE
+		        , A.APP_CAREER
+		        , A.APP_PL
+		        , A.APP_FILE
+		        , A.APP_GENDER
+		        , AST.STATUS_ID
+		        , AST.APP_ID AS STATUS_APP_ID
+		        , NVL(AST.CURRENT_STATUS, '평가필요') AS CURRENT_STATUS
+		        , AST.INTERVIEW_DATE
+		        , AST.UPDATE_AT
+		FROM 
+			APPLICATION A
+		LEFT JOIN 
+			APPLICATION_STATUS AST ON A.APP_ID = AST.APP_ID
+		WHERE 
+			A.APP_ID = #{appId}
+	</select>
+	
+<!-- 지원서 등록 -->
+	<insert id="insertApplication" parameterType="ApplicationVO">
+		INSERT INTO APPLICATION (
+		    APP_ID
+		    , RECRUIT_ID
+		    , APP_NAME
+		    , APP_YEARDATE
+		    , APP_EMAIL
+		    , APP_GRADE
+		    , APP_CAREER
+		    , APP_PL
+		    , APP_FILE
+		    , APP_GENDER
+		) VALUES (
+		    application_seq.NEXTVAL
+			, #{recruitId}
+			, #{appName}
+			, #{appYeardate}
+			, #{appEmail}
+			, #{appGrade}
+			, #{appCareer}
+			, #{appPl}
+			, #{appFile}
+			, #{appGender}
+		)
+	</insert>
+	
+<!-- 지원서 상태 수정 -->
+	<update id="updateApplicationStatus">
+		UPDATE APPLICATION_STATUS
+        SET 
+        	CURRENT_STATUS = #{currentStatus}
+            , INTERVIEW_DATE = #{interviewDate}
+        WHERE 
+        	STATUS_ID = #{statusId}
+       		AND APP_ID = #{appId}
+	</update>
+	
+<!-- 면접자 조회 -->	
+	<select id="selectInterviewList" resultMap="applicationMap">
+	    SELECT 
+	        A.APP_ID
+	        , A.RECRUIT_ID
+	        , A.APP_NAME
+	        , A.APP_YEARDATE
+	        , A.APP_EMAIL
+	        , A.APP_GRADE
+	        , A.APP_CAREER
+	        , A.APP_PL
+	        , A.APP_FILE
+	        , A.APP_GENDER
+	        , S.STATUS_ID
+	        , S.CURRENT_STATUS
+	        , S.INTERVIEW_DATE
+	        , S.UPDATE_AT
+	        , S.EVAL_KNOW
+	        , S.EVAL_SKILL
+	        , S.EVAL_ATTI
+	        , S.EVAL_COMMU
+	        , S.EVAL_EXPERI
+	        , R.RECRUIT_ID
+	        , R.RECRUIT_TITLE
+	        , R.RECRUIT_WORKPLACE
+	        , R.RECRUIT_HIRETYPE
+	        , R.RECRUIT_SALARY
+	        , R.RECRUIT_WORKDETAIL
+	        , R.RECRUIT_PQ
+	        , R.RECRUIT_ENDDATE
+	        , R.RECRUIT_CONTACT
+	        , R.RECRUIT_STARTDATE
+	        , R.RECRUIT_POSITION
+	        , R.RECRUIT_HIRENUM
+	    FROM 
+	    	APPLICATION_STATUS S
+	    JOIN 
+	    	APPLICATION A ON S.APP_ID = A.APP_ID
+	    JOIN 
+	    	RECRUIT R ON A.RECRUIT_ID = R.RECRUIT_ID
+	    WHERE 
+	    	S.CURRENT_STATUS IN ('면접예정', '합격', '불합격')
+	    ORDER BY 
+	    	R.RECRUIT_ID DESC, S.INTERVIEW_DATE DESC
+	</select>
+	
+<!-- 면접 평가 수정 -->	
+	<update id="updateInterviewResult">
+	    UPDATE APPLICATION_STATUS
+	    SET 
+	        EVAL_KNOW = #{evalKnow}
+	        , EVAL_SKILL = #{evalSkill}
+	        , EVAL_ATTI = #{evalAtti}
+	        , EVAL_COMMU = #{evalCommu}
+	        , EVAL_EXPERI = #{evalExperi}
+	        , CURRENT_STATUS = #{currentStatus}
+	    WHERE 
+	    	STATUS_ID = #{statusId}
+	    	AND APP_ID = #{appId}
+	</update>
+
+<!-- 총 지원자 성별 비율 조회 -->
+	<select id="selectTotalGenderRatio" resultType="map">
+	    SELECT 
+	    	APP_GENDER
+	    	, COUNT(*) AS GENDER_COUNT
+	    FROM 
+	    	APPLICATION
+	    GROUP BY 
+	    	APP_GENDER
+	</select>
+
+<!-- 합격자 성별 비율 조회 -->
+	<select id="selectPassedGenderRatio" resultType="map">
+	    SELECT 
+	    	A.APP_GENDER
+	    	, COUNT(*) AS GENDER_COUNT
+	    FROM 
+	    	APPLICATION A
+	    JOIN 
+	    	APPLICATION_STATUS S ON A.APP_ID = S.APP_ID
+	    WHERE 
+	    	S.CURRENT_STATUS = '합격'
+	    GROUP BY 
+	    	A.APP_GENDER
+	</select>
+	
+<!-- 면접 상태 비율 조회  -->	
+	<select id="selectInterviewStatusCount" resultType="map">
+	    SELECT 
+	        S.CURRENT_STATUS,
+	        COUNT(*) AS count
+	    FROM 
+	        APPLICATION_STATUS S
+        JOIN 
+        	APPLICATION A ON S.APP_ID = A.APP_ID
+   		JOIN 
+   			RECRUIT R ON A.RECRUIT_ID = R.RECRUIT_ID
+	    WHERE 
+	        S.CURRENT_STATUS IN ('면접예정', '합격', '불합격')
+	        AND EXTRACT(YEAR FROM R.RECRUIT_STARTDATE) = #{year}
+	        AND ( 
+	            (#{half} = 1 AND EXTRACT(MONTH FROM R.RECRUIT_STARTDATE) BETWEEN 1 AND 6)  
+	            OR 
+	            (#{half} = 2 AND EXTRACT(MONTH FROM R.RECRUIT_STARTDATE) BETWEEN 7 AND 12)
+	        )
+	    GROUP BY 
+	        S.CURRENT_STATUS
+	</select>
+	
+<!-- 체크박스로 선택된 appId들만 조회 -->
+<select id="selectInterviewsByAppIds" resultMap="applicationMap" parameterType="list">
+    SELECT 
+        A.APP_ID
+        , A.RECRUIT_ID
+        , A.APP_NAME
+        , A.APP_YEARDATE
+        , A.APP_EMAIL
+        , A.APP_GRADE
+        , A.APP_CAREER
+        , A.APP_PL
+        , A.APP_FILE
+        , A.APP_GENDER
+        , S.STATUS_ID
+        , S.CURRENT_STATUS
+        , S.INTERVIEW_DATE
+        , S.UPDATE_AT
+        , S.EVAL_KNOW
+        , S.EVAL_SKILL
+        , S.EVAL_ATTI
+        , S.EVAL_COMMU
+        , S.EVAL_EXPERI
+        , R.RECRUIT_ID
+        , R.RECRUIT_TITLE
+        , R.RECRUIT_WORKPLACE
+        , R.RECRUIT_HIRETYPE
+        , R.RECRUIT_SALARY
+        , R.RECRUIT_WORKDETAIL
+        , R.RECRUIT_PQ
+        , R.RECRUIT_ENDDATE
+        , R.RECRUIT_CONTACT
+        , R.RECRUIT_STARTDATE
+        , R.RECRUIT_POSITION
+        , R.RECRUIT_HIRENUM
+    FROM 
+        APPLICATION_STATUS S
+    JOIN 
+        APPLICATION A ON S.APP_ID = A.APP_ID
+    JOIN 
+        RECRUIT R ON A.RECRUIT_ID = R.RECRUIT_ID
+    WHERE 
+        A.APP_ID IN 
+        <foreach item="id" collection="appIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+</select>
+
+
+	
+</mapper>

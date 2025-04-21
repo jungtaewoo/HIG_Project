@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * == 개정이력(Modification Information) ==
+ *
+ *   수정일      			수정자           수정내용
+ *  ============   	============== =======================
+ *  2025. 3. 11.     	KHS            최초 생성
+ *  2025. 3. 26.        정태우          부서 인원수 매퍼 추가
+ *  2025. 3. 26.        KHS            조직도 매퍼 수정, 리절트 맵 수정
+-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.or.ddit.mybatis.mappers.department.DepartmentMapper">
+
+    <!-- ResultMap 정의 -->
+    <resultMap type="kr.or.ddit.department.vo.DepartmentVO" id="departmentMap">
+        <id property="departmentId" column="DEPARTMENT_ID"/>
+        <result property="departmentName" column="DEPARTMENT_NAME"/>
+        <result property="departmentLocation" column="DEPARTMENT_LOCATION"/>
+        <result property="departmentPhonenumber" column="DEPARTMENT_PHONENUMBER"/>
+        <result property="departmentFaxnumber" column="DEPARTMENT_FAXNUMBER"/>
+        <result property="numberType" column="NUMBER_TYPE"/>
+        <result property="parentOrgId" column="PARENT_ORG_ID"/>
+        <result property="departmentStatus" column="DEPARTMENT_STATUS"/>
+		<result property="deptHeadName" column="DEPT_HEAD_NAME"/>  <!-- 부서장 이름 매핑 추가 -->
+		<result property="departmentEmployeeCount" column="DEPARTMENT_EMPLOYEE_COUNT"/>
+
+      	<collection property="teams" ofType="TeamVO" >
+    		<id property="teamId" column="TEAM_ID"/>
+        	<result property="teamName" column="TEAM_NAME"/>
+        	<result property="teamPhonenumber" column="TEAM_PHONENUMBER"/>
+        	<result property="teamFaxnumber" column="TEAM_FAXNUMBER"/>
+			<result property="teamEmployeeCount" column="TEAM_EMPLOYEE_COUNT"/>
+
+			<collection property="employees" ofType="kr.or.ddit.employee.vo.EmployeeVO" autoMapping="true">
+				<id property="empId" column="EMP_ID"/>
+				<result property="name" column="NAME"/>
+				<result property="phoneNumber" column="PHONE_NUMBER"/>
+			        <association property="job" column="JOB_ID" javaType="kr.or.ddit.job.vo.JobVO">
+			            <result property="jobId" column="JOB_ID"/>
+			            <result property="jobName" column="JOB_NAME"/>
+			        </association>
+		            <!-- Rank 정보를 RankVO로 매핑 (예시) -->
+				    <association property="rank" column="RANK_ID" javaType="kr.or.ddit.rank.vo.RankVO">
+				        <result property="rankId" column="RANK_ID"/>
+				        <result property="rankName" column="RANK_NAME"/>
+				    </association>
+			</collection>
+      	</collection>
+
+      	<collection property="accounts"
+			ofType="kr.or.ddit.account.vo.AccountVO" autoMapping="true">
+		</collection>
+
+    </resultMap>
+
+	<select id="getEmployeeCountByDepartment" resultMap="departmentMap">
+		SELECT
+		    d.DEPARTMENT_ID,
+		    d.DEPARTMENT_NAME,
+		    COUNT(e.EMP_ID) AS DEPARTMENT_EMPLOYEE_COUNT
+		FROM DEPARTMENT d
+		LEFT JOIN EMPLOYEE e ON d.DEPARTMENT_ID = e.DEPARTMENT_ID
+		GROUP BY d.DEPARTMENT_ID, d.DEPARTMENT_NAME
+		ORDER BY d.DEPARTMENT_ID
+	</select>
+
+    <!-- 조직도 조회 -->
+    <select id="getOrg" resultMap="departmentMap">
+		SELECT
+		    d.DEPARTMENT_ID,
+		    d.DEPARTMENT_NAME,
+		    d.DEPARTMENT_LOCATION,
+		    d.DEPARTMENT_PHONENUMBER,
+		    d.DEPARTMENT_FAXNUMBER,
+		    d.NUMBER_TYPE,
+		    d.PARENT_ORG_ID,
+		    d.DEPARTMENT_STATUS,
+
+		    t.TEAM_ID,
+		    t.TEAM_NAME,
+		    t.TEAM_PHONENUMBER,
+		    t.TEAM_FAXNUMBER,
+
+		    e.EMP_ID,
+		    e.NAME,
+		    e.*,
+		    j.JOB_NAME,
+		    r.RANK_NAME,
+
+		    (
+		      SELECT COUNT(DISTINCT e2.EMP_ID)
+		      FROM EMPLOYEE e2
+		      WHERE e2.DEPARTMENT_ID = d.DEPARTMENT_ID
+		    ) AS DEPARTMENT_EMPLOYEE_COUNT,
+
+		    (
+		      SELECT COUNT(DISTINCT e3.EMP_ID)
+		      FROM EMPLOYEE e3
+		      WHERE e3.TEAM_ID = t.TEAM_ID
+		    ) AS TEAM_EMPLOYEE_COUNT,
+
+		    (
+		      SELECT e4.NAME
+		      FROM EMPLOYEE e4
+		      WHERE e4.DEPARTMENT_ID = d.DEPARTMENT_ID
+		        AND e4.JOB_ID = 1040
+		      FETCH FIRST 1 ROWS ONLY
+		    ) AS DEPT_HEAD_NAME
+
+		FROM
+		    DEPARTMENT d
+		    LEFT JOIN TEAM     t ON d.DEPARTMENT_ID = t.DEPARTMENT_ID
+		    LEFT JOIN EMPLOYEE e ON t.TEAM_ID = e.TEAM_ID
+		    LEFT JOIN JOB      j ON e.JOB_ID = j.JOB_ID
+		    LEFT JOIN RANK     r ON e.RANK_ID = r.RANK_ID
+
+		ORDER BY
+		    d.DEPARTMENT_ID,
+		    t.TEAM_ID,
+		    e.RANK_ID DESC
+
+    </select>
+
+	<!-- 부서 목록 조회 -->
+	<select id="getDepartmentList" resultMap="departmentMap">
+		SELECT
+		    D.DEPARTMENT_ID,
+		    D.DEPARTMENT_NAME,
+		    D.DEPARTMENT_LOCATION,
+		    D.DEPARTMENT_PHONENUMBER,
+		    D.DEPARTMENT_FAXNUMBER,
+		    D.NUMBER_TYPE,
+		    (
+		      SELECT E.NAME
+		      FROM EMPLOYEE E
+		      WHERE E.DEPARTMENT_ID = D.DEPARTMENT_ID
+		        AND E.JOB_ID = 1040
+		      FETCH FIRST 1 ROWS ONLY
+		    ) AS DEPT_HEAD_NAME
+		FROM DEPARTMENT D
+        ORDER BY D.DEPARTMENT_ID ASC
+
+	</select>
+
+	<select id="getDepartmentById" parameterType="Long"
+		resultMap="departmentMap">
+		SELECT
+		  DEPARTMENT_ID
+		, DEPARTMENT_NAME
+		, DEPARTMENT_LOCATION
+		, DEPARTMENT_PHONENUMBER
+		, DEPARTMENT_FAXNUMBER
+		, NUMBER_TYPE
+		FROM DEPARTMENT
+		WHERE DEPARTMENT_ID = #{departmentId}
+	</select>
+
+	<!-- 오늘 날짜로 출근한 사람이 몇명인지 조회 혹시 date가 들어온다면 그 날짜로 검색 -->
+	<select id="TodayAlive" resultType="DepartmentVO">
+		SELECT
+	      d.department_id
+		, d.department_name
+		, COUNT(e.emp_id) AS department_arrived_employee_count
+		FROM
+		department d
+		LEFT JOIN employee e ON e.department_id = d.department_id
+		LEFT JOIN attendance a ON a.emp_id = e.emp_id
+		WHERE
+		a.attendance_status IN ( '정상', '지각' ) -- 정상 또는 지각만 조회
+		<if test="date != null and date != ''">
+       		 AND TRUNC(a.work_date) = TO_DATE(#{date}, 'YYYY-MM-DD')
+	    </if>
+	    <if test="date == null or date == ''">
+    		 AND TRUNC(a.work_date) = TRUNC(SYSDATE)
+    	</if>
+		GROUP BY
+		  d.department_id
+		, d.department_name
+	</select>
+
+
+	<!-- 부서 추가 -->
+	<insert id="insertDepartment">
+		<selectKey resultType="java.lang.Long"
+			keyProperty="departmentId" order="BEFORE">
+			SELECT departmentid_seq.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO DEPARTMENT (
+		DEPARTMENT_ID
+		, DEPARTMENT_NAME
+		, DEPARTMENT_LOCATION
+		, DEPARTMENT_PHONENUMBER
+		, DEPARTMENT_FAXNUMBER
+		, NUMBER_TYPE
+		, PARENT_ORG_ID
+		, DEPARTMENT_STATUS
+		) VALUES (
+		#{departmentId}
+		, #{departmentName}
+		, #{departmentLocation}
+		, #{departmentPhonenumber}
+		, #{departmentFaxnumber}
+		, #{numberType}
+		, #{parentOrgId}
+		,'Y'
+		)
+	</insert>
+
+	<!-- 부서 수정 -->
+	<update id="updateDepartment">
+		UPDATE DEPARTMENT
+		SET DEPARTMENT_ID = #{departmentId}
+		, DEPARTMENT_NAME = #{departmentName}
+		, DEPARTMENT_LOCATION = #{departmentLocation}
+		, DEPARTMENT_PHONENUMBER = #{departmentPhonenumber}
+		, DEPARTMENT_FAXNUMBER = #{departmentFaxnumber}
+		, NUMBER_TYPE = #{numberType}
+		WHERE DEPARTMENT_ID = #{departmentId}
+	</update>
+
+	<!-- 부서 삭제 -->
+	<delete id="deleteDepartment">
+		DELETE
+		FROM DEPARTMENT
+		WHERE DEPARTMENT_ID = #{departmentId}
+	</delete>
+
+	<delete id="deleteDepartments">
+		DELETE FROM DEPARTMENT WHERE DEPARTMENT_ID IN
+		<foreach item="departmentId" collection="departmentIds"
+			open="(" separator="," close=")">
+			#{departmentId}
+		</foreach>
+	</delete>
+
+</mapper>

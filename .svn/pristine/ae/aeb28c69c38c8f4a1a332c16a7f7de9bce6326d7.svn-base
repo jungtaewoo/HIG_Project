@@ -1,0 +1,128 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>미제출자 목록</title>
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<style>
+body {
+	background-color: #f8f9fa;
+	font-family: "Segoe UI", "Malgun Gothic", sans-serif;
+}
+
+.container {
+	padding: 2rem;
+}
+
+.header-bar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 1.5rem;
+}
+
+.btn-back {
+	background-color: #6c757d;
+	color: white;
+	font-weight: bold;
+	border: none;
+	border-radius: 6px;
+	padding: 6px 16px;
+	font-size: 14px;
+}
+
+.btn-back:hover {
+	background-color: #5a6268;
+}
+
+.table th, .table td {
+	vertical-align: middle;
+	font-size: 14px;
+}
+.table th *, .table td {
+	font-size: 16px !important;
+}
+
+.title {
+	font-size: 20px;
+	font-weight: bold;
+	color: #333;
+}
+
+.no-data {
+	text-align: center;
+	font-size: 16px;
+	color: #888;
+	padding: 30px;
+}
+</style>
+
+<div class="page-container container-fluid">
+	<div class="d-flex justify-content-between align-items-center mb-2">
+
+		<!-- 좌측: 버튼 그룹 -->
+		<div>
+			<button type="button" class="btn btn-outline-secondary"
+				onclick="history.back();">
+				<i class="fas fa-arrow-left"></i>
+			</button>
+		</div>
+
+		<!-- 우측: Breadcrumb -->
+		<nav aria-label="breadcrumb">
+			<ol class="breadcrumb mb-0">
+				<li class="breadcrumb-item fw-bold text-primary"><a
+					href="${pageContext.request.contextPath }/account/login/home">📌Main</a></li>
+				<li class="breadcrumb-item"><a href="${pageContext.request.contextPath }/evaluation/evaluationDashboard">인사평가 현황판</a></li>
+				<li class="breadcrumb-item active" aria-current="page">미제출자 리스트</li>
+			</ol>
+		</nav>
+	</div>
+</div>
+<br/>
+
+<body>
+	<div class="container">
+		<!-- 🔙 메인으로 버튼 -->
+		<div class="header-bar">
+			<div class="title">📋 미제출자 리스트</div>
+		</div>
+
+		<c:choose>
+			<c:when test="${not empty unsubmittedList}">
+				<table class="table table-bordered table-striped">
+					<thead class="table-light text-center">
+						<tr>
+							<th>사번</th>
+							<th>이름</th>
+							<th>본부</th>
+							<th>팀</th>
+							<th>상태</th>
+						</tr>
+					</thead>
+					<tbody>
+						<c:forEach var="emp" items="${unsubmittedList}">
+							<tr class="text-center">
+								<td>${emp.empId}</td>
+								<td>${emp.name}</td>
+								<td>${emp.departmentName}</td>
+								<td>${emp.teamName}</td>
+								<td><c:choose>
+										<c:when test="${emp.evaluationStatus == 'Y'}">✅ 제출완료</c:when>
+										<c:otherwise>❌ 미제출</c:otherwise>
+									</c:choose></td>
+							</tr>
+						</c:forEach>
+					</tbody>
+				</table>
+			</c:when>
+			<c:otherwise>
+				<div class="no-data">미제출자가 없습니다.</div>
+			</c:otherwise>
+		</c:choose>
+	</div>
+</body>
+</html>

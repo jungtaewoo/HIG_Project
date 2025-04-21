@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * == 개정이력(Modification Information) ==
+ *
+ *   수정일      			수정자           수정내용
+ *  ============   	============== =======================
+ *  2025. 3. 11.     	KHS            최초 생성
+ *  2025. 3. 21.     	KHS	        작성자 job에서 role테이블로변경, 파일업로드 적용
+-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mybatis.mappers.board.BoardMapper">
+
+    <!-- ResultMap 정의 -->
+    <resultMap type="kr.or.ddit.board.vo.BoardVO" id="boardMap" autoMapping="true">
+        <id property="noticeId" column="NOTICE_ID"/>
+        <result property="oneFile" column="NOTICE_FILE" jdbcType="NUMERIC"/>
+
+		<!-- role 객체 매핑 -->
+	    <association property="role" javaType="kr.or.ddit.role.vo.RoleVO">
+	        <id property="roleId" column="ROLE_ID"/>
+	        <result property="roleName" column="ROLE_NAME"/>
+	    </association>
+        <!--  공지 카테고리 객체 매핑 -->
+		<association property="category" javaType="kr.or.ddit.boardcategory.vo.BoardCategoryVO" autoMapping="true">
+			<id property="categoryId" column="CATEGORY_ID"/>
+		</association>
+		<association property="emp" javaType="kr.or.ddit.employee.vo.EmployeeVO" autoMapping="true">
+			<id property="empId" column="EMP_ID"/>
+		</association>
+        <!--  파일 상세 정보 추가 -->
+	   <collection property="fileDetails" ofType="FileDetailVO">
+	       <id property="detailId" column="DETAIL_ID"/>
+	       <result property="fileId" column="FILE_ID"/>
+	       <result property="fileName" column="FILE_NAME"/>
+	       <result property="fileSavename" column="FILE_SAVENAME"/>
+	       <result property="filePath" column="FILE_PATH"/>
+	       <result property="fileStatus" column="FILE_STATUS"/>
+	       <result property="fileSize" column="FILE_SIZE"/>
+	       <result property="fileType" column="FILE_TYPE"/>
+	       <result property="uploadDate" column="UPLOAD_DATE"/>
+	   </collection>
+    </resultMap>
+
+    <!-- 전체 공지글 개수 조회 -->
+    <select id="selectTotalRecord" resultType="int">
+        SELECT COUNT(*)
+        FROM NOTICE
+    </select>
+
+    <!-- 고정 공지글 목록 조회 -->
+    <select id="selectImportanceBoardList" resultMap="boardMap">
+        SELECT
+		    N.NOTICE_ID,
+		    R.ROLE_ID,
+		    R.ROLE_NAME,
+		    N.TITLE,
+		    N.CREATED_AT,
+		    N.CATEGORY_ID,
+            C.CATEGORY_NAME,
+		    N.IMPORTANCE,
+		    N.VIEW_COUNT,
+		    E.NAME
+		FROM NOTICE N
+        JOIN NOTICE_CATEGORY C ON N.CATEGORY_ID = C.CATEGORY_ID
+		JOIN EMPLOYEE E ON N.EMP_ID = E.EMP_ID
+		JOIN ROLE R ON E.ROLE_ID = R.ROLE_ID
+        WHERE IMPORTANCE = 'Y'
+		ORDER BY N.IMPORTANCE DESC, N.NOTICE_ID DESC
+    </select>
+
+    <!-- 공지글 목록 조회 -->
+    <select id="selectBoardList" resultMap="boardMap">
+        SELECT
+		    N.NOTICE_ID,
+		    R.ROLE_ID,
+		    R.ROLE_NAME,
+		    N.TITLE,
+		    N.CREATED_AT,
+		    N.CATEGORY_ID,
+            C.CATEGORY_NAME,
+		    N.IMPORTANCE,
+		    N.VIEW_COUNT,
+		    E.NAME
+		FROM NOTICE N
+        JOIN NOTICE_CATEGORY C ON N.CATEGORY_ID = C.CATEGORY_ID
+		JOIN EMPLOYEE E ON N.EMP_ID = E.EMP_ID
+		JOIN ROLE R ON E.ROLE_ID = R.ROLE_ID
+		WHERE IMPORTANCE = 'N'
+		ORDER BY N.IMPORTANCE DESC, N.NOTICE_ID DESC
+    </select>
+
+    <!-- 특정 공지글 조회 -->
+    <select id="selectBoard" resultMap="boardMap">
+         SELECT
+		    N.NOTICE_ID
+		  , R.ROLE_NAME
+		  , N.TITLE
+		  , N.CONTENT
+		  , N.CREATED_AT
+		  , N.VIEW_COUNT
+		  , N.NOTICE_FILE
+          , N.CATEGORY_ID
+          , C.CATEGORY_NAME
+		  , FD.DETAIL_ID
+		  , FD.FILE_ID
+		  , FD.FILE_NAME
+		  , FD.FILE_SAVENAME
+		  , FD.FILE_PATH
+		  , FD.FILE_STATUS
+		  , FD.FILE_SIZE
+		  , FD.FILE_TYPE
+		  , FD.UPLOAD_DATE
+		  , E.NAME
+		FROM NOTICE N
+            JOIN NOTICE_CATEGORY C ON N.CATEGORY_ID = C.CATEGORY_ID
+		    JOIN EMPLOYEE        E ON N.EMP_ID = E.EMP_ID
+		    JOIN ROLE            R ON E.ROLE_ID = R.ROLE_ID
+		    LEFT OUTER JOIN FILE_DETAIL FD ON N.NOTICE_FILE = FD.FILE_ID
+		WHERE
+		    N.NOTICE_ID = #{noticeId}
+		ORDER BY N . CREATED_AT DESC
+    </select>
+
+	<insert id="insertBoard" parameterType="BoardVO">
+		INSERT INTO NOTICE (
+		    NOTICE_ID,
+		    EMP_ID,
+		    TITLE,
+		    CONTENT,
+		    CATEGORY_ID,
+		    IMPORTANCE,
+		    CREATED_AT,
+		    VIEW_COUNT,
+		    NOTICE_FILE
+		) VALUES (
+		    notice_seq.NEXTVAL,
+		    #{empId,jdbcType=VARCHAR},
+		    #{title,jdbcType=VARCHAR},
+		    #{content,jdbcType=CLOB},
+		    #{categoryId,jdbcType=NUMERIC},
+		    #{importance,jdbcType=CHAR},
+		    SYSDATE,
+		    0,
+		    #{oneFile,jdbcType=NUMERIC}
+		)
+
+	</insert>
+
+    <!-- 조회수 업데이트 -->
+    <update id="updateViews">
+        UPDATE NOTICE
+        SET VIEW_COUNT = VIEW_COUNT + 1
+        WHERE NOTICE_ID = #{noticeId}
+    </update>
+
+    <!-- 공지글 수정 -->
+    <update id="updateBoard">
+        UPDATE NOTICE
+        SET
+			TITLE = #{title,jdbcType=VARCHAR}
+			, EMP_ID = #{empId,jdbcType=VARCHAR}
+			, CONTENT = #{content,jdbcType=CLOB}
+			, CATEGORY_ID = #{categoryId,jdbcType=NUMERIC}
+		    , IMPORTANCE = #{importance,jdbcType=CHAR}
+            , NOTICE_FILE = #{oneFile,jdbcType=NUMERIC}
+        WHERE NOTICE_ID = #{noticeId,jdbcType=NUMERIC}
+    </update>
+
+    <!-- 공지글 삭제 -->
+	<delete id="deleteBoard">
+	    DELETE FROM NOTICE
+	    WHERE NOTICE_ID = #{noticeId}
+	</delete>
+
+    <!-- 공지글 고정 -->
+    <update id="updateBoardImportance" parameterType="map">
+   	    UPDATE NOTICE
+	    SET IMPORTANCE = #{importance},
+	        UPDATED_AT = CURRENT_TIMESTAMP
+	    WHERE NOTICE_ID = #{noticeId}
+    </update>
+
+    <!-- 카테고리 리스트 가져오기 -->
+<!-- 	<select id="getBoardCategoryList" resultMap="boardMap"> -->
+<!-- 		SELECT * -->
+<!--         FROM NOTICE_CATEGORY -->
+<!-- 	</select> -->
+
+</mapper>

@@ -1,0 +1,264 @@
+package kr.or.ddit.approval.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import kr.or.ddit.annual.vo.AnnualManageVO;
+import kr.or.ddit.approval.service.ApprovalProcessService;
+import kr.or.ddit.approval.service.ApproverService;
+import kr.or.ddit.approval.vo.DraftApproverVO;
+import kr.or.ddit.approval.vo.DraftDetailVO;
+import kr.or.ddit.approval.vo.DraftManageMentVO;
+import kr.or.ddit.file.vo.FileDetailVO;
+
+/**
+ * 
+ * @author CHOI
+ * @since 2025. 3. 19.
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *   
+ *   수정일      			수정자           수정내용
+ *  -----------   	-------------    ---------------------------
+ *  2025. 3. 19.     	CHOI	          결재 진행(관련 정보 보기) 
+ *
+ * </pre>
+ */
+@RestController
+public class ApprovalProcessController {
+	
+	@Inject
+	private ApprovalProcessService service;
+	
+	@Inject
+	private ApproverService aprService;
+	
+	/**
+	 * 기안자가 본인의 기안 문서를 조회 (비동기 방식)  상신함..-> 로그인한 사용자 + 대기
+	 * viewController -> /approval/mydrafts 
+	 */
+	@GetMapping("/approvalProcess/mydrafts")
+	public ResponseEntity<List<DraftManageMentVO>> getMyDraftDocuments() {
+        // 로그인한 사용자의 empId 가져오기
+        String empId = getLoggedInUserId();
+
+        if (empId == null) {
+            return ResponseEntity.status(401).build(); // 401 Unauthorized
+        }
+
+        List<DraftManageMentVO> draftList = service.writeDraftMangeMent(empId);
+
+        if (draftList.isEmpty()) {
+            return ResponseEntity.noContent().build(); // 204 No Content (데이터 없음)
+        }
+
+        return ResponseEntity.ok(draftList);
+    }
+	
+	
+	/**
+	 * rest 방식으로 결재자 대기함 조회
+	 * @return
+	 * viewController -> /approval/approverDrafts
+	 */
+	@GetMapping("/approvalProcess/approverDrafts")
+	public ResponseEntity<List<DraftApproverVO>> getMyApprovalInfoDoc(@RequestParam("aprId") String aprId){
+		//로그인한 사용자 정보 
+		String empId = getLoggedInUserId();
+		
+		if (empId == null) {
+            return ResponseEntity.status(401).build(); // 401 Unauthorized
+        }
+		
+		//결재자가 본인 결재 대기함 리스트를 볼 수 있음 
+		List<DraftApproverVO> draftList = aprService.getMyApprovalInfo(aprId);
+		
+		if(draftList.isEmpty()) {
+			return ResponseEntity.noContent().build(); // 204 No data
+		}
+		return ResponseEntity.ok(draftList);
+	}
+	
+	
+	
+	 /**
+     * 업로드 완료된 fileIds를 draftId와 매핑
+     */
+    @PostMapping("approval/{draftId}/mappingFiles")
+    public ResponseEntity<String> mappingFiles(
+            @PathVariable("draftId") Long draftId,
+            @RequestParam("fileIds") List<Long> fileIds
+    ) {
+        try {
+            // paramMap 구성
+            Map<String, Object> paramMap = new HashMap<>();
+            paramMap.put("draftId", draftId);
+            paramMap.put("fileIds", fileIds);
+            
+            // DB에 insert
+            service.insertDraftMentFile(paramMap);
+            
+            return ResponseEntity.ok("파일 매핑 성공");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("파일 매핑 실패");
+        }
+    }
+	
+	
+	
+	
+	/**
+	 * 결재문서 -> 해당 결재자가 결재 문서 상세보기 
+	 * @param draftId 문서 코드 
+	 * @return
+	 */
+	@GetMapping("/approval/draft/detail")
+	public ResponseEntity<?> getMyApprovalInfoDetail(@RequestParam("draftId") Long draftId){
+		List<DraftApproverVO>  draftVO = aprService.getMyApprovalInfoDetail(draftId);
+		return ResponseEntity.ok(draftVO);
+	}
+	
+	/**
+	 * 파일처리를 위한 파일 상세 정보 
+	 * @param draftId
+	 * @return
+	 */
+	@GetMapping("/file/listByDraft/{draftId}")
+	public ResponseEntity<List<FileDetailVO>> getFilesByDraftId(@PathVariable("draftId") Long draftId) {
+	    try {
+	        // fileService에 draftId로 연결된 파일 목록을 조회하는 메서드가 구현되어 있어야 함.
+	        List<FileDetailVO> files = service.getFilesByDraftId(draftId);
+	        return ResponseEntity.ok(files);
+	    } catch (Exception e) {
+	        // 에러 발생 시 적절한 응답 반환
+	        return ResponseEntity.badRequest().build();
+	    }
+	}
+	
+	/**
+     * 기안 문서 상세 정보를 조회하는 REST 엔드포인트
+     * 
+     */
+    @GetMapping("/approval/draft/{draftId}")
+    public ResponseEntity<DraftDetailVO> getDraftDetail(@PathVariable("draftId") Long draftId) {
+        DraftDetailVO detail = service.getDraftDocDetail(draftId);
+        if (detail != null) {
+            return ResponseEntity.ok(detail);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    
+    /**
+     * 내가 작성한 상신 문서 -> 상세보기 
+     * @param draftId
+     * @return
+     * viewController -> /approval/myDraftDetailView
+     */
+    @GetMapping("/approvalProcess/myDraftDetail")
+    public ResponseEntity<DraftManageMentVO> getMyDraftDetail(@RequestParam("draftId") Long draftId){
+        String empId = getLoggedInUserId();
+        if(empId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); 
+        }
+        
+        Map<String, Object> params = new HashMap<>();
+        params.put("draftId", draftId);
+        params.put("empId", empId);
+        
+        // 문서 상세 정보 조회
+        DraftManageMentVO drafDetail = service.getMyDraftDetail(params);
+        if(drafDetail == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        
+        return ResponseEntity.ok(drafDetail);
+    }
+    
+    
+    
+    /**
+     * 연차 옵션 목록 조회
+     * DB에서 연차 옵션 목록을 조회하여 JSON 배열로 반환함.
+     */
+    @GetMapping("/approval/draft/data/annualTypes")
+    public ResponseEntity<List<AnnualManageVO>> getAnnualTypes() {
+        try {
+            List<AnnualManageVO> annualCodes = service.selectAvailableAnnualTypes();
+            return ResponseEntity.ok(annualCodes);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    
+    /**
+     * approval/checkLeaveConflict?empId=...&leaveStartDate=...&leaveEndDate=...
+     * 지정된 기간에 대해 이미 연차 신청 건이 있는지 확인합니다.
+     * @param empId
+     * @param leaveStartDate 휴가 시작일 
+     * @param leaveEndDate 휴가 종료일
+     * @return true: 충돌 있음, false: 충돌 없음
+     */
+    @GetMapping("approval/checkLeaveConflict")
+    public ResponseEntity<?> checkLeaveConflict(
+             @RequestParam("leaveStartDate") String leaveStartDate,
+             @RequestParam("leaveEndDate") String leaveEndDate
+             ){
+    	 // 세션에서 empId 가져오기
+        String empId = getLoggedInUserId();
+        if(empId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+  
+    	boolean conflict = service.hasLeaveConflict(empId, leaveStartDate, leaveEndDate);
+        return ResponseEntity.ok(conflict);
+    }
+	
+	
+	
+	
+	@GetMapping("/approvalProcess/getApproverId")
+	public ResponseEntity<String> getApproverId() {
+	    // 현재 로그인한 사용자 ID 가져오기
+	    String empId = getLoggedInUserId();
+
+	    if (empId == null) {
+	        return ResponseEntity.status(401).body("Unauthorized");
+	    }
+
+	    return ResponseEntity.ok(empId); // 결재자 ID로 반환
+	}
+	
+
+    /**
+     * 로그인한 사용자의 empId 가져오기
+     */
+    public String getLoggedInUserId() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (principal instanceof UserDetails) {
+            return ((UserDetails) principal).getUsername(); // 로그인된 사용자의 ID (empId) 반환
+        }
+
+        return null; // 로그인되지 않은 경우
+    }
+}

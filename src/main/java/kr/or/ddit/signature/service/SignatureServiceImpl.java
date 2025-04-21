@@ -1,0 +1,39 @@
+package kr.or.ddit.signature.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import kr.or.ddit.mybatis.mappers.signature.SignatureMapper;
+import kr.or.ddit.signature.vo.SignatureVO;
+
+@Service
+public class SignatureServiceImpl implements SignatureService {
+
+	@Autowired
+	private SignatureMapper mapper;
+
+	// 서명 추가
+	@Override
+	public int insertSign(SignatureVO sign) {
+		return mapper.insertSign(sign);
+	}
+
+	// 모든 서명조회
+	@Override
+	public List<SignatureVO> selectSign() {
+		return mapper.selectSign();
+	}
+
+	@Override
+	public SignatureVO getSignature(String empId) {
+		return mapper.getSignature(empId);
+	}
+
+	@Override
+	public int updateSign(SignatureVO sign) {
+		return mapper.updateSign(sign);
+	}
+
+}
