@@ -147,26 +147,6 @@ public class AttendanceReadController {
     }
 
 
-//	/** 
-//	 *  QR스캔 시 메인 프로필 출퇴기록 업데이트
-//	 * @param empId
-//	 * @return
-//	 */
-//	@GetMapping("/content/update")
-//	@ResponseBody
-//	public Map<String, Object> updateAttendance(@RequestParam("empId")String empId) {
-//	    Map<String, Object> response = new HashMap<>();
-//	    System.err.println("이거 뭐하는 거였더라 ㅠㅠ?");
-//	    response.put("response", service.updateAttendance(empId));
-//		return response;
-//	}
-//	
-	@PostMapping("/annaulCheck/Attendance")
-	public Map<String, Object> annaulCheckAttendance(){
-		Map<String, Object> result = new HashMap<>();
-		
-		
-		return null;
-	}
+
 	
 }
