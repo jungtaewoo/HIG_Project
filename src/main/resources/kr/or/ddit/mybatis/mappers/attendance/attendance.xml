@@ -71,6 +71,37 @@
 		</if>
 		 order by a.work_date ASC
 	</select>
+	<!-- 
+	<select id="departmentList" resultType="DepartmentVO">
+	    WITH department_count AS (
+		SELECT
+		    d.department_id,
+		    d.department_name,
+		    COUNT(e.emp_id) AS department_employee_count
+		FROM
+		    department d
+		LEFT JOIN employee e ON e.department_id = d.department_id
+		GROUP BY
+		    d.department_id,
+		    d.department_name
+	    )
+	    SELECT
+		dc.department_id,
+		dc.department_name,
+		dc.department_employee_count
+	    FROM
+		department_count dc
+	    <if test="teamId != null and teamId != ''">
+		WHERE dc.department_id = (
+		    SELECT department_id
+		    FROM team
+		    WHERE team_id = #{teamId}
+		)
+	    </if>
+	</select>
+	-->
+
+	
 	<!--  전체 부서 리스트 조회 -->
 	<select id="departmentList" resultType="DepartmentVO">
 		SELECT
