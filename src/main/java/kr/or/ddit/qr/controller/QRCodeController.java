@@ -94,19 +94,18 @@ public class QRCodeController {
 		try {
 			// 1. QR 코드 유효성 검사
 			QrVO qrInfo = qrservice.getQRInfo(token);
+			if (qrInfo == null)
+				throw new RuntimeException("유효하지 않은 QR 코드 입니다.");
 			
 			//token안에 claims에서 id와 유효시간 추출
 			Claims claims = Jwts.parser()
 				    .setSigningKey(secretKey.getEncoded())  // 반드시 같은 키로 복호화해야 함
 				    .parseClaimsJws(token)                  // 토큰 문자열
 				    .getBody();     
-			
-			if (qrInfo == null)
-				throw new RuntimeException("유효하지 않은 QR 코드 입니다.");
-
-			LocalDateTime now = LocalDateTime.now();
 			String empId = claims.get("empId",String.class);
 			String expiresAt = claims.get("formattedExpireAt", String.class);
+			
+			LocalDateTime now = LocalDateTime.now();
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 			LocalDateTime expirationTime = LocalDateTime.parse(expiresAt, formatter);
 
