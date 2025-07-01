@@ -32,7 +32,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.google.zxing.BarcodeFormat;
@@ -40,6 +39,7 @@ import com.google.zxing.EncodeHintType;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import kr.or.ddit.annual.service.AnnualHistoryService;
@@ -67,10 +67,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Controller
 @Slf4j
-@RequestMapping("/")
 public class QRCodeController {
-	
-
 	
 	private SecretKey secretKey;
 	
@@ -92,17 +89,24 @@ public class QRCodeController {
      * @param model
      * @return
      */
-	@GetMapping("qrqr")
+	@GetMapping("/qrqr")
 	public ResponseEntity<String> locationQR(@RequestParam("token") String token) {
 		try {
 			// 1. QR 코드 유효성 검사
 			QrVO qrInfo = qrservice.getQRInfo(token);
+			
+			//token안에 claims에서 id와 유효시간 추출
+			Claims claims = Jwts.parser()
+				    .setSigningKey(secretKey.getEncoded())  // 반드시 같은 키로 복호화해야 함
+				    .parseClaimsJws(token)                  // 토큰 문자열
+				    .getBody();     
+			
 			if (qrInfo == null)
 				throw new RuntimeException("유효하지 않은 QR 코드 입니다.");
 
 			LocalDateTime now = LocalDateTime.now();
-			String empId = qrInfo.getEmpId();
-			String expiresAt = qrInfo.getExpiresAt();
+			String empId = claims.get("empId",String.class);
+			String expiresAt = claims.get("formattedExpireAt", String.class);
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 			LocalDateTime expirationTime = LocalDateTime.parse(expiresAt, formatter);
 
@@ -182,7 +186,7 @@ public class QRCodeController {
 	 * @return
 	 * @throws Exception
 	 */
-	@GetMapping("generate-qr")
+	@GetMapping("/generate-qr")
 	public String generateQRCode(Model model, HttpSession session, HttpServletRequest req) throws Exception {
 	    Authentication account = SecurityContextHolder.getContext().getAuthentication();
 	    // 로그인된 사용자 ID
@@ -239,7 +243,7 @@ public class QRCodeController {
 	    	    .compact();
 	    
 	    // DB에 QR 정보 저장 
-	    qrservice.saveQR(token, empId, formattedExpireAt);
+	    qrservice.saveQR(token);
 	    
 	    // 서버 IP 가져오기
 	    String ip = getIp();
